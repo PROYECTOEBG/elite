@@ -7,7 +7,7 @@ export async function before(m, { conn, participants, groupMetadata }) {
   let who = m.messageStubParameters[0]
   let taguser = `@${who.split('@')[0]}`
   let chat = global.db.data.chats[m.chat]
-  let pp = './src/sinfoto.jpg'
+  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => './src/sinfoto.jpg'
   let img = await (await fetch(`${pp}`)).buffer()
 
     if (chat.antiLink && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_ADD) {
