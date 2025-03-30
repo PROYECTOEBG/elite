@@ -31,11 +31,11 @@ let fgif = {key: {participant : '0@s.whatsapp.net'}, message: {"videoMessage": {
 let enlace = { contextInfo: { externalAdReply: {title: wm + ' 🐈', body: 'support group' , sourceUrl: redesMenu, thumbnail: await(await fetch(gataMenu)).buffer() }}}
 let enlace2 = { contextInfo: { externalAdReply: { showAdAttribution: true, mediaUrl: yt, mediaType: 'VIDEO', description: '', title: wm, body: '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 - 𝗪𝗵𝗮𝘁𝘀𝗔𝗽𝗽 ', thumbnailUrl: gataMenu, sourceUrl: accountsgb }}}
 let dos = [enlace, enlace2]  
-global.wait = "⌛ *`Cargando...`*\n*✪✦✦⊹⊹⊹⊹⊹⊹⊹⊹✪* `20%`"
-global.waitt = "⏳ *`Cargando....`*\n*✪✦✦✦✦⊹⊹⊹⊹⊹⊹✪* `40%`"
-global.waittt = "⌛ *`Cargando...`*\n*✪✦✦✦✦✦✦⊹⊹⊹⊹✪* `60%`"
-global.waitttt = "⏳ *`Cargando....`*\n*✪✦✦✦✦✦✦✦✦⊹⊹✪* `80%`"
-global.waittttt = "⌛ *`Procesando...`*\n*✪✦✦✦✦✦✦✦✦✦✦✪* `100%`"
+global.wait = "*🚀 P R O C E S A N D O*";
+global.waitt = "*🚀 P R O C E S A N D O*";
+global.waittt = "*🚀 P R O C E S A N D O*";
+global.waitttt = "*🚀 P R O C E S A N D O*";
+global.waittttt = "*🚀 P R O C E S A N D O*";
 global.destraba = `⏰DESTRABA⏰*
 li.DESTRAVip.to
 2024 🦍💨
@@ -63,6 +63,19 @@ global.imagen3 = fs.readFileSync("./media/menus/img2.jpg")
 global.imagen4 = fs.readFileSync("./media/menus/img3.jpg")
 global.imagen5 = fs.readFileSync("./media/menus/img4.jpg")
 global.imagen6 = fs.readFileSync("./media/menus/img5.jpg")
+global.bermuda = fs.readFileSync("./media/menus/bermuda.jpg")
+global.purgatorio = fs.readFileSync("./media/menus/purgatorio.jpg")
+global.nexterra = fs.readFileSync("./media/menus/nexterra.jpg")
+global.alpes = fs.readFileSync("./media/menus/alpes.jpg")
+global.kalahari = fs.readFileSync("./media/menus/kalahari.jpg")
+global.agenda = fs.readFileSync("./media/menus/agenda.jpg")
+global.reglascuadri = fs.readFileSync("./media/menus/reglascuadri.jpg")
+global.vestimentacuadri = fs.readFileSync("./media/menus/vestimentacuadri.jpg")
+global.podiocuadri = fs.readFileSync("./media/menus/podiocuadri.jpg")
+global.reglasclk = fs.readFileSync("./media/menus/reglasclk.jpg")
+global.reglaslideres = fs.readFileSync("./media/menus/reglaslideres.jpg")
+global.combode = fs.readFileSync("./media/menus/combode.jpg")
+global.combobr = fs.readFileSync("./media/menus/combobr.jpg")
 global.imagen7 = fs.readFileSync("./media/menus/img6.jpg")
 global.imagen8 = fs.readFileSync("./media/menus/img7.jpg")
 global.imagen9 = fs.readFileSync("./media/menus/img8.jpg")
@@ -70,6 +83,8 @@ global.imagen10 = fs.readFileSync("./media/menus/img9.jpg")
 global.imagen11 = fs.readFileSync("./media/menus/img10.jpg")
 global.imagen12 = fs.readFileSync("./media/menus/img11.jpg")
 global.imagen13 = fs.readFileSync("./media/menus/img12.jpg")
+
+
 
 global.img = 'https://cdn.dorratz.com/files/1738785861212.jpg'
 global.img2 = img //'https://qu.ax/hjcB.jpg' 
@@ -100,6 +115,19 @@ global.logogit = img //'https://qu.ax/RzKF.jpg'
 global.gataVidMenu = ['https://qu.ax/AAvg.mp4', 'https://qu.ax/SeFS.mp4', 'https://qu.ax/NqZN.mp4'][Math.floor(Math.random() * 3)]
 global.gataMenu = [img, img2, img6, img7, img8, img9, img13, img14, img15, img17, img18][Math.floor(Math.random() * 11)]
 global.gataImg = [imagen1, imagen2, imagen3, imagen4, imagen5, imagen6, imagen7, imagen8, imagen9, imagen10, imagen11, imagen12, imagen13][Math.floor(Math.random() * 13)]
+global.bermuda = [bermuda]
+global.purgatorio = [purgatorio]
+global.nexterra = [nexterra]
+global.alpes = [alpes]
+global.kalahari = [kalahari]
+global.agenda = [agenda]
+global.reglascuadri = [reglascuadri]
+global.vestimentacuadri = [vestimentacuadri]
+global.podiocuadri = [podiocuadri]
+global.reglasclk = [reglasclk]
+global.reglaslideres = [reglaslideres]
+global.combode = [combode]
+global.combobr = [combobr]
 
 // Mensaje de espera
 // await mensajesEditados(conn, m)
