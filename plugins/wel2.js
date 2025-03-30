@@ -24,7 +24,13 @@ export async function before(m, { conn, participants, groupMetadata }) {
     }
        
     if (chat.antiLink && m.messageStubType === WAMessageStubType.GROUP_PARTICIPANT_LEAVE) {
-      let bye = `❀ *Adiós* de ${groupMetadata.subject}\n ✰ ${taguser}\n${global.welcom2}\n •(=^●ω●^=)• Te esperamos pronto!\n> ✐ Puedes usar *#help* para ver la lista de comandos.`
+      let bye = `╭━━━━━━━━━━━━━━━╮
+│      _- 1_ 𝙄𝙉𝙎𝙀𝙍𝙑𝙄𝘽𝙇𝙀   
+│        ${taguser}    
+╰━━━━━━━━━━━━━━━╯
+ 𝙋𝙨𝙙𝙩: 𝘌𝘴𝘤𝘶𝘱𝘢𝘯𝘭𝘦 𝘦𝘯 𝘦𝘴𝘢 𝘤𝘢𝘳𝘢 𝘱𝘰𝘳 𝘢𝘥𝘰𝘳𝘯𝘰 𝘦𝘯 𝘦𝘭 𝘨𝘳𝘶𝘱𝘰 𝘹𝘥.
+
+ - 𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡`
       await conn.sendMessage(m.chat, { image: img, caption: bye, mentions: [who] })
     }
 
