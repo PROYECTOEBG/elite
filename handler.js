@@ -1434,7 +1434,7 @@ function pickRandom(list) { return list[Math.floor(Math.random() * list.length)]
  * Handle groups participants update
  * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['group-participants.update']} groupsUpdate 
  */
-export async function participantsUpdate({ id, participants, action }) {
+/**export async function participantsUpdate({ id, participants, action }) {
 if (opts['self'])
 return
 // if (id in conn.chats) return // First login will spam
@@ -1460,7 +1460,7 @@ const botTt2 = groupMetadata.participants.find(u => this.decodeJid(u.id) == this
 const isBotAdminNn = botTt2?.admin === "admin" || false
 text = (action === 'add' ? (chat.sWelcome || this.welcome || conn.welcome || 'Welcome, @user!').replace('@subject', await this.getName(id)).replace('@desc', groupMetadata.desc?.toString() || '😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 😻') :
 (chat.sBye || this.bye || conn.bye || 'Bye, @user!')).replace('@user', '@' + user.split('@')[0])
-			    
+*/			    
 if (chat.antifake && isBotAdminNn && action === 'add') {
 const prefijosPredeterminados = [2, 4, 6, 7, 8, 9] // Puedes personalizar los prefijos de los usuarios que deseas eliminar, especificando los que deben ser bloqueados si el número empieza con alguno de ellos.
 let prefijos = (Array.isArray(chat.sCondition) && chat.sCondition.length > 0) || chat.sCondition !== "" ? chat.sCondition : prefijosPredeterminados
