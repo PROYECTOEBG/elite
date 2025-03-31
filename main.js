@@ -1,430 +1,718 @@
-import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
-import { smsg } from './lib/simple.js'
-import { format } from 'util'
-import { fileURLToPath } from 'url'
-import path, { join } from 'path'
-import { unwatchFile, watchFile } from 'fs'
-import fs from 'fs'
-import chalk from 'chalk'   
-import fetch from 'node-fetch'
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
+import './config.js' 
 import './plugins/_content.js'
- 
-/**
- * @type {import('@adiwajshing/baileys')}  
- */
-const { proto } = (await import('@whiskeysockets/baileys')).default
-const isNumber = x => typeof x === 'number' && !isNaN(x)
-const delay = ms => isNumber(ms) && new Promise(resolve => setTimeout(function () {
-clearTimeout(this)
-resolve()
-}, ms))
+import { createRequire } from 'module'
+import path, { join } from 'path'
+import {fileURLToPath, pathToFileURL} from 'url'
+import { platform } from 'process'
+import * as ws from 'ws'
+import fs, { watchFile, unwatchFile, writeFileSync, readdirSync, statSync, unlinkSync, existsSync, readFileSync, copyFileSync, watch, rmSync, readdir, stat, mkdirSync, rename, writeFile } from 'fs'
+import yargs from 'yargs'
+import { spawn } from 'child_process'
+import lodash from 'lodash'
+import chalk from 'chalk'
+import syntaxerror from 'syntax-error'
+import { format } from 'util'
+import pino from 'pino'
+import Pino from 'pino'
+import { Boom } from '@hapi/boom'
+import { makeWASocket, protoType, serialize } from './lib/simple.js'
+import {Low, JSONFile} from 'lowdb'
+import store from './lib/store.js'
+import readline from 'readline'
+import NodeCache from 'node-cache' 
+import { gataJadiBot } from './plugins/jadibot-serbot.js';
+import pkg from 'google-libphonenumber'
+const { PhoneNumberUtil } = pkg
+const phoneUtil = PhoneNumberUtil.getInstance()
+const { makeInMemoryStore, DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = await import('@whiskeysockets/baileys')
+const { CONNECTING } = ws
+const { chain } = lodash
+const PORT = process.env.PORT || process.env.SERVER_PORT || 3000
+protoType()
+serialize()
+global.__filename = function filename(pathURL = import.meta.url, rmPrefix = platform !== 'win32') {
+  return rmPrefix ? /file:\/\/\//.test(pathURL) ? fileURLToPath(pathURL) : pathURL : pathToFileURL(pathURL).toString();
+}; global.__dirname = function dirname(pathURL) {
+  return path.dirname(global.__filename(pathURL, true));
+}; global.__require = function require(dir = import.meta.url) {
+  return createRequire(dir);
+};
+global.API = (name, path = '/', query = {}, apikeyqueryname) => (name in global.APIs ? global.APIs[name] : name) + path + (query || apikeyqueryname ? '?' + new URLSearchParams(Object.entries({...query, ...(apikeyqueryname ? {[apikeyqueryname]: global.APIKeys[name in global.APIs ? global.APIs[name] : name]} : {})})) : '')
+global.timestamp = { start: new Date }
+const __dirname = global.__dirname(import.meta.url);
+global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+global.prefix = new RegExp('^[' + (opts['prefix'] || '*/i!#$%+£¢€¥^°=¶∆×÷π√✓©®&.\\-.@').replace(/[|\\{}()[\]^$+*.\-\^]/g, '\\$&') + ']')
 
-/**
- * Handle messages upsert
- * @param {import('@adiwajshing/baileys').BaileysEventMap<unknown>['messages.upsert']} groupsUpdate 
- */
-export async function handler(chatUpdate) {
-this.msgqueque = this.msgqueque || [];
-this.uptime = this.uptime || Date.now();
-if (!chatUpdate) {
-return
+//news
+const databasePath = path.join(__dirname, 'database') 
+if (!fs.existsSync(databasePath)) fs.mkdirSync(databasePath)
+
+const usersPath = path.join(databasePath, 'users')
+const chatsPath = path.join(databasePath, 'chats')
+const settingsPath = path.join(databasePath, 'settings')
+const msgsPath = path.join(databasePath, 'msgs')
+const stickerPath = path.join(databasePath, 'sticker')
+const statsPath = path.join(databasePath, 'stats');
+
+[usersPath, chatsPath, settingsPath, msgsPath, stickerPath, statsPath].forEach((dir) => {
+if (!fs.existsSync(dir)) fs.mkdirSync(dir)
+})
+
+function getFilePath(basePath, id) {
+return path.join(basePath, `${id}.json`)
 }
-if (!chatUpdate || !chatUpdate.messages) {
-return
+
+global.db = {
+data: {
+users: {},
+chats: {},
+settings: {},
+msgs: {},
+sticker: {},
+stats: {},
+},
+READ: false,
+};
+
+global.loadDatabase = async function loadDatabase() {
+if (global.db.READ) {
+return new Promise((resolve) => {
+const interval = setInterval(() => {
+if (!global.db.READ) {
+clearInterval(interval);
+resolve(global.db.data);
+}}, 1000);
+});
+}
+
+global.db.READ = true;
+try {
+const loadFiles = async (dirPath, targetObj, ignorePatterns = []) => {
+const files = fs.readdirSync(dirPath)
+for (const file of files) {
+const id = path.basename(file, '.json')
+
+if (ignorePatterns.some(pattern => id.includes(pattern))) {
+continue; 
+}
+const db = new Low(new JSONFile(getFilePath(dirPath, id)))
+await db.read()
+db.data = db.data || {};
+targetObj[id] = { ...targetObj[id], ...db.data }
+}};
+
+await Promise.all([loadFiles(usersPath, global.db.data.users, ['@newsletter', 'lid', '@g.us']), 
+loadFiles(chatsPath, global.db.data.chats, ['status@broadcast']), 
+loadFiles(settingsPath, global.db.data.settings),
+loadFiles(msgsPath, global.db.data.msgs),
+loadFiles(stickerPath, global.db.data.sticker),
+loadFiles(statsPath, global.db.data.stats),
+]);
+} catch (error) {
+console.error('Error loading database:', error);
+} finally {
+global.db.READ = false
+}};
+
+global.db.save = async function saveDatabase() {
+if (global.db.READ) {
+await new Promise((resolve) => {
+const interval = setInterval(() => {
+if (!global.db.READ) {
+clearInterval(interval)
+resolve()
+}}, 100)
+});
+}
+
+global.db.READ = true
+try {
+const saveFiles = async (dirPath, dataObj, ignorePatterns = []) => {
+for (const [id, data] of Object.entries(dataObj)) {
+if (ignorePatterns.some(pattern => id.includes(pattern))) {
+continue; 
+}
+
+const db = new Low(new JSONFile(getFilePath(dirPath, id)))
+db.data = data
+await db.write()
+}}
+
+await Promise.all([saveFiles(usersPath, global.db.data.users, ['@newsletter', 'lid', '@g.us']), 
+saveFiles(chatsPath, global.db.data.chats, ['status@broadcast']), 
+saveFiles(settingsPath, global.db.data.settings),
+saveFiles(msgsPath, global.db.data.msgs),
+saveFiles(stickerPath, global.db.data.sticker),
+saveFiles(statsPath, global.db.data.stats),
+]);
+} catch (error) {
+console.error('Error saving database:', error)
+} finally {
+global.db.READ = false
+}}
+loadDatabase()
+
+/*global.db = new Low(/https?:\/\//.test(opts['db'] || '') ? new cloudDBAdapter(opts['db']) : new JSONFile('database.json'))
+global.DATABASE = global.db; 
+global.loadDatabase = async function loadDatabase() {
+if (global.db.READ) {
+return new Promise((resolve) => setInterval(async function() {
+if (!global.db.READ) {
+clearInterval(this);
+resolve(global.db.data == null ? global.loadDatabase() : global.db.data);
+}}, 1 * 1000));
+}
+if (global.db.data !== null) return;
+global.db.READ = true;
+await global.db.read().catch(console.error);
+global.db.READ = null;
+global.db.data = {
+users: {},
+chats: {},
+stats: {},
+msgs: {},
+sticker: {},
+settings: {},
+...(global.db.data || {}),
+};
+global.db.chain = chain(global.db.data);
+};
+loadDatabase();/*
+
+// Inicialización de conexiones globales
+//if (global.conns instanceof Array) {console.log('Conexiones ya inicializadas...');} else {global.conns = [];}
+
+/* ------------------------------------------------*/
+
+global.creds = 'creds.json'
+global.authFile = 'GataBotSession'
+global.authFileJB  = 'GataJadiBot'
+global.rutaBot = join(__dirname, authFile)
+global.rutaJadiBot = join(__dirname, authFileJB)
+const respaldoDir = join(__dirname, 'BackupSession');
+const credsFile = join(global.rutaBot, global.creds);
+const backupFile = join(respaldoDir, global.creds);
+
+if (!fs.existsSync(rutaJadiBot)) {
+fs.mkdirSync(rutaJadiBot)}
+
+if (!fs.existsSync(respaldoDir)) fs.mkdirSync(respaldoDir);
+
+const {state, saveState, saveCreds} = await useMultiFileAuthState(global.authFile)
+const msgRetryCounterMap = new Map();
+const msgRetryCounterCache = new NodeCache({ stdTTL: 0, checkperiod: 0 });
+const userDevicesCache = new NodeCache({ stdTTL: 0, checkperiod: 0 });
+const {version} = await fetchLatestBaileysVersion()
+let phoneNumber = global.botNumberCode
+const methodCodeQR = process.argv.includes("qr")
+const methodCode = !!phoneNumber || process.argv.includes("code")
+const MethodMobile = process.argv.includes("mobile")
+let rl = readline.createInterface({
+input: process.stdin,
+output: process.stdout,
+terminal: true,
+})
+
+const question = (texto) => {
+rl.clearLine(rl.input, 0)
+return new Promise((resolver) => {
+rl.question(texto, (respuesta) => {
+rl.clearLine(rl.input, 0)
+resolver(respuesta.trim())
+})})
+}
+
+let opcion
+if (methodCodeQR) {
+opcion = '1'
+}
+if (!methodCodeQR && !methodCode && !fs.existsSync(`./${authFile}/creds.json`)) {
+do {
+let lineM = '⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ ⋯ 》'
+opcion = await question(`╭${lineM}  
+┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}
+┊ ${chalk.blueBright('┊')} ${chalk.blue.bgBlue.bold.cyan(mid.methodCode1)}
+┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}   
+┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}     
+┊ ${chalk.blueBright('┊')} ${chalk.green.bgMagenta.bold.yellow(mid.methodCode2)}
+┊ ${chalk.blueBright('┊')} ${chalk.bold.redBright(`⇢  ${mid.methodCode3} 1:`)} ${chalk.greenBright(mid.methodCode4)}
+┊ ${chalk.blueBright('┊')} ${chalk.bold.redBright(`⇢  ${mid.methodCode3} 2:`)} ${chalk.greenBright(mid.methodCode5)}
+┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}
+┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}     
+┊ ${chalk.blueBright('┊')} ${chalk.italic.magenta(mid.methodCode6)}
+┊ ${chalk.blueBright('┊')} ${chalk.italic.magenta(mid.methodCode7)}
+┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')} 
+┊ ${chalk.blueBright('╭┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')}    
+┊ ${chalk.blueBright('┊')} ${chalk.red.bgRed.bold.green(mid.methodCode8)}
+┊ ${chalk.blueBright('┊')} ${chalk.italic.cyan(mid.methodCode9)}
+┊ ${chalk.blueBright('┊')} ${chalk.italic.cyan(mid.methodCode10)}
+┊ ${chalk.blueBright('┊')} ${chalk.bold.yellow(`npm run qr ${chalk.italic.magenta(`(${mid.methodCode12})`)}`)}
+┊ ${chalk.blueBright('┊')} ${chalk.bold.yellow(`npm run code ${chalk.italic.magenta(`(${mid.methodCode13})`)}`)}
+┊ ${chalk.blueBright('┊')} ${chalk.bold.yellow(`npm start ${chalk.italic.magenta(`(${mid.methodCode14})`)}`)}
+┊ ${chalk.blueBright('╰┅┅┅┅┅┅┅┅┅┅┅┅┅┅┅')} 
+╰${lineM}\n${chalk.bold.magentaBright('---> ')}`)
+if (!/^[1-2]$/.test(opcion)) {
+console.log(chalk.bold.redBright(mid.methodCode11(chalk)))
+}} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${authFile}/creds.json`))
+}
+
+const filterStrings = [
+"Q2xvc2luZyBzdGFsZSBvcGVu", // "Closing stable open"
+"Q2xvc2luZyBvcGVuIHNlc3Npb24=", // "Closing open session"
+"RmFpbGVkIHRvIGRlY3J5cHQ=", // "Failed to decrypt"
+"U2Vzc2lvbiBlcnJvcg==", // "Session error"
+"RXJyb3I6IEJhZCBNQUM=", // "Error: Bad MAC" 
+"RGVjcnlwdGVkIG1lc3NhZ2U=" // "Decrypted message" 
+]
+
+console.info = () => {} 
+console.debug = () => {} 
+['log', 'warn', 'error'].forEach(methodName => redefineConsoleMethod(methodName, filterStrings))
+const connectionOptions = {
+logger: pino({ level: 'silent' }),
+printQRInTerminal: opcion == '1' ? true : methodCodeQR ? true : false,
+mobile: MethodMobile, 
+browser: opcion == '1' ? ['GataBot-MD', 'Edge', '20.0.04'] : methodCodeQR ? ['GataBot-MD', 'Edge', '20.0.04'] : ["Ubuntu", "Chrome", "20.0.04"],
+auth: {
+creds: state.creds,
+keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
+},
+markOnlineOnConnect: true, 
+generateHighQualityLinkPreview: true, 
+syncFullHistory: false,
+getMessage: async (clave) => {
+let jid = jidNormalizedUser(clave.remoteJid)
+let msg = await store.loadMessage(jid, clave.id)
+return msg?.message || ""
+},
+msgRetryCounterCache, // Resolver mensajes en espera
+msgRetryCounterMap, // Determinar si se debe volver a intentar enviar un mensaje o no
+defaultQueryTimeoutMs: undefined,
+version: [2, 3000, 1015901307],
+}
+
+/*console.info = () => {} 
+const connectionOptions = {
+logger: pino({ level: "fatal" }),
+printQRInTerminal: opcion == '1' ? true : methodCodeQR ? true : false,
+mobile: MethodMobile, 
+auth: {
+creds: state.creds,
+keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: "fatal" }).child({ level: "fatal" })),
+},
+browser: opcion == '1' ? ['GataBot-MD', 'Edge', '20.0.04'] : methodCodeQR ? ['GataBot-MD', 'Edge', '20.0.04'] : ["Ubuntu", "Chrome", "20.0.04"],
+version: version,
+generateHighQualityLinkPreview: true
+};*/
+    
+global.conn = makeWASocket(connectionOptions)
+
+if (!fs.existsSync(`./${authFile}/creds.json`)) {
+if (opcion === '2' || methodCode) {
+opcion = '2'
+if (!conn.authState.creds.registered) {
+let addNumber
+if (!!phoneNumber) {
+addNumber = phoneNumber.replace(/[^0-9]/g, '')
 } else {
-this.pushMessage(chatUpdate.messages).catch(console.error)
+do {
+phoneNumber = await question(chalk.bgBlack(chalk.bold.greenBright(mid.phNumber2(chalk))))
+phoneNumber = phoneNumber.replace(/\D/g,'')
+if (!phoneNumber.startsWith('+')) {
+phoneNumber = `+${phoneNumber}`
 }
-let m = chatUpdate.messages[chatUpdate.messages.length - 1]
-if (!m) {
+} while (!await isValidPhoneNumber(phoneNumber))
+rl.close()
+addNumber = phoneNumber.replace(/\D/g, '')
+setTimeout(async () => {
+let codeBot = await conn.requestPairingCode(addNumber)
+codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot
+console.log(chalk.bold.white(chalk.bgMagenta(mid.pairingCode)), chalk.bold.white(chalk.white(codeBot)))
+}, 2000)
+}}}
+}
+
+conn.isInit = false
+conn.well = false
+
+if (!opts['test']) {
+if (global.db) setInterval(async () => {
+if (global.db.data) await global.db.save()
+if (opts['autocleartmp'] && (global.support || {}).find) (tmp = [os.tmpdir(), 'tmp', "GataJadiBot"], tmp.forEach(filename => cp.spawn('find', [filename, '-amin', '2', '-type', 'f', '-delete'])))}, 30 * 1000)}
+
+if (opts['server']) (await import('./server.js')).default(global.conn, PORT)
+
+async function getMessage(key) {
+if (store) {
+} return {
+conversation: 'SimpleBot',
+}}
+
+//respaldo de la sesión "GataBotSession"
+const backupCreds = () => {
+if (fs.existsSync(credsFile)) {
+fs.copyFileSync(credsFile, backupFile);
+console.log(`[✅] Respaldo creado en ${backupFile}`);
+} else {
+console.log('[⚠] No se encontró el archivo creds.json para respaldar.');
+}};
+
+const restoreCreds = () => {
+if (fs.existsSync(credsFile)) {
+fs.copyFileSync(backupFile, credsFile);
+console.log(`[✅] creds.json reemplazado desde el respaldo.`);
+} else if (fs.existsSync(backupFile)) {
+fs.copyFileSync(backupFile, credsFile);
+console.log(`[✅] creds.json restaurado desde el respaldo.`);
+} else {
+console.log('[⚠] No se encontró ni el archivo creds.json ni el respaldo.');
+}};
+
+setInterval(async () => {
+await backupCreds();
+console.log('[♻️] Respaldo periódico realizado.');
+}, 5 * 60 * 1000);
+
+async function connectionUpdate(update) {  
+const {connection, lastDisconnect, isNewLogin} = update
+global.stopped = connection
+if (isNewLogin) conn.isInit = true
+const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
+if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
+await global.reloadHandler(true).catch(console.error)
+//console.log(await global.reloadHandler(true).catch(console.error));
+global.timestamp.connect = new Date
+}
+if (global.db.data == null) loadDatabase()
+if (update.qr != 0 && update.qr != undefined || methodCodeQR) {
+if (opcion == '1' || methodCodeQR) {
+console.log(chalk.bold.yellow(mid.mCodigoQR))}
+}
+if (connection == 'open') {
+console.log(chalk.bold.greenBright(mid.mConexion))
+await joinChannels(conn)}
+let reason = new Boom(lastDisconnect?.error)?.output?.statusCode
+if (connection === 'close') {
+if (reason === DisconnectReason.badSession) {
+console.log(chalk.bold.cyanBright(lenguajeGB['smsConexionOFF']()))
+} else if (reason === DisconnectReason.connectionClosed) {
+console.log(chalk.bold.magentaBright(lenguajeGB['smsConexioncerrar']()))
+restoreCreds();
+await global.reloadHandler(true).catch(console.error)
+} else if (reason === DisconnectReason.connectionLost) {
+console.log(chalk.bold.blueBright(lenguajeGB['smsConexionperdida']()))
+restoreCreds();
+await global.reloadHandler(true).catch(console.error)
+} else if (reason === DisconnectReason.connectionReplaced) {
+console.log(chalk.bold.yellowBright(lenguajeGB['smsConexionreem']()))
+} else if (reason === DisconnectReason.loggedOut) {
+console.log(chalk.bold.redBright(lenguajeGB['smsConexionOFF']()))
+await global.reloadHandler(true).catch(console.error)
+} else if (reason === DisconnectReason.restartRequired) {
+console.log(chalk.bold.cyanBright(lenguajeGB['smsConexionreinicio']()))
+await global.reloadHandler(true).catch(console.error)
+} else if (reason === DisconnectReason.timedOut) {
+console.log(chalk.bold.yellowBright(lenguajeGB['smsConexiontiem']()))
+await global.reloadHandler(true).catch(console.error) //process.send('reset')
+} else {
+console.log(chalk.bold.redBright(lenguajeGB['smsConexiondescon'](reason, connection)))
+}}
+}
+process.on('uncaughtException', console.error);
+//process.on('uncaughtException', (err) => {
+//console.error('Se ha cerrado la conexión:\n', err)
+//process.send('reset') })
+
+/* ------------------------------------------------*/
+/* Código reconexión de sub-bots fases beta */
+/* Echo por: https://github.com/elrebelde21 */
+
+/*async function connectSubBots() {
+const subBotDirectory = './GataJadiBot';
+if (!existsSync(subBotDirectory)) {
+console.log('No se encontraron ningun sub-bots.');
 return;
 }
-if (global.db.data == null) await global.loadDatabase()
-try {
-m = smsg(this, m) || m
-if (!m)
-return
-m.exp = 0
-m.limit = false
-m.money = false
-try {
-// TODO: use loop to insert data instead of this
-let user = global.db.data.users[m.sender]
-if (typeof user !== 'object')
-global.db.data.users[m.sender] = {}
-if (user) {
-if (!isNumber(user.exp)) user.exp = 0;
-if (user.exp < 0) user.exp = 0; 
-if (!isNumber(user.money)) user.money = 150;
-if (user.money < 0) user.money = 0; 
-if (!isNumber(user.limit)) user.limit = 15;
-if (user.limit < 0) user.limit = 0; 
-if (!isNumber(user.joincount)) user.joincount = 1 
-if (user.joincount < 0) user.joincount = 0; 
-if (!('premium' in user)) user.premium = false
-if (!('muto' in user)) user.muto = false  
-if (!('registered' in user)) user.registered = false
-if (!('registroR' in user)) user.registroR = false
-if (!('registroC' in user)) user.registroC = false  
-if (!isNumber(user.IDregister)) user.IDregister = 0 
-if (!user.registered) {
-if (!('name' in user)) user.name = m.name
-if (!('age' in user)) user.age = 0
-if (!('descripcion' in user)) user.descripcion = 0
-if (!('genero' in user)) user.genero = 0
-if (!('identidad' in user)) user.identidad = 0
-if (!('pasatiempo' in user)) user.pasatiempo = 0
-if (!('tiempo' in user)) user.tiempo = 0 
-if (!('miestado' in user)) user.miestado = 0
-if (!('midLanguage' in user)) user.midLanguage = 0
-if (!isNumber(user.premLimit)) user.premLimit = 0
-if (!isNumber(user.anggur)) user.anggur = 0
-if (!isNumber(user.apel)) user.apel = 0
-if (!isNumber(user.bibitanggur)) user.bibitanggur = 0
-if (!isNumber(user.bibitapel)) user.bibitapel = 0
-if (!isNumber(user.bibitjeruk)) user.bibitjeruk = 0
-if (!isNumber(user.bibitmangga)) user.bibitmangga = 0
-if (!isNumber(user.bibitpisang)) user.bibitpisang = 0
-if (!isNumber(user.emas)) user.emas = 0
-if (!isNumber(user.jeruk)) user.jeruk = 0
-if (!isNumber(user.kayu)) user.kayu = 0
-if (!isNumber(user.makanan)) user.makanan = 0
-if (!isNumber(user.mangga)) user.mangga = 0
-if (!isNumber(user.pisang)) user.pisang = 0
-if (!isNumber(user.premiumDate)) user.premiumDate = -1
-if (!isNumber(user.regTime)) user.regTime = -1
-if (!isNumber(user.semangka)) user.semangka = 0
-if (!isNumber(user.stroberi)) user.stroberi = 0
+const subBotFolders = readdirSync(subBotDirectory).filter(file => 
+statSync(join(subBotDirectory, file)).isDirectory()
+);
+const botPromises = subBotFolders.map(async folder => {
+const authFile = join(subBotDirectory, folder);
+if (existsSync(join(authFile, 'creds.json'))) {
+return await connectionUpdate(authFile);
 }
-	              		    
-if (!isNumber(user.afk)) user.afk = -1
-//if (!('autolevelup' in user))  user.autolevelup = true
-if (!isNumber(user.reporte)) user.reporte = 0
-if (!('role' in user)) user.role = '*NOVATO(A)* 🪤'
-if (!isNumber(user.agility)) user.agility = 0
-if (!isNumber(user.anakanjing)) user.anakanjing = 0
-if (!user.warnPv) user.warnPv = false
-if (!isNumber(user.mesagge)) user.anakanjing = 0
-if (!isNumber(user.anakcentaur)) user.anakcentaur = 0
-if (!isNumber(user.anakgriffin)) user.anakgriffin = 0
-if (!isNumber(user.anakkucing)) user.anakkucing = 0
-if (!isNumber(user.anakkuda)) user.anakkuda = 0
-if (!isNumber(user.anakkyubi)) user.anakkyubi = 0
-if (!isNumber(user.anaknaga)) user.anaknaga = 0
-if (!isNumber(user.anakpancingan)) user.anakpancingan = 0
-if (!isNumber(user.anakphonix)) user.anakphonix = 0
-if (!isNumber(user.anakrubah)) user.anakrubah = 0
-if (!isNumber(user.anakserigala)) user.anakserigala = 0
-if (!isNumber(user.anggur)) user.anggur = 0
-if (!isNumber(user.anjing)) user.anjing = 0
-if (!isNumber(user.juegos)) user.juegos = 0
-if (!isNumber(user.anjinglastclaim)) user.anjinglastclaim = 0
-if (!isNumber(user.antispam)) user.antispam = 0
-if (!isNumber(user.antispamlastclaim)) user.antispamlastclaim = 0
-if (!isNumber(user.apel)) user.apel = 0
-if (!isNumber(user.aqua)) user.aqua = 0
-if (!isNumber(user.arc)) user.arc = 0
-if (!isNumber(user.arcdurability)) user.arcdurability = 0
-if (!isNumber(user.arlok)) user.arlok = 0
-if (!isNumber(user.armor)) user.armor = 0
-if (!isNumber(user.armordurability)) user.armordurability = 0
-if (!isNumber(user.armormonster)) user.armormonster = 0
-if (!isNumber(user.as)) user.as = 0
-if (!isNumber(user.atm)) user.atm = 0
-if (!isNumber(user.axe)) user.axe = 0
-if (!isNumber(user.axedurability)) user.axedurability = 0
-if (!isNumber(user.ayam)) user.ayam = 0
-if (!isNumber(user.ayamb)) user.ayamb = 0
-if (!isNumber(user.ayambakar)) user.ayambakar = 0
-if (!isNumber(user.ayamg)) user.ayamg = 0
-if (!isNumber(user.ayamgoreng)) user.ayamgoreng = 0
-if (!isNumber(user.babi)) user.babi = 0
-if (!isNumber(user.babihutan)) user.babihutan = 0
-if (!isNumber(user.babipanggang)) user.babipanggang = 0
-if (!isNumber(user.bandage)) user.bandage = 0
-if (!isNumber(user.bank)) user.bank = 0
-if (!isNumber(user.banteng)) user.banteng = 0
-if (!isNumber(user.batu)) user.batu = 0
-if (!isNumber(user.bawal)) user.bawal = 0
-if (!isNumber(user.bawalbakar)) user.bawalbakar = 0
-if (!isNumber(user.bayam)) user.bayam = 0
-if (!isNumber(user.berlian)) user.berlian = 10
-if (!isNumber(user.bibitanggur)) user.bibitanggur = 0
-if (!isNumber(user.bibitapel)) user.bibitapel = 0
-if (!isNumber(user.bibitjeruk)) user.bibitjeruk = 0
-if (!isNumber(user.bibitmangga)) user.bibitmangga = 0
-if (!isNumber(user.bibitpisang)) user.bibitpisang = 0
-if (!isNumber(user.botol)) user.botol = 0
-if (!isNumber(user.bow)) user.bow = 0
-if (!isNumber(user.bowdurability)) user.bowdurability = 0
-if (!isNumber(user.boxs)) user.boxs = 0
-if (!isNumber(user.brick)) user.brick = 0
-if (!isNumber(user.brokoli)) user.brokoli = 0
-if (!isNumber(user.buaya)) user.buaya = 0
-if (!isNumber(user.buntal)) user.buntal = 0
-if (!isNumber(user.cat)) user.cat = 0
-if (!isNumber(user.catexp)) user.catexp = 0
-if (!isNumber(user.catlastfeed)) user.catlastfeed = 0
-if (!isNumber(user.centaur)) user.centaur = 0
-if (!isNumber(user.centaurexp)) user.centaurexp = 0
-if (!isNumber(user.centaurlastclaim)) user.centaurlastclaim = 0
-if (!isNumber(user.centaurlastfeed)) user.centaurlastfeed = 0
-if (!isNumber(user.clay)) user.clay = 0
-if (!isNumber(user.coal)) user.coal = 0
-if (!isNumber(user.coin)) user.coin = 0
-if (!isNumber(user.fantasy)) user.fantasy = 0
-if (!isNumber(user.common)) user.common = 0
-if (!isNumber(user.crystal)) user.crystal = 0
-if (!isNumber(user.cumi)) user.cumi = 0
-if (!isNumber(user.cupon)) user.cupon = 0
-if (!isNumber(user.diamond)) user.diamond = 3
-if (!isNumber(user.dog)) user.dog = 0
-if (!isNumber(user.dogexp)) user.dogexp = 0
-if (!isNumber(user.doglastfeed)) user.doglastfeed = 0
-if (!isNumber(user.dory)) user.dory = 0
-if (!isNumber(user.dragon)) user.dragon = 0
-if (!isNumber(user.dragonexp)) user.dragonexp = 0
-if (!isNumber(user.dragonlastfeed)) user.dragonlastfeed = 0
-if (!isNumber(user.emas)) user.emas = 0
-if (!isNumber(user.emerald)) user.emerald = 0
-if (!isNumber(user.enchant)) user.enchant = 0
-if (!isNumber(user.esteh)) user.esteh = 0
-if (!isNumber(user.exp)) user.exp = 0
-if (!isNumber(user.expg)) user.expg = 0
-if (!isNumber(user.exphero)) user.exphero = 0
-if (!isNumber(user.eleksirb)) user.eleksirb = 0
-if (!isNumber(user.emasbatang)) user.emasbatang = 0
-if (!isNumber(user.emasbiasa)) user.emasbiasa = 0
-if (!isNumber(user.fideos)) user.fideos = 0    
-if (!isNumber(user.fishingrod)) user.fishingrod = 0
-if (!isNumber(user.fishingroddurability)) user.fishingroddurability = 0
-if (!isNumber(user.fortress)) user.fortress = 0
-if (!isNumber(user.fox)) user.fox = 0
-if (!isNumber(user.foxexp)) user.foxexp = 0
-if (!isNumber(user.foxlastfeed)) user.foxlastfeed = 0
-if (!isNumber(user.fullatm)) user.fullatm = 0
-if (!isNumber(user.fantasy)) user.fantasy = []
-if (!isNumber(user.fantasy_character)) user.fantasy_character = 0
-if (!isNumber(user.fantasy_character2)) user.fantasy_character2 = 0
-if (!isNumber(user.fantasy_character3)) user.fantasy_character3 = 0
-if (!isNumber(user.fantasy_character4)) user.fantasy_character4 = 0
-if (!isNumber(user.fantasy_character5)) user.fantasy_character5 = 0
-if (!isNumber(user.gadodado)) user.gadodado = 0
-if (!isNumber(user.gajah)) user.gajah = 0
-if (!isNumber(user.gamemines)) user.gamemines = false
-if (!isNumber(user.ganja)) user.ganja = 0
-if (!isNumber(user.gardenboxs)) user.gardenboxs = 0
-if (!isNumber(user.gems)) user.gems = 0
-if (!isNumber(user.glass)) user.glass = 0
-if (!isNumber(user.glimit)) user.glimit = 15
-if (!isNumber(user.glory)) user.glory = 0
-if (!isNumber(user.gold)) user.gold = 0
-if (!isNumber(user.griffin)) user.griffin = 0
-if (!isNumber(user.griffinexp)) user.griffinexp = 0
-if (!isNumber(user.griffinlastclaim)) user.griffinlastclaim = 0
-if (!isNumber(user.griffinlastfeed)) user.griffinlastfeed = 0
-if (!isNumber(user.gulai)) user.gulai = 0
-if (!isNumber(user.gurita)) user.gurita = 0
-if (!isNumber(user.harimau)) user.harimau = 0
-if (!isNumber(user.haus)) user.haus = 100
-if (!isNumber(user.healt)) user.healt = 100
-if (!isNumber(user.health)) user.health = 100
-if (!isNumber(user.healthmonster)) user.healthmonster = 0
-if (!isNumber(user.healtmonster)) user.healtmonster = 0
-if (!isNumber(user.hero)) user.hero = 1
-if (!isNumber(user.herolastclaim)) user.herolastclaim = 0
-if (!isNumber(user.hiu)) user.hiu = 0
-if (!isNumber(user.horse)) user.horse = 0
-if (!isNumber(user.horseexp)) user.horseexp = 0
-if (!isNumber(user.horselastfeed)) user.horselastfeed = 0
-if (!isNumber(user.ikan)) user.ikan = 0
-if (!isNumber(user.ikanbakar)) user.ikanbakar = 0
-if (!isNumber(user.intelligence)) user.intelligence = 0
-if (!isNumber(user.iron)) user.iron = 0
-if (!isNumber(user.jagung)) user.jagung = 0
-if (!isNumber(user.jagungbakar)) user.jagungbakar = 0
-if (!isNumber(user.jeruk)) user.jeruk = 0
-if (!isNumber(user.joinlimit)) user.joinlimit = 1
-if (!isNumber(user.judilast)) user.judilast = 0
-if (!isNumber(user.kaleng)) user.kaleng = 0
-if (!isNumber(user.kambing)) user.kambing = 0
-if (!isNumber(user.kangkung)) user.kangkung = 0
-if (!isNumber(user.kapak)) user.kapak = 0
-if (!isNumber(user.kardus)) user.kardus = 0
-if (!isNumber(user.katana)) user.katana = 0
-if (!isNumber(user.katanadurability)) user.katanadurability = 0
-if (!isNumber(user.kayu)) user.kayu = 0
-if (!isNumber(user.kentang)) user.kentang = 0
-if (!isNumber(user.kentanggoreng)) user.kentanggoreng = 0
-if (!isNumber(user.kepiting)) user.kepiting = 0
-if (!isNumber(user.kepitingbakar)) user.kepitingbakar = 0
-if (!isNumber(user.kerbau)) user.kerbau = 0
-if (!isNumber(user.kerjadelapan)) user.kerjadelapan = 0
-if (!isNumber(user.kerjadelapanbelas)) user.kerjadelapanbelas = 0
-if (!isNumber(user.kerjadua)) user.kerjadua = 0
-if (!isNumber(user.kerjaduabelas)) user.kerjaduabelas = 0
-if (!isNumber(user.kerjaduadelapan)) user.kerjaduadelapan = 0
-if (!isNumber(user.kerjaduadua)) user.kerjaduadua = 0
-if (!isNumber(user.kerjaduaempat)) user.kerjaduaempat = 0
-if (!isNumber(user.kerjaduaenam)) user.kerjaduaenam = 0
-if (!isNumber(user.kerjadualima)) user.kerjadualima = 0
-if (!isNumber(user.kerjaduapuluh)) user.kerjaduapuluh = 0
-if (!isNumber(user.kerjaduasatu)) user.kerjaduasatu = 0
-if (!isNumber(user.kerjaduasembilan)) user.kerjaduasembilan = 0
-if (!isNumber(user.kerjaduatiga)) user.kerjaduatiga = 0
-if (!isNumber(user.kerjaduatujuh)) user.kerjaduatujuh = 0
-if (!isNumber(user.kerjaempat)) user.kerjaempat = 0
-if (!isNumber(user.kerjaempatbelas)) user.kerjaempatbelas = 0
-if (!isNumber(user.kerjaenam)) user.kerjaenam = 0
-if (!isNumber(user.kerjaenambelas)) user.kerjaenambelas = 0
-if (!isNumber(user.kerjalima)) user.kerjalima = 0
-if (!isNumber(user.kerjalimabelas)) user.kerjalimabelas = 0
-if (!isNumber(user.kerjasatu)) user.kerjasatu = 0
-if (!isNumber(user.kerjasebelas)) user.kerjasebelas = 0
-if (!isNumber(user.kerjasembilan)) user.kerjasembilan = 0
-if (!isNumber(user.kerjasembilanbelas)) user.kerjasembilanbelas = 0
-if (!isNumber(user.kerjasepuluh)) user.kerjasepuluh = 0
-if (!isNumber(user.kerjatiga)) user.kerjatiga = 0
-if (!isNumber(user.kerjatigabelas)) user.kerjatigabelas = 0
-if (!isNumber(user.kerjatigapuluh)) user.kerjatigapuluh = 0
-if (!isNumber(user.kerjatujuh)) user.kerjatujuh = 0
-if (!isNumber(user.kerjatujuhbelas)) user.kerjatujuhbelas = 0
-if (!isNumber(user.korbanngocok)) user.korbanngocok = 0
-if (!isNumber(user.kubis)) user.kubis = 0
-if (!isNumber(user.kucing)) user.kucing = 0
-if (!isNumber(user.kucinglastclaim)) user.kucinglastclaim = 0
-if (!isNumber(user.kuda)) user.kuda = 0
-if (!isNumber(user.kudalastclaim)) user.kudalastclaim = 0
-if (!isNumber(user.kyubi)) user.kyubi = 0
-if (!isNumber(user.kyubiexp)) user.kyubiexp = 0
-if (!isNumber(user.kyubilastclaim)) user.kyubilastclaim = 0
-if (!isNumber(user.kyubilastfeed)) user.kyubilastfeed = 0
-if (!isNumber(user.labu)) user.labu = 0
-if (!isNumber(user.laper)) user.laper = 100
-if (!isNumber(user.lastadventure)) user.lastadventure = 0
-if (!isNumber(user.lastbansos)) user.lastbansos = 0
-if (!isNumber(user.lastberbru)) user.lastberbru = 0
-if (!isNumber(user.lastberkebon)) user.lastberkebon = 0
-if (!isNumber(user.lastbunga)) user.lastbunga = 0
-if (!isNumber(user.lastbunuhi)) user.lastbunuhi = 0
-if (!isNumber(user.lastcoins)) user.lastcoins = 0    
-if (!isNumber(user.lastclaim)) user.lastclaim = 0
-if (!isNumber(user.lastcode)) user.lastcode = 0
-if (!isNumber(user.lastcofre)) user.lastcofre = 0
-if (!isNumber(user.lastcodereg)) user.lastcodereg = 0
-if (!isNumber(user.lastcrusade)) user.lastcrusade = 0
-if (!isNumber(user.lastdagang)) user.lastdagang = 0
-if (!isNumber(user.lastdiamantes)) user.lastdiamantes = 0    
-if (!isNumber(user.lastduel)) user.lastduel = 0
-if (!isNumber(user.lastdungeon)) user.lastdungeon = 0
-if (!isNumber(user.lasteasy)) user.lasteasy = 0
-if (!isNumber(user.lastfight)) user.lastfight = 0
-if (!isNumber(user.lastfishing)) user.lastfishing = 0
-if (!isNumber(user.lastgift)) user.lastgift = 0
-if (!isNumber(user.crime)) user.crime = 0
-if (!isNumber(user.lastgojek)) user.lastgojek = 0
-if (!isNumber(user.lastgrab)) user.lastgrab = 0
-if (!isNumber(user.lasthourly)) user.lasthourly = 0
-if (!isNumber(user.halloween)) user.halloween = 0
-if (!isNumber(user.lasthunt)) user.lasthunt = 0
-if (!isNumber(user.lastIstigfar)) user.lastIstigfar = 0
-if (!isNumber(user.lastjb)) user.lastjb = 0
-if (!isNumber(user.lastkill)) user.lastkill = 0
-if (!isNumber(user.lastlink)) user.lastlink = 0
-if (!isNumber(user.lastlumber)) user.lastlumber = 0
-if (!isNumber(user.lastmancingeasy)) user.lastmancingeasy = 0
-if (!isNumber(user.lastmancingextreme)) user.lastmancingextreme = 0
-if (!isNumber(user.lastmancinghard)) user.lastmancinghard = 0
-if (!isNumber(user.lastmancingnormal)) user.lastmancingnormal = 0
-if (!isNumber(user.lastmining)) user.lastmining = 0
-if (!isNumber(user.lastmisi)) user.lastmisi = 0
-if (!isNumber(user.lastmonthly)) user.lastmonthly = 0
-if (!isNumber(user.lastmulung)) user.lastmulung = 0
-if (!isNumber(user.lastnambang)) user.lastnambang = 0
-if (!isNumber(user.lastnebang)) user.lastnebang = 0
-if (!isNumber(user.lastngocok)) user.lastngocok = 0
-if (!isNumber(user.lastngojek)) user.lastngojek = 0
-if (!isNumber(user.lastopen)) user.lastopen = 0
-if (!isNumber(user.lastpekerjaan)) user.lastpekerjaan = 0
-if (!isNumber(user.lastpago)) user.lastpago = 0 
-if (!isNumber(user.lastpotionclaim)) user.lastpotionclaim = 0
-if (!isNumber(user.lastrampok)) user.lastrampok = 0
-if (!isNumber(user.lastramuanclaim)) user.lastramuanclaim = 0
-if (!isNumber(user.lastrob)) user.lastrob = 0
-if (!isNumber(user.lastroket)) user.lastroket = 0
-if (!isNumber(user.lastsda)) user.lastsda = 0
-if (!isNumber(user.lastseen)) user.lastseen = 0
-if (!isNumber(user.lastSetStatus)) user.lastSetStatus = 0
-if (!isNumber(user.lastsironclaim)) user.lastsironclaim = 0
-if (!isNumber(user.lastsmancingclaim)) user.lastsmancingclaim = 0
-if (!isNumber(user.laststringclaim)) user.laststringclaim = 0
-if (!isNumber(user.lastswordclaim)) user.lastswordclaim = 0
-if (!isNumber(user.lastturu)) user.lastturu = 0
-if (!isNumber(user.lastwar)) user.lastwar = 0
-if (!isNumber(user.lastwarpet)) user.lastwarpet = 0
-if (!isNumber(user.lastweaponclaim)) user.lastweaponclaim = 0
-if (!isNumber(user.lastweekly)) user.lastweekly = 0
-if (!isNumber(user.lastwork)) user.lastwork = 0
-if (!isNumber(user.legendary)) user.legendary = 0
-if (!isNumber(user.lele)) user.lele = 0
-if (!isNumber(user.leleb)) user.leleb = 0
-if (!isNumber(user.lelebakar)) user.lelebakar = 0
-if (!isNumber(user.leleg)) user.leleg = 0
-if (!isNumber(user.level)) user.level = 0
-if (!isNumber(user.limit)) user.limit = 15
-if (!isNumber(user.limitjoinfree)) user.limitjoinfree = 1
-if (!isNumber(user.lion)) user.lion = 0
-if (!isNumber(user.lionexp)) user.lionexp = 0
-if (!isNumber(user.lionlastfeed)) user.lionlastfeed = 0
-if (!isNumber(user.lobster)) user.lobster = 0
-if (!isNumber(user.lumba)) user.lumba = 0
-if (!isNumber(user.magicwand)) user.magicwand = 0
-if (!isNumber(user.magicwanddurability)) user.magicwanddurability = 0
-if (!isNumber(user.makanancentaur)) user.makanancentaur = 0
-if (!isNumber(user.makanangriffin)) user.makanangriffin = 0
-if (!isNumber(user.makanankyubi)) user.makanankyubi = 0
-if (!isNumber(user.makanannaga)) user.makanannaga = 0
-if (!isNumber(user.makananpet)) user.makananpet = 0
-if (!isNumber(user.makananphonix)) user.makananphonix = 0
-if (!isNumber(user.spam)) user.spam = 0
-if (!isNumber(user.makananserigala)) user.makananserigala = 0
-if (!isNumber(user.mana)) user.mana = 0
-if (!isNumber(user.mangga)) user.mangga = 0
-if (!isNumber(user.money)) user.money = 150
-if (!isNumber(user.monyet)) user.monyet = 0
-if (!isNumber(user.mythic)) user.mythic = 0
-if (!isNumber(user.naga)) user.naga = 0
-if (!isNumber(user.nagalastclaim)) user.nagalastclaim = 0
-if (!isNumber(user.net)) user.net = 0
-if (!isNumber(user.nila)) user.nila = 0
-if (!isNumber(user.nilabakar)) user.nilabakar = 0
-if (!isNumber(user.note)) user.note = 0
-if (!isNumber(user.ojekk)) user.ojekk = 0
-if (!isNumber(user.oporayam)) user.oporayam = 0
-if (!isNumber(user.orca)) user.orca = 0
-if (!isNumber(user.pancing)) user.pancing = 0
-if (!isNumber(user.pasangan)) user.pasangan = 0	
-if (!isNumber(user.pancingan)) user.pancingan = 1
-if (!isNumber(user.panda)) user.panda = 0
-if (!isNumber(user.paus)) user.paus = 0
-if (!isNumber(user.pausbakar)) user.pausbakar = 0
-if (!isNumber(user.pepesikan)) user.pepesikan = 0
-if (!isNumber(user.pertambangan)) user.pertambangan = 0
-if (!isNumber(user.pertanian)) user.pertanian = 0
-if (!isNumber(user.pet)) user.pet = 0
-if (!isNumber(user.petFood)) user.petFood = 0
-if (!isNumber(user.phonix)) user.phonix = 0
-if (!isNumber(user.phonixexp)) user.phonixexp = 0
-if (!isNumber(user.phonixlastclaim)) user.phonixlastclaim = 0
-if (!isNumber(user.phonixlastfeed)) user.phonixlastfeed = 0
-if (!isNumber(user.pickaxe)) user.pickaxe = 0
-if (!isNumber(user.pickaxedurability)) user.pickaxedurability = 0
-if (!isNumber(user.pillhero)) user.pillhero= 0
-if (!isNumber(user.pisang)) user.pisang = 0
-if (!isNumber(user.pointxp)) user.pointxp = 0
-if (!isNumber(user.potion)) user.potion = 0
-if (!isNumber(user.psenjata)) user.psenjata = 0
-if (!isNumber(user.psepick)) user.psepick = 0
-if (!isNumber(user.ramuan)) user.ramuan = 0
-if (!isNumber(user.ramuancentaurlast)) user.ramuancentaurlast = 0
-if (!isNumber(user.ramuangriffinlast)) user.ramuangriffinlast = 0
-if (!isNumber(user.ramuanherolast)) us
+});
+const bots = await Promise.all(botPromises);
+global.conns = bots.filter(Boolean);
+console.log(chalk.bold.greenBright(`✅ TODOS LOS SUB-BOTS SE HAN INICIADO CORRECTAMENTE`))
+}
+(async () => {
+global.conns = [];
+const mainBotAuthFile = 'GataBotSession';
+try {
+const mainBot = await connectionUpdate(mainBotAuthFile);
+global.conns.push(mainBot);
+console.log(chalk.bold.greenBright(`✅ BOT PRINCIPAL INICIANDO CORRECTAMENTE`))
+await connectSubBots();
+} catch (error) {
+console.error(chalk.bold.cyanBright(`❌ OCURRIÓ UN ERROR AL INICIAR EL BOT PRINCIPAL: `, error))
+}
+})();*/
+
+/* ------------------------------------------------*/
+
+let isInit = true;
+let handler = await import('./handler.js');
+global.reloadHandler = async function(restatConn) {
+try {
+const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error);
+if (Object.keys(Handler || {}).length) handler = Handler;
+} catch (e) {
+console.error(e);
+}
+if (restatConn) {
+const oldChats = global.conn.chats;
+try {
+global.conn.ws.close();
+} catch { }
+conn.ev.removeAllListeners();
+global.conn = makeWASocket(connectionOptions, {chats: oldChats});
+isInit = true;
+}
+if (!isInit) {
+conn.ev.off('messages.upsert', conn.handler);
+conn.ev.off('group-participants.update', conn.participantsUpdate);
+conn.ev.off('groups.update', conn.groupsUpdate);
+conn.ev.off('message.delete', conn.onDelete);
+conn.ev.off('call', conn.onCall);
+conn.ev.off('connection.update', conn.connectionUpdate);
+conn.ev.off('creds.update', conn.credsUpdate);
+}
+//Información para Grupos
+conn.welcome = lenguajeGB['smsWelcome']() 
+conn.bye = lenguajeGB['smsBye']() 
+conn.spromote = lenguajeGB['smsSpromote']() 
+conn.sdemote = lenguajeGB['smsSdemote']() 
+conn.sDesc = lenguajeGB['smsSdesc']() 
+conn.sSubject = lenguajeGB['smsSsubject']() 
+conn.sIcon = lenguajeGB['smsSicon']() 
+conn.sRevoke = lenguajeGB['smsSrevoke']() 
+conn.handler = handler.handler.bind(global.conn);
+conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
+conn.groupsUpdate = handler.groupsUpdate.bind(global.conn);
+conn.onDelete = handler.deleteUpdate.bind(global.conn);
+conn.onCall = handler.callUpdate.bind(global.conn);
+conn.connectionUpdate = connectionUpdate.bind(global.conn);
+conn.credsUpdate = saveCreds.bind(global.conn, true);
+conn.ev.on('messages.upsert', conn.handler);
+conn.ev.on('group-participants.update', conn.participantsUpdate);
+conn.ev.on('groups.update', conn.groupsUpdate);
+conn.ev.on('message.delete', conn.onDelete);
+conn.ev.on('call', conn.onCall);
+conn.ev.on('connection.update', conn.connectionUpdate);
+conn.ev.on('creds.update', conn.credsUpdate);
+isInit = false
+return true
+}
+/** Arranque nativo para subbots by - ReyEndymion >> https://github.com/ReyEndymion
+ */
+if (global.gataJadibts) {
+const readRutaJadiBot = readdirSync(rutaJadiBot)
+if (readRutaJadiBot.length > 0) {
+const creds = 'creds.json'
+for (const gjbts of readRutaJadiBot) {
+const botPath = join(rutaJadiBot, gjbts)
+const readBotPath = readdirSync(botPath)
+if (readBotPath.includes(creds)) {
+gataJadiBot({pathGataJadiBot: botPath, m: null, conn, args: '', usedPrefix: '/', command: 'serbot'})
+}}
+}}
+
+/*const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
+const pluginFilter = (filename) => /\.js$/.test(filename);
+global.plugins = {};
+async function filesInit() {
+for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+try {
+const file = global.__filename(join(pluginFolder, filename));
+const module = await import(file);
+global.plugins[filename] = module.default || module;
+} catch (e) {
+conn.logger.error(e);
+delete global.plugins[filename];
+}}}
+filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)*/
+
+const pluginFolder = global.__dirname(join(__dirname, './plugins/index'))
+const pluginFilter = (filename) => /\.js$/.test(filename)
+global.plugins = {}
+async function filesInit() {
+for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
+try {
+const file = global.__filename(join(pluginFolder, filename))
+const module = await import(file)
+global.plugins[filename] = module.default || module
+} catch (e) {
+conn.logger.error(e)
+delete global.plugins[filename]
+}}}
+filesInit().then((_) => Object.keys(global.plugins)).catch(console.error)
+
+global.reload = async (_ev, filename) => {
+if (pluginFilter(filename)) {
+const dir = global.__filename(join(pluginFolder, filename), true)
+if (filename in global.plugins) {
+if (existsSync(dir)) conn.logger.info(` SE ACTULIZADO - '${filename}' CON ÉXITO`)
+else {
+conn.logger.warn(`SE ELIMINO UN ARCHIVO : '${filename}'`)
+return delete global.plugins[filename];
+}
+} else conn.logger.info(`SE DETECTO UN NUEVO PLUGINS : '${filename}'`)
+const err = syntaxerror(readFileSync(dir), filename, {
+sourceType: 'module',
+allowAwaitOutsideFunction: true,
+});
+if (err) conn.logger.error(`SE DETECTO UN ERROR DE SINTAXIS | SYNTAX ERROR WHILE LOADING '${filename}'\n${format(err)}`);
+else {
+try {
+const module = (await import(`${global.__filename(dir)}?update=${Date.now()}`));
+global.plugins[filename] = module.default || module;
+} catch (e) {
+conn.logger.error(`HAY UN ERROR REQUIERE EL PLUGINS '${filename}\n${format(e)}'`);
+} finally {
+global.plugins = Object.fromEntries(Object.entries(global.plugins).sort(([a], [b]) => a.localeCompare(b)));
+}}}};
+Object.freeze(global.reload);
+watch(pluginFolder, global.reload);
+await global.reloadHandler();
+async function _quickTest() {
+const test = await Promise.all([
+spawn('ffmpeg'),
+spawn('ffprobe'),
+spawn('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-filter_complex', 'color', '-frames:v', '1', '-f', 'webp', '-']),
+spawn('convert'),
+spawn('magick'),
+spawn('gm'),
+spawn('find', ['--version']),
+].map((p) => {
+return Promise.race([
+new Promise((resolve) => {
+p.on('close', (code) => {
+resolve(code !== 127);
+});
+}),
+new Promise((resolve) => {
+p.on('error', (_) => resolve(false));
+})]);
+}));
+const [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
+const s = global.support = {ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find};
+Object.freeze(global.support);
+}
+function clearTmp() {
+const tmpDir = join(__dirname, 'tmp')
+const filenames = readdirSync(tmpDir)
+filenames.forEach(file => {
+const filePath = join(tmpDir, file)
+unlinkSync(filePath)})
+}
+function purgeSession() {
+let prekey = []
+let directorio = readdirSync("./GataBotSession")
+let filesFolderPreKeys = directorio.filter(file => {
+return file.startsWith('pre-key-')
+})
+prekey = [...prekey, ...filesFolderPreKeys]
+filesFolderPreKeys.forEach(files => {
+unlinkSync(`./GataBotSession/${files}`)
+})
+} 
+function purgeSessionSB() {
+try {
+const listaDirectorios = readdirSync('./GataJadiBot/');
+let SBprekey = [];
+listaDirectorios.forEach(directorio => {
+if (statSync(`./GataJadiBot/${directorio}`).isDirectory()) {
+const DSBPreKeys = readdirSync(`./GataJadiBot/${directorio}`).filter(fileInDir => {
+return fileInDir.startsWith('pre-key-')
+})
+SBprekey = [...SBprekey, ...DSBPreKeys];
+DSBPreKeys.forEach(fileInDir => {
+if (fileInDir !== 'creds.json') {
+unlinkSync(`./GataJadiBot/${directorio}/${fileInDir}`)
+}})
+}})
+if (SBprekey.length === 0) {
+console.log(chalk.bold.green(lenguajeGB.smspurgeSessionSB1()))
+} else {
+console.log(chalk.bold.cyanBright(lenguajeGB.smspurgeSessionSB2()))
+}} catch (err) {
+console.log(chalk.bold.red(lenguajeGB.smspurgeSessionSB3() + err))
+}}
+function purgeOldFiles() {
+const directories = ['./GataBotSession/', './GataJadiBot/']
+directories.forEach(dir => {
+readdirSync(dir, (err, files) => {
+if (err) throw err
+files.forEach(file => {
+if (file !== 'creds.json') {
+const filePath = path.join(dir, file);
+unlinkSync(filePath, err => {
+if (err) {
+console.log(chalk.bold.red(`${lenguajeGB.smspurgeOldFiles3()} ${file} ${lenguajeGB.smspurgeOldFiles4()}` + err))
+} else {
+console.log(chalk.bold.green(`${lenguajeGB.smspurgeOldFiles1()} ${file} ${lenguajeGB.smspurgeOldFiles2()}`))
+} }) }
+}) }) }) }
+function redefineConsoleMethod(methodName, filterStrings) {
+const originalConsoleMethod = console[methodName]
+console[methodName] = function() {
+const message = arguments[0]
+if (typeof message === 'string' && filterStrings.some(filterString => message.includes(atob(filterString)))) {
+arguments[0] = ""
+}
+originalConsoleMethod.apply(console, arguments)
+}}
+
+setInterval(async () => {
+if (stopped === 'close' || !conn || !conn.user) return
+await clearTmp()
+console.log(chalk.bold.cyanBright(lenguajeGB.smsClearTmp()))}, 1000 * 60 * 4) // 4 min 
+
+setInterval(async () => {
+if (stopped === 'close' || !conn || !conn.user) return
+await purgeSessionSB()
+await purgeSession()
+console.log(chalk.bold.cyanBright(lenguajeGB.smspurgeSession()))
+await purgeOldFiles()
+console.log(chalk.bold.cyanBright(lenguajeGB.smspurgeOldFiles()))}, 1000 * 60 * 10)
+
+_quickTest().then(() => conn.logger.info(chalk.bold(lenguajeGB['smsCargando']().trim()))).catch(console.error)
+
+let file = fileURLToPath(import.meta.url)
+watchFile(file, () => {
+unwatchFile(file)
+console.log(chalk.bold.greenBright(lenguajeGB['smsMainBot']().trim()))
+import(`${file}?update=${Date.now()}`)
+})
+
+async function isValidPhoneNumber(number) {
+try {
+number = number.replace(/\s+/g, '')
+// Si el número empieza con '+521' o '+52 1', quitar el '1'
+if (number.startsWith('+521')) {
+number = number.replace('+521', '+52'); // Cambiar +521 a +52
+} else if (number.startsWith('+52') && number[4] === '1') {
+number = number.replace('+52 1', '+52'); // Cambiar +52 1 a +52
+}
+const parsedNumber = phoneUtil.parseAndKeepRawInput(number)
+return phoneUtil.isValidNumber(parsedNumber)
+} catch (error) {
+return false
+}}
+
+async function joinChannels(conn) {
+for (const channelId of Object.values(global.ch)) {
+await conn.newsletterFollow(channelId).catch(() => {})
+}}
