@@ -67,7 +67,7 @@ externalAdReply: {
 showAdAttribution: true,
 renderLargerThumbnail: true,
 thumbnailUrl: pp, 
-title: [wm, '😻 𝗦𝘂𝗽𝗲𝗿 ' + gt + ' 😻', '🌟 centergatabot.gmail.com'].getRandom(),
+title: [wm, 'EliteBotGlobal'].getRandom(),
 containsAutoReply: true,
 mediaType: 1, 
 sourceUrl: [canal1, canal2, canal3, canal4, yt, grupo1, grupo2, grupo_collab1, grupo_collab2, grupo_collab3, md].getRandom()}}}, { quoted: fkontak }) 
