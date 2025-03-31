@@ -1490,7 +1490,7 @@ mentionedJid:[user],
 "title": [wm, '' + gt + '', 'EliteBotGlobal'].getRandom(),
 "containsAutoReply": true,
 "mediaType": 1, 
-sourceUrl: 'https://github.com/GataNina-Li/GataBot-MD' }}}, { quoted: fkontak2 })
+sourceUrl: 'https://chat.whatsapp.com/GzqYw7fK9CADEWEtfL6804' }}}, { quoted: fkontak2 })
 apii.data = ''
 //this.sendFile(id, apii.data, 'pp.jpg', text, null, false, { mentions: [user] }, { quoted: fkontak2 })
 }}}
