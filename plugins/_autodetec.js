@@ -8,7 +8,7 @@ let handler = m => m
 handler.before = async function (m, { conn, participants, groupMetadata, isBotAdmin }) {
 
 if (!m.messageStubType || !m.isGroup) return
-let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => gataMenu)
+let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => sinfoto5)
 let img = await (await fetch(`${pp}`)).buffer()
 let usuario = `@${m.sender.split`@`[0]}`
 let chat = global.db.data.chats[m.chat]
