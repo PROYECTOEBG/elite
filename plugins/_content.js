@@ -83,7 +83,7 @@ global.imagen10 = fs.readFileSync("./media/menus/img9.jpg")
 global.imagen11 = fs.readFileSync("./media/menus/img10.jpg")
 global.imagen12 = fs.readFileSync("./media/menus/img11.jpg")
 global.imagen13 = fs.readFileSync("./media/menus/img12.jpg")
-
+global.sinfoto5 = fs.readFileSync("./media/menus/sinfoto5.jpg")
 
 
 global.img = 'https://cdn.dorratz.com/files/1738785861212.jpg'
@@ -128,7 +128,7 @@ global.reglasclk = [reglasclk]
 global.reglaslideres = [reglaslideres]
 global.combode = [combode]
 global.combobr = [combobr]
-
+global.sinfoto5 = [sinfoto5]
 // Mensaje de espera
 // await mensajesEditados(conn, m)
 global.mensajesEditados = async function(conn, m) {
