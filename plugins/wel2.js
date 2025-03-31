@@ -1,4 +1,4 @@
-
+/*
 import { WAMessageStubType } from '@whiskeysockets/baileys'
 import fetch from 'node-fetch'
 
@@ -44,3 +44,4 @@ export async function before(m, { conn, participants, groupMetadata }) {
  - 𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡`
       await conn.sendMessage(m.chat, { image: img, caption: kick, mentions: [who] })
   }}
+*/
