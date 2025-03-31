@@ -683,8 +683,7 @@ const directories = await readdir(jadibtsDir);
 let SBprekey = [];
 const now = Date.now();
 const oneHourAgo = now - (24 * 60 * 60 * 1000); //24 horas
-    
-for (const dir of directories) {
+  for (const dir of directories) {
 const dirPath = join(jadibtsDir, dir);
 const stats = await stat(dirPath);
 if (stats.isDirectory()) {
@@ -709,7 +708,7 @@ console.log(chalk.bold.green(lenguajeGB.smspurgeSessionSB1()))
 console.log(chalk.cyanBright(`[🔵] Pre-keys antiguas eliminadas de sub-bots: ${SBprekey.length}`));
 }} catch (err) {
 console.log(chalk.bold.red(lenguajeGB.smspurgeSessionSB3() + err))
-  }
+}}
 
 async function purgeOldFiles() {
 const directories = ['./GataBotSession/', './GataJadiBot/'];
@@ -785,7 +784,6 @@ console.log(chalk.bold.green(`${lenguajeGB.smspurgeOldFiles1()} ${file} ${lengua
 } }) }
 }) }) }) }*/
 
-
 function redefineConsoleMethod(methodName, filterStrings) {
 const originalConsoleMethod = console[methodName]
 console[methodName] = function() {
@@ -837,4 +835,3 @@ async function joinChannels(conn) {
 for (const channelId of Object.values(global.ch)) {
 await conn.newsletterFollow(channelId).catch(() => {})
 }}
-  
