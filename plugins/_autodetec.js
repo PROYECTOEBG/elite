@@ -45,11 +45,11 @@ let descs = groupMetadata.desc || "Sin descripción ";
 let userName = `${m.messageStubParameters[0].split`@`[0]}`;
 let defaultWelcome = `*╔══════════════*
 *╟* *BIENVENIDO*
-*╟*🛡️subject
+*╟* ${subject}
 *╟👤@${userName}* 
 *╟📄𝐼𝑁𝐹𝑂𝑅𝑀𝐴𝐶𝐼𝑂́𝑁:*
 
-descs
+${descs}
 
 *╚══════════════*`;
 let textWel = chat.sWelcome ? chat.sWelcome
