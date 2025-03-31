@@ -45,11 +45,11 @@ let descs = groupMetadata.desc || "Sin descripción ";
 let userName = `${m.messageStubParameters[0].split`@`[0]}`;
 let defaultWelcome = `*╔══════════════*
 *╟* *BIENVENIDO*
-*╟*🛡️@subject
-*╟👤@user* 
+*╟*🛡️subject
+*╟👤@${userName}* 
 *╟📄𝐼𝑁𝐹𝑂𝑅𝑀𝐴𝐶𝐼𝑂́𝑁:*
 
-@desc
+descs
 
 *╚══════════════*`;
 let textWel = chat.sWelcome ? chat.sWelcome
@@ -76,7 +76,7 @@ let subject = groupMetadata.subject;
 let userName = `${m.messageStubParameters[0].split`@`[0]}`;
 let defaultBye = `*╔══════════════*
 *╟* *SE FUE UNA BASURA*
-*╟👤@user* 
+*╟👤@${userName}* 
 *╚══════════════*`;
 let textBye = chat.sBye ? chat.sBye
 .replace(/@user/g, `@${userName}`)
