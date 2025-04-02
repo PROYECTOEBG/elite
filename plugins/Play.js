@@ -2,7 +2,9 @@ import fetch from "node-fetch"; import yts from 'yt-search'; import axios from "
 
 const formatAudio = ['mp3', 'm4a', 'webm', 'acc', 'flac', 'opus', 'ogg', 'wav']; const formatVideo = ['360', '480', '720', '1080', '1440', '4k'];
 
-const handler = async (m, { conn, text, command }) => { try { if (!text.trim()) { return conn.reply(m.chat, ❀ Por favor, ingresa el nombre de la música a descargar., m); }
+const handler = async (m, { conn, text, command }) => { console.log(Comando recibido: ${command}, Texto: ${text});
+
+try { if (!text.trim()) { return conn.reply(m.chat, ❀ Por favor, ingresa el nombre de la música a descargar., m); }
 
 const search = await yts(text);
 if (!search.all || search.all.length === 0) {
@@ -46,7 +48,7 @@ try {
 
 } catch (error) { console.error("Error en el handler:", error); return m.reply(⚠︎ Ocurrió un error: ${error.message}); } };
 
-handler.command = ['play', 'play2', 'ytmp3', 'yta', 'ytmp4', 'ytv']; handler.tags = ['downloader']; handler.group = true;
+handler.command = ['playtest', 'play2', 'ytmp3', 'yta', 'ytmp4', 'ytv', 'prueba']; handler.tags = ['downloader']; handler.group = true;
 
 export default handler;
 
