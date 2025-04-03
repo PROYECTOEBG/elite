@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-    // Lista de signos válidos
+    // Lista de signos válidos con emojis
     const signos = {
         'aries': '♈ Aries',
         'tauro': '♉ Tauro',
@@ -22,83 +22,94 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     
     // Verificar si el signo es válido
     if (!signo || !signos[signo]) {
-        let listaSignos = Object.entries(signos).map(([key, val]) => `▢ ${usedPrefix + command} ${key} - ${val}`).join('\n');
-        await conn.reply(m.chat, `✨ *Horóscopo Disponible*\n\n${listaSignos}\n\nEjemplo: ${usedPrefix + command} cancer`, m);
-        return;
+        let listaSignos = Object.entries(signos)
+            .map(([key, val]) => `▢ ${usedPrefix + command} ${key} - ${val}`)
+            .join('\n');
+        return conn.reply(m.chat, 
+            `✨ *Horóscopo Disponible*\n\n${listaSignos}\n\nEjemplo: ${usedPrefix + command} cancer`, 
+            m
+        );
     }
     
     try {
-        // Mostrar estado de carga
+        // Mostrar estado de "escribiendo..."
         await conn.sendPresenceUpdate('composing', m.chat);
         
-        // 1. Obtener imagen aleatoria del signo
-        const horoscopeImage = await getHoroscopeImage(signo);
+        // Obtener datos del horóscopo desde una API confiable
+        const horoscopeData = await getHoroscopeData(signo);
         
-        // 2. Obtener predicción
-        const prediction = await getHoroscopePrediction(signo);
+        // Construir mensaje con formato
+        const message = `*${signos[signo]}*\n` +
+                       `📅 *Fecha:* ${horoscopeData.date || new Date().toLocaleDateString()}\n\n` +
+                       `🔮 *Predicción:*\n${horoscopeData.prediction}\n\n` +
+                       `💫 *Consejo del día:* ${horoscopeData.advice || getRandomAdvice()}\n\n` +
+                       `⭐ *Número de suerte:* ${horoscopeData.lucky_number || Math.floor(Math.random() * 10) + 1}`;
         
-        // 3. Construir mensaje
-        const message = `*${signos[signo]}*\n\n` +
-                       `📅 *Fecha:* ${new Date().toLocaleDateString()}\n\n` +
-                       `🔮 *Predicción:*\n${prediction || 'Las estrellas no han revelado su destino hoy...'}\n\n` +
-                       `💫 *Consejo del día:* ${getRandomAdvice()}`;
-        
-        // 4. Enviar mensaje de forma segura
-        if (typeof m.chat === 'string' && m.chat.endsWith('@g.us') || m.chat.endsWith('@s.whatsapp.net')) {
-            await conn.sendMessage(m.chat, {
-                image: { url: horoscopeImage },
-                caption: message,
-                mentions: [m.sender]
-            }, { quoted: m });
-        } else {
-            console.error('Chat ID no válido:', m.chat);
-        }
+        // Enviar mensaje con imagen
+        await conn.sendMessage(m.chat, {
+            image: { url: horoscopeData.image },
+            caption: message,
+            mentions: [m.sender]
+        }, { quoted: m });
         
     } catch (error) {
         console.error('Error en horóscopo:', error);
-        await conn.reply(m.chat, `❌ Error al consultar el horóscopo. Intenta nuevamente más tarde.`, m);
+        // Respuesta de respaldo si falla la API
+        const backupMessage = `*${signos[signo]}*\n\n` +
+                             `📅 Hoy es un día especial para ti.\n\n` +
+                             `✨ Las estrellas indican que tendrás un día lleno de oportunidades.\n\n` +
+                             `💫 Consejo: Confía en tu intuición.`;
+        
+        await conn.sendMessage(m.chat, {
+            image: { url: 'https://i.imgur.com/5Q9s5vY.jpg' },
+            caption: backupMessage
+        }, { quoted: m });
     }
 };
 
-// Función para obtener imagen de horóscopo (versión segura)
-async function getHoroscopeImage(sign) {
+// Nueva función para obtener datos del horóscopo
+async function getHoroscopeData(sign) {
     try {
-        // API de Unsplash como respaldo
-        const response = await fetch(`https://source.unsplash.com/500x500/?zodiac,${sign},stars`);
-        return response.url;
-    } catch (e) {
-        console.error('Error al obtener imagen:', e);
-        return 'https://i.imgur.com/5Q9s5vY.jpg'; // Imagen por defecto
-    }
-}
-
-// Función para obtener predicción (versión segura)
-async function getHoroscopePrediction(sign) {
-    try {
-        const response = await fetch(`https://horoscope-api.herokuapp.com/horoscope/today/${sign}`);
+        // API alternativa más confiable
+        const response = await fetch(`https://aztro.sameerkumar.website/?sign=${sign}&day=today`, {
+            method: 'POST'
+        });
         const data = await response.json();
-        return data.horoscope || "La predicción no está disponible en este momento";
-    } catch (e) {
-        console.error('Error al obtener predicción:', e);
-        return "Las estrellas están ocupadas, intenta más tarde";
+        
+        // Obtener imagen relacionada
+        const imageUrl = `https://source.unsplash.com/500x500/?${sign},zodiac,sign`;
+        
+        return {
+            date: data.current_date,
+            prediction: data.description,
+            advice: data.mantra,
+            lucky_number: data.lucky_number,
+            image: imageUrl
+        };
+        
+    } catch (error) {
+        console.error('Error al obtener datos:', error);
+        throw error;
     }
 }
 
-// Consejos aleatorios
+// Función para consejos aleatorios
 function getRandomAdvice() {
     const advices = [
         "Confía en tu intuición hoy",
         "Es buen día para tomar decisiones importantes",
         "Evita los conflictos innecesarios",
         "El amor puede llegar cuando menos lo esperes",
-        "Cuida tu salud emocional"
+        "Cuida tu salud emocional",
+        "Un viaje corto podría ser beneficioso",
+        "La paciencia será tu mayor virtud hoy"
     ];
     return advices[Math.floor(Math.random() * advices.length)];
 }
 
-handler.help = ['horoscopoo <signo>'];
+handler.help = ['horoscopo <signo>'];
 handler.tags = ['fun'];
-handler.command = /^(horoscopoo|horóscopo|signo)$/i;
+handler.command = /^(horoscopo|horóscopo|signo)$/i;
 handler.limit = true;
 
 export default handler;
