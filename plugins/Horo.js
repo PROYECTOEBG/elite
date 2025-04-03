@@ -1,46 +1,57 @@
+// Importa fetch si es necesario para otras partes
 import fetch from 'node-fetch';
 
-// ↓↓↓ REEMPLAZA ESTOS ENLACES CON TUS IMÁGENES REALES DE INSTAGRAM ↓↓↓
+// IMÁGENES DE CADA SIGNO — usa enlaces directos (.jpg/.png)
 const zodiacImages = {
-    cancer: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw==',  // Reemplazar con enlace real
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='   // Reemplazar con enlace real
-    ],
-    piscis: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='   // Reemplazar con enlace real
-    ],
     aries: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='    // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?aries,fire',
+        'https://source.unsplash.com/400x400/?ram'
     ],
     tauro: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='    // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?taurus',
+        'https://source.unsplash.com/400x400/?bull'
     ],
     geminis: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='  // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?gemini',
+        'https://source.unsplash.com/400x400/?twins'
+    ],
+    cancer: [
+        'https://source.unsplash.com/400x400/?cancer',
+        'https://source.unsplash.com/400x400/?moon'
     ],
     leo: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='      // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?leo',
+        'https://source.unsplash.com/400x400/?lion'
     ],
     virgo: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='    // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?virgo',
+        'https://source.unsplash.com/400x400/?woman'
     ],
     libra: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='     // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?libra',
+        'https://source.unsplash.com/400x400/?scales'
     ],
     escorpio: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw==' // Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?scorpio',
+        'https://source.unsplash.com/400x400/?scorpion'
     ],
     sagitario: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='// Reemplazar con enlace real
+        'https://source.unsplash.com/400x400/?sagittarius',
+        'https://source.unsplash.com/400x400/?archer'
     ],
     capricornio: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='// Reemplazar
+        'https://source.unsplash.com/400x400/?capricorn',
+        'https://source.unsplash.com/400x400/?mountain'
     ],
     acuario: [
-        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='   // Reemplazar
+        'https://source.unsplash.com/400x400/?aquarius',
+        'https://source.unsplash.com/400x400/?water'
+    ],
+    piscis: [
+        'https://source.unsplash.com/400x400/?pisces',
+        'https://source.unsplash.com/400x400/?ocean'
     ]
 };
-// ↑↑↑ REEMPLAZA LOS ENLACES ARRIBA ↑↑↑
 
 const usedImages = new Map();
 
@@ -64,7 +75,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         let signList = Object.entries(zodiacSigns)
             .map(([key, val]) => `▢ ${usedPrefix}${command} ${key} - ${val}`)
             .join('\n');
-        
+
         return conn.reply(m.chat, 
             `✨ *SIGNOS ZODIACALES DISPONIBLES* ✨\n\n${signList}\n\nEjemplo: ${usedPrefix}${command} cancer`, 
             m
@@ -95,7 +106,7 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
             luckyNumber: Math.floor(Math.random() * 10) + 1
         };
         
-        const imageUrl = await getInstagramImage(sign);
+        const imageUrl = await getZodiacImage(sign);
 
         const message = `*${zodiacSigns[sign]}*\n📆 *Fecha:* ${horoscopeData.date}\n\n` +
                        `🔮 *Predicción:*\n${horoscopeData.prediction}\n\n` +
@@ -117,46 +128,26 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     }
 };
 
-async function getInstagramImage(sign) {
-    if (!zodiacImages[sign]?.length) {
-        throw new Error('No hay imágenes para este signo');
+// Obtiene una imagen sin repetir hasta agotar las disponibles
+async function getZodiacImage(sign) {
+    const images = zodiacImages[sign];
+    if (!images || images.length === 0) {
+        throw new Error('No hay imágenes disponibles para este signo.');
     }
 
     if (!usedImages.has(sign)) {
         usedImages.set(sign, []);
     }
 
-    const available = zodiacImages[sign].filter(url => !usedImages.get(sign).includes(url));
-    const selected = available.length ? 
-        available[Math.floor(Math.random() * available.length)] : 
-        zodiacImages[sign][0];
-    
-    usedImages.get(sign).push(selected);
-    return await instagramToDirect(selected);
-}
+    const used = usedImages.get(sign);
+    const available = images.filter(url => !used.includes(url));
 
-async function instagramToDirect(url) {
-    try {
-        if (url.match(/\.(jpg|jpeg|png)$/i)) return url;
-        
-        const postId = url.match(/\/p\/([^\/]+)/)?.[1];
-        if (!postId) return url;
-        
-        // Intento 1: Formato simple
-        const simpleUrl = `https://www.instagram.com/p/${postId}/media/?size=l`;
-        const response = await fetch(simpleUrl, { method: 'HEAD' });
-        if (response.ok) return simpleUrl;
-        
-        // Intento 2: API alternativa
-        const apiUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(url)}`;
-        const apiResponse = await fetch(apiUrl);
-        const data = await apiResponse.json();
-        return data.thumbnail_url || url;
-        
-    } catch (e) {
-        console.error('Error al convertir URL:', e);
-        return url;
-    }
+    const selected = available.length > 0 
+        ? available[Math.floor(Math.random() * available.length)] 
+        : images[Math.floor(Math.random() * images.length)];
+
+    used.push(selected);
+    return selected;
 }
 
 function getRandomAdvice() {
@@ -172,24 +163,21 @@ function getRandomAdvice() {
 
 function getRandomPrediction(sign) {
     const predictions = {
-        cancer: [
-            "Hoy es un día para conectar con tus emociones.",
-            "La luna favorece tu intuición hoy.",
-            "Momento ideal para la familia."
-        ],
-        piscis: [
-            "Día propicio para la creatividad.",
-            "Las energías espirituales te guiarán.",
-            "Escucha tu voz interior con atención."
-        ],
-        default: [
-            "Las estrellas indican oportunidades hoy.",
-            "Día clave para tu crecimiento.",
-            "El universo está a tu favor."
-        ]
+        aries: ["Hoy te sentirás lleno de energía.", "Una oportunidad laboral puede surgir.", "Sigue adelante con tus planes."],
+        tauro: ["Buen día para enfocarte en tu estabilidad.", "El dinero podría llegar inesperadamente.", "Confía en ti mismo."],
+        geminis: ["Tu creatividad estará al máximo.", "Las conversaciones serán clave hoy.", "Mantente flexible ante los cambios."],
+        cancer: ["Las emociones estarán a flor de piel.", "Buena oportunidad para conectar con familia.", "Haz caso a tu intuición."],
+        leo: ["Tendrás mucha confianza hoy.", "Alguien importante te reconocerá.", "Un buen día para brillar."],
+        virgo: ["El orden y la planificación te favorecerán.", "Cuida tu salud hoy.", "Una sorpresa te espera."],
+        libra: ["El equilibrio será clave.", "Toma decisiones con calma.", "Posible reencuentro con alguien especial."],
+        escorpio: ["Tu intensidad será positiva hoy.", "Descubre un secreto importante.", "Evita los conflictos innecesarios."],
+        sagitario: ["Aventúrate a hacer algo nuevo.", "Viajar puede ser una opción.", "La diversión será clave hoy."],
+        capricornio: ["Es momento de enfocarte en tu carrera.", "Una persona influyente te ayudará.", "La paciencia será clave."],
+        acuario: ["Las ideas innovadoras fluirán hoy.", "Conéctate con amigos.", "Un cambio inesperado será positivo."],
+        piscis: ["Día propicio para la creatividad.", "Las energías espirituales te guiarán.", "Escucha tu voz interior con atención."],
+        default: ["Las estrellas indican oportunidades hoy.", "Día clave para tu crecimiento.", "El universo está a tu favor."]
     };
-    const signPredictions = predictions[sign] || predictions.default;
-    return signPredictions[Math.floor(Math.random() * signPredictions.length)];
+    return predictions[sign] || predictions.default;
 }
 
 handler.help = ['horoscopo <signo>'];
