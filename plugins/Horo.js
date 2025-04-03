@@ -1,7 +1,9 @@
 import fetch from 'node-fetch';
 
+// Cache para llevar registro de imágenes usadas
+const imageCache = new Map();
+
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-    // Lista de signos válidos con emojis
     const signos = {
         'aries': '♈ Aries',
         'tauro': '♉ Tauro',
@@ -17,10 +19,8 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         'piscis': '♓ Piscis'
     };
     
-    // Obtener el signo solicitado
     const signo = args[0]?.toLowerCase();
     
-    // Verificar si el signo es válido
     if (!signo || !signos[signo]) {
         let listaSignos = Object.entries(signos)
             .map(([key, val]) => `▢ ${usedPrefix + command} ${key} - ${val}`)
@@ -32,68 +32,109 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     }
     
     try {
-        // Mostrar estado de "escribiendo..."
         await conn.sendPresenceUpdate('composing', m.chat);
         
-        // Obtener datos del horóscopo desde una API confiable
+        // Obtener datos del horóscopo
         const horoscopeData = await getHoroscopeData(signo);
         
-        // Construir mensaje con formato
-        const message = `*${signos[signo]}*\n` +
-                       `📅 *Fecha:* ${horoscopeData.date || new Date().toLocaleDateString()}\n\n` +
-                       `🔮 *Predicción:*\n${horoscopeData.prediction}\n\n` +
-                       `💫 *Consejo del día:* ${horoscopeData.advice || getRandomAdvice()}\n\n` +
-                       `⭐ *Número de suerte:* ${horoscopeData.lucky_number || Math.floor(Math.random() * 10) + 1}`;
+        // Obtener imagen única
+        const imageUrl = await getUniqueImage(signo);
         
-        // Enviar mensaje con imagen
+        const message = `*${signos[signo]}*\n` +
+                       `📅 *Fecha:* ${horoscopeData.date}\n\n` +
+                       `🔮 *Predicción:*\n${horoscopeData.prediction}\n\n` +
+                       `💫 *Consejo:* ${horoscopeData.advice}\n\n` +
+                       `🍀 *Número de suerte:* ${horoscopeData.lucky_number}`;
+        
         await conn.sendMessage(m.chat, {
-            image: { url: horoscopeData.image },
+            image: { url: imageUrl },
             caption: message,
             mentions: [m.sender]
         }, { quoted: m });
         
     } catch (error) {
         console.error('Error en horóscopo:', error);
-        // Respuesta de respaldo si falla la API
-        const backupMessage = `*${signos[signo]}*\n\n` +
-                             `📅 Hoy es un día especial para ti.\n\n` +
-                             `✨ Las estrellas indican que tendrás un día lleno de oportunidades.\n\n` +
-                             `💫 Consejo: Confía en tu intuición.`;
-        
-        await conn.sendMessage(m.chat, {
-            image: { url: 'https://i.imgur.com/5Q9s5vY.jpg' },
-            caption: backupMessage
-        }, { quoted: m });
+        await sendBackupHoroscope(m, conn, signos[signo]);
     }
 };
 
-// Nueva función para obtener datos del horóscopo
+// Función para obtener imagen única
+async function getUniqueImage(sign) {
+    const cacheKey = `img_${sign}`;
+    let attempts = 0;
+    let imageUrl;
+    
+    // Intentar hasta 3 veces obtener una imagen no usada
+    while (attempts < 3) {
+        try {
+            // Usar timestamp para evitar caché
+            const timestamp = Date.now();
+            imageUrl = `https://source.unsplash.com/600x600/?${sign},zodiac,astrology,stars&t=${timestamp}`;
+            
+            const response = await fetch(imageUrl, { method: 'HEAD' });
+            if (response.ok) {
+                const finalUrl = response.url;
+                
+                // Verificar si esta URL no ha sido usada antes
+                if (!imageCache.has(finalUrl)) {
+                    imageCache.set(finalUrl, true);
+                    
+                    // Limitar el cache a 50 imágenes máximo
+                    if (imageCache.size > 50) {
+                        const [firstKey] = imageCache.keys();
+                        imageCache.delete(firstKey);
+                    }
+                    
+                    return finalUrl;
+                }
+            }
+        } catch (e) {
+            console.error('Error al verificar imagen:', e);
+        }
+        attempts++;
+    }
+    
+    // Si falla, devolver imagen por defecto única
+    return `https://source.unsplash.com/600x600/?${sign},universe&t=${Date.now()}`;
+}
+
 async function getHoroscopeData(sign) {
     try {
-        // API alternativa más confiable
         const response = await fetch(`https://aztro.sameerkumar.website/?sign=${sign}&day=today`, {
             method: 'POST'
         });
         const data = await response.json();
         
-        // Obtener imagen relacionada
-        const imageUrl = `https://source.unsplash.com/500x500/?${sign},zodiac,sign`;
-        
         return {
             date: data.current_date,
             prediction: data.description,
-            advice: data.mantra,
-            lucky_number: data.lucky_number,
-            image: imageUrl
+            advice: data.mantra || getRandomAdvice(),
+            lucky_number: data.lucky_number
         };
         
     } catch (error) {
         console.error('Error al obtener datos:', error);
-        throw error;
+        return {
+            date: new Date().toLocaleDateString(),
+            prediction: 'Las estrellas indican que tendrás un día lleno de oportunidades.',
+            advice: getRandomAdvice(),
+            lucky_number: Math.floor(Math.random() * 10) + 1
+        };
     }
 }
 
-// Función para consejos aleatorios
+async function sendBackupHoroscope(m, conn, signoName) {
+    const backupMessage = `*${signoName}*\n\n` +
+                         `📅 Hoy es un día especial para ti.\n\n` +
+                         `✨ Las estrellas indican que tendrás un día lleno de oportunidades.\n\n` +
+                         `💫 Consejo: ${getRandomAdvice()}`;
+    
+    await conn.sendMessage(m.chat, {
+        image: { url: `https://source.unsplash.com/600x600/?${signoName.toLowerCase()},universe&t=${Date.now()}` },
+        caption: backupMessage
+    }, { quoted: m });
+}
+
 function getRandomAdvice() {
     const advices = [
         "Confía en tu intuición hoy",
