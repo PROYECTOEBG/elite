@@ -5,8 +5,8 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }
 let user;
 
 // Si se menciona a un usuario
-if (m.message.extendedTextMessage && m.message.extendedTextMessage.contextInfo.mentionedJid) {
-    user = m.message.extendedTextMessage.contextInfo.mentionedJid[0];
+if (m.mentionedJid && m.mentionedJid.length > 0) {
+    user = m.mentionedJid[0];
 } 
 // Si no hay mención
 else {
@@ -23,7 +23,7 @@ if (command === "mute") {
 
 };
 
-// Interceptar mensajes de usuarios muteados handler.before = async (m, { conn }) => { if (mutedUsers.has(m.sender) && m.mtype !== 'stickerMessage') { try { await conn.sendMessage(m.chat, { delete: m.key }); } catch (e) { console.error(e); } } };
+// Interceptar mensajes de usuarios muteados handler.before = async (m, { conn }) => { if (mutedUsers.has(m.sender)) { try { await conn.sendMessage(m.chat, { delete: m.key }); } catch (e) { console.error(e); } } };
 
 handler.help = ['mute', 'unmute']; handler.tags = ['group']; handler.command = /^(mute|unmute)$/i; handler.group = true; handler.admin = true; handler.botAdmin = true;
 
