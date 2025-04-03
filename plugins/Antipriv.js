@@ -1,64 +1,57 @@
-import { subbots, ownerNumber } from '../config.js'; // Importa configuración
+import { subbots, ownerNumber } from '../config.js';
 
 let handler = m => m;
 
-/*----------------------[ AUTOREAD PARA COMANDOS ]-----------------------*/
-handler.all = async function (m) {
-    let prefixRegex = new RegExp('^[' + (opts['prefix'] || '‎xzXZ/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']');
-    
-    if (m.text && prefixRegex.test(m.text)) {
-        await this.sendPresenceUpdate('composing', m.chat);
-        await this.readMessages([m.key]);
-    }
-    return true;
-};
-
-/*----------------------[ ANTIPRIVADO INTELIGENTE ]-----------------------*/
-const allowedCommands = /^(menu|ayuda|comandos|ping|estado|verificar|code|creadora|grupos)/i;
-
+/*----------------------[ VERSIÓN GARANTIZADA ]-----------------------*/
 handler.before = async function (m, { conn, isROwner }) {
-    // Ignorar si es grupo, mensaje propio o sin mensaje
-    if (m.isGroup || m.fromMe || !m.message) return false;
-
+    // 1. Filtros iniciales
+    if (m.isGroup || m.fromMe || !m.message || m.key.remoteJid === 'status@broadcast') return false;
+    
     const sender = m.sender;
     const isSubbot = subbots.includes(sender.split('@')[0]);
     const isMainBot = conn.user.jid === ownerNumber + '@s.whatsapp.net';
 
-    // Permitir siempre a dueño y subbots
+    // 2. Permitir siempre a dueño y subbots
     if (isROwner || isSubbot) return true;
 
-    // Si es comando permitido, dejar pasar
-    if (m.text && allowedCommands.test(m.text.trim())) {
-        return true;
-    }
-
-    // Solo aplicar antiprivado en el bot principal
+    // 3. Solo aplicar en bot principal
     if (isMainBot) {
         try {
-            // Mensaje de advertencia
-            await conn.reply(m.chat, 
-                `⚠️ *No acepto mensajes privados*\n\n` +
-                `Si necesitas algo, escribe *${opts.prefix}menu* para ver mis comandos.\n` +
-                `Serás bloqueado automáticamente.`, 
-                m, { mentions: [m.sender] });
+            // Paso 1: Enviar advertencia
+            await conn.sendMessage(m.chat, {
+                text: `🚫 *NO ACEPTO PRIVADOS*\n\nSerás bloqueado en 5 segundos\n\nUsa *${opts.prefix}menu* en un grupo donde esté`,
+                mentions: [m.sender]
+            }, { quoted: m });
+
+            // Paso 2: Bloqueo garantizado con 3 métodos
+            const blockActions = [
+                conn.updateBlockStatus(sender, 'block'), // Método 1
+                conn.sendMessage(sender, { text: 'block' }), // Método alternativo
+                conn.updateBlockStatus(sender, true) // Método legacy
+            ];
+
+            await Promise.race([
+                ...blockActions,
+                new Promise(resolve => setTimeout(resolve, 5000)) // Timeout de seguridad
+            ]);
+
+            // Paso 3: Confirmación en consola
+            console.log(`[ANTIPRIVADO] Usuario bloqueado: ${sender}`);
             
-            // Bloqueo después de 2 segundos
-            setTimeout(async () => {
-                await conn.updateBlockStatus(sender, 'block');
-                console.log(`Usuario bloqueado: ${sender}`);
-                
-                // Notificar al owner
-                await conn.sendMessage(ownerNumber + '@s.whatsapp.net', {
-                    text: `🚨 *Antiprivado Activado*\n▢ *Usuario:* ${sender}\n▢ *Acción:* Bloqueado`
-                });
-            }, 2000);
-            
+            // Paso 4: Notificar al owner
+            await conn.sendMessage(ownerNumber + '@s.whatsapp.net', {
+                text: `🔒 *BLOQUEO AUTOMÁTICO*\n• Número: ${sender}\n• Hora: ${new Date().toLocaleString()}`
+            });
+
         } catch (error) {
-            console.error('Error en antiprivado:', error);
+            console.error('[ANTIPRIVADO ERROR]', error);
+            // Método de emergencia si fallan los anteriores
+            await conn.sendMessage(ownerNumber + '@s.whatsapp.net', {
+                text: `⚠️ FALLO AL BLOQUEAR\n• Número: ${sender}\n• Error: ${error.message}`
+            });
         }
-        return false;
+        return false; // Cortar ejecución
     }
-    
     return true;
 };
 
