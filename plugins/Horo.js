@@ -23,17 +23,18 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     // Verificar si el signo es válido
     if (!signo || !signos[signo]) {
         let listaSignos = Object.entries(signos).map(([key, val]) => `▢ ${usedPrefix + command} ${key} - ${val}`).join('\n');
-        return conn.reply(m, `✨ *Horóscopo Disponible*\n\n${listaSignos}\n\nEjemplo: ${usedPrefix + command} cancer`, m);
+        await conn.reply(m.chat, `✨ *Horóscopo Disponible*\n\n${listaSignos}\n\nEjemplo: ${usedPrefix + command} cancer`, m);
+        return;
     }
     
     try {
         // Mostrar estado de carga
         await conn.sendPresenceUpdate('composing', m.chat);
         
-        // 1. Obtener imagen aleatoria del signo desde una API
+        // 1. Obtener imagen aleatoria del signo
         const horoscopeImage = await getHoroscopeImage(signo);
         
-        // 2. Obtener predicción desde otra API
+        // 2. Obtener predicción
         const prediction = await getHoroscopePrediction(signo);
         
         // 3. Construir mensaje
@@ -42,64 +43,55 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
                        `🔮 *Predicción:*\n${prediction || 'Las estrellas no han revelado su destino hoy...'}\n\n` +
                        `💫 *Consejo del día:* ${getRandomAdvice()}`;
         
-        // 4. Enviar imagen con texto
-        await conn.sendMessage(m.chat, {
-            image: { url: horoscopeImage },
-            caption: message,
-            mentions: [m.sender]
-        }, { quoted: m });
+        // 4. Enviar mensaje de forma segura
+        if (typeof m.chat === 'string' && m.chat.endsWith('@g.us') || m.chat.endsWith('@s.whatsapp.net')) {
+            await conn.sendMessage(m.chat, {
+                image: { url: horoscopeImage },
+                caption: message,
+                mentions: [m.sender]
+            }, { quoted: m });
+        } else {
+            console.error('Chat ID no válido:', m.chat);
+        }
         
     } catch (error) {
         console.error('Error en horóscopo:', error);
-        conn.reply(m.chat, `❌ Error al consultar el horóscopo. Intenta nuevamente más tarde.`, m);
+        await conn.reply(m.chat, `❌ Error al consultar el horóscopo. Intenta nuevamente más tarde.`, m);
     }
 };
 
-// Función para obtener imagen de horóscopo desde API
+// Función para obtener imagen de horóscopo (versión segura)
 async function getHoroscopeImage(sign) {
-    // API 1: API de imágenes genéricas con tag de horóscopo
-    const api1 = `https://source.unsplash.com/500x500/?zodiac-${sign},astrology`;
-    
-    // API 2: API alternativa (puedes agregar más)
-    const api2 = `https://api.zodiac.com/images/${sign}/random`;
-    
-    // Intentar con la primera API
     try {
-        const imgUrl = await fetch(api1).then(res => res.url);
-        if (imgUrl.includes('unsplash.com')) return imgUrl;
-    } catch (e) {}
-    
-    // Si falla, intentar con API alternativa
-    try {
-        const imgUrl = await fetch(api2).then(res => res.json()).then(data => data.url);
-        return imgUrl;
+        // API de Unsplash como respaldo
+        const response = await fetch(`https://source.unsplash.com/500x500/?zodiac,${sign},stars`);
+        return response.url;
     } catch (e) {
-        // Si todo falla, imagen por defecto
-        return 'https://i.imgur.com/5Q9s5vY.jpg';
+        console.error('Error al obtener imagen:', e);
+        return 'https://i.imgur.com/5Q9s5vY.jpg'; // Imagen por defecto
     }
 }
 
-// Función para obtener predicción desde API
+// Función para obtener predicción (versión segura)
 async function getHoroscopePrediction(sign) {
     try {
         const response = await fetch(`https://horoscope-api.herokuapp.com/horoscope/today/${sign}`);
         const data = await response.json();
-        return data.horoscope || data.prediction || null;
+        return data.horoscope || "La predicción no está disponible en este momento";
     } catch (e) {
-        return null;
+        console.error('Error al obtener predicción:', e);
+        return "Las estrellas están ocupadas, intenta más tarde";
     }
 }
 
-// Consejos aleatorios (puedes ampliar esta lista)
+// Consejos aleatorios
 function getRandomAdvice() {
     const advices = [
         "Confía en tu intuición hoy",
         "Es buen día para tomar decisiones importantes",
         "Evita los conflictos innecesarios",
         "El amor puede llegar cuando menos lo esperes",
-        "Cuida tu salud emocional",
-        "Un viaje corto podría ser beneficioso",
-        "La paciencia será tu mayor virtud hoy"
+        "Cuida tu salud emocional"
     ];
     return advices[Math.floor(Math.random() * advices.length)];
 }
