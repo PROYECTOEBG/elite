@@ -1,57 +1,77 @@
-import { subbots, ownerNumber } from '../config.js';
+import { ownerNumber } from '../config.js';
+
+const BOT_PRINCIPAL = ownerNumber + '@s.whatsapp.net';
 
 let handler = m => m;
 
 handler.before = async function (m, { conn }) {
-    // 1. Filtros rápidos (grupos, estados, mensajes del bot)
-    if (m.isGroup || m.fromMe || !m.message || m.key.remoteJid === 'status@broadcast') return false;
-
-    const sender = m.sender;
-    const isMainBot = conn.user.jid === ownerNumber + '@s.whatsapp.net';
-    const isOwner = sender === ownerNumber + '@s.whatsapp.net';
+    // 1. Filtros esenciales
+    if (!m.message || m.isGroup || m.fromMe || m.key.remoteJid === 'status@broadcast') return false;
     
-    // 2. Solo aplicar en bot principal
-    if (!isMainBot) return true;
-
+    const sender = m.sender;
+    
+    // 2. Solo actuar en el bot principal
+    if (conn.user.jid !== BOT_PRINCIPAL) return true;
+    
     // 3. Permitir solo al dueño
-    if (isOwner) return true;
+    if (sender === BOT_PRINCIPAL) return true;
 
-    // 4. BLOQUEO AGRESIVO (3 métodos combinados)
+    // 4. Protocolo de bloqueo reforzado
     try {
-        console.log(`[BLOQUEO] Iniciando bloqueo de ${sender}`);
+        console.log(`[BLOQUEO] Iniciando protocolo para ${sender}`);
         
-        // Método 1: Bloqueo tradicional
-        await conn.updateBlockStatus(sender, 'block').catch(e => console.log("Método 1 falló:", e));
+        // Método 1: Bloqueo directo v3
+        await conn.sendMessage(sender, { text: 'block' });
         
-        // Método 2: Comando directo
-        await conn.sendMessage(sender, { text: 'block' }).catch(e => console.log("Método 2 falló:", e));
+        // Método 2: Eliminación completa
+        await conn.chatModify({
+            delete: true,
+            lastMessages: [{ key: m.key, messageTimestamp: m.messageTimestamp }]
+        }, sender);
         
-        // Método 3: Eliminación total
+        // Método 3: Fuerza bruta
         await Promise.all([
-            conn.chatModify({ delete: true }, sender),
+            conn.updateBlockStatus(sender, 'block'),
             conn.updateProfilePicture(sender, ''),
-            conn.sendMessage(ownerNumber + '@s.whatsapp.net', {
-                text: `🔴 BLOQUEO EJECUTADO\n• Usuario: ${sender}\n• Hora: ${new Date().toLocaleString()}`
-            })
+            conn.updateProfileName(sender, 'BLOQUEADO')
         ]);
-
-        // Verificación final
-        const isBlocked = await conn.fetchBlocklist().then(blocks => blocks.includes(sender));
-        console.log(`[RESULTADO] Usuario ${isBlocked ? 'BLOQUEADO' : 'NO BLOQUEADO'}`);
-
-        if (!isBlocked) {
-            throw new Error("Falló el bloqueo automático");
-        }
-
+        
+        // Verificación en tiempo real
+        const blockCheck = await verifyBlock(conn, sender);
+        if (!blockCheck) throw new Error('Bloqueo no verificado');
+        
+        console.log(`[ÉXITO] Usuario ${sender} bloqueado definitivamente`);
+        
     } catch (error) {
-        console.error("ERROR CRÍTICO:", error);
-        // Auto-reparación: Reiniciar la conexión si falla
-        if (error.message.includes("block")) {
-            await conn.restart();
-        }
+        console.error('[FALLA CRÍTICA]', error);
+        // Auto-reparación extrema
+        await forceRestart(conn);
     }
     
-    return false; // Detener cualquier procesamiento posterior
+    return false;
 };
+
+// Función de verificación mejorada
+async function verifyBlock(conn, jid) {
+    const checks = [
+        () => conn.fetchBlocklist().then(list => list.includes(jid)),
+        () => conn.chats.fetch(jid).then(chat => chat === null).catch(() => true),
+        () => conn.profilePictureUrl(jid).then(() => false).catch(() => true)
+    ];
+    
+    const results = await Promise.all(checks.map(check => check().catch(() => false)));
+    return results.some(Boolean);
+}
+
+// Reinicio forzado
+async function forceRestart(conn) {
+    try {
+        await conn.end();
+        await conn.connect();
+        await new Promise(resolve => setTimeout(resolve, 5000));
+    } catch (e) {
+        process.exit(1);
+    }
+}
 
 export default handler;
