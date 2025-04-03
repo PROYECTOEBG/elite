@@ -10,7 +10,7 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }
     if (m.message.extendedTextMessage && m.message.extendedTextMessage.contextInfo.mentionedJid) {
         user = m.message.extendedTextMessage.contextInfo.mentionedJid[0];
     } else {
-        return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear.', m);
+        return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
     if (command === "mute") {
