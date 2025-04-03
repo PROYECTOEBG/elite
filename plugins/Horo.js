@@ -1,7 +1,7 @@
 import fetch from 'node-fetch';
 
-// Cache para llevar registro de imágenes usadas
-const imageCache = new Map();
+// Cache para imágenes y datos
+const horoscopeCache = new Map();
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
     const signos = {
@@ -34,11 +34,9 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     try {
         await conn.sendPresenceUpdate('composing', m.chat);
         
-        // Obtener datos del horóscopo
+        // Obtener datos del horóscopo con manejo de caché
         const horoscopeData = await getHoroscopeData(signo);
-        
-        // Obtener imagen única
-        const imageUrl = await getUniqueImage(signo);
+        const imageUrl = await getHoroscopeImage(signo);
         
         const message = `*${signos[signo]}*\n` +
                        `📅 *Fecha:* ${horoscopeData.date}\n\n` +
@@ -54,85 +52,115 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         
     } catch (error) {
         console.error('Error en horóscopo:', error);
-        await sendBackupHoroscope(m, conn, signos[signo]);
+        await sendLocalHoroscope(m, conn, signos[signo]);
     }
 };
 
-// Función para obtener imagen única
-async function getUniqueImage(sign) {
-    const cacheKey = `img_${sign}`;
-    let attempts = 0;
-    let imageUrl;
+// Nueva API funcional para horóscopos
+async function getHoroscopeData(sign) {
+    const cacheKey = `data_${sign}_${new Date().toLocaleDateString()}`;
     
-    // Intentar hasta 3 veces obtener una imagen no usada
-    while (attempts < 3) {
-        try {
-            // Usar timestamp para evitar caché
-            const timestamp = Date.now();
-            imageUrl = `https://source.unsplash.com/600x600/?${sign},zodiac,astrology,stars&t=${timestamp}`;
-            
-            const response = await fetch(imageUrl, { method: 'HEAD' });
-            if (response.ok) {
-                const finalUrl = response.url;
-                
-                // Verificar si esta URL no ha sido usada antes
-                if (!imageCache.has(finalUrl)) {
-                    imageCache.set(finalUrl, true);
-                    
-                    // Limitar el cache a 50 imágenes máximo
-                    if (imageCache.size > 50) {
-                        const [firstKey] = imageCache.keys();
-                        imageCache.delete(firstKey);
-                    }
-                    
-                    return finalUrl;
-                }
-            }
-        } catch (e) {
-            console.error('Error al verificar imagen:', e);
-        }
-        attempts++;
+    // Verificar caché primero
+    if (horoscopeCache.has(cacheKey)) {
+        return horoscopeCache.get(cacheKey);
     }
     
-    // Si falla, devolver imagen por defecto única
-    return `https://source.unsplash.com/600x600/?${sign},universe&t=${Date.now()}`;
-}
-
-async function getHoroscopeData(sign) {
     try {
-        const response = await fetch(`https://aztro.sameerkumar.website/?sign=${sign}&day=today`, {
-            method: 'POST'
-        });
+        // API alternativa 1 (horóscopo diario)
+        const response = await fetch(`https://api.adderou.cl/tyaas/`);
         const data = await response.json();
         
-        return {
-            date: data.current_date,
-            prediction: data.description,
-            advice: data.mantra || getRandomAdvice(),
-            lucky_number: data.lucky_number
-        };
-        
-    } catch (error) {
-        console.error('Error al obtener datos:', error);
-        return {
-            date: new Date().toLocaleDateString(),
-            prediction: 'Las estrellas indican que tendrás un día lleno de oportunidades.',
-            advice: getRandomAdvice(),
-            lucky_number: Math.floor(Math.random() * 10) + 1
-        };
+        if (data && data.horoscopo && data.horoscopo[sign]) {
+            const result = {
+                date: new Date().toLocaleDateString(),
+                prediction: data.horoscopo[sign].horoscopo,
+                advice: data.horoscopo[sign].amor || getRandomAdvice(),
+                lucky_number: Math.floor(Math.random() * 10) + 1
+            };
+            
+            horoscopeCache.set(cacheKey, result);
+            return result;
+        }
+    } catch (e) {
+        console.error('Error con API principal:', e);
     }
+    
+    // Si falla la API principal, usar datos locales
+    const localData = {
+        date: new Date().toLocaleDateString(),
+        prediction: getRandomPrediction(sign),
+        advice: getRandomAdvice(),
+        lucky_number: Math.floor(Math.random() * 10) + 1
+    };
+    
+    horoscopeCache.set(cacheKey, localData);
+    return localData;
 }
 
-async function sendBackupHoroscope(m, conn, signoName) {
-    const backupMessage = `*${signoName}*\n\n` +
-                         `📅 Hoy es un día especial para ti.\n\n` +
-                         `✨ Las estrellas indican que tendrás un día lleno de oportunidades.\n\n` +
-                         `💫 Consejo: ${getRandomAdvice()}`;
+// Función para obtener imágenes únicas
+async function getHoroscopeImage(sign) {
+    const cacheKey = `img_${sign}_${new Date().getDate()}`;
+    
+    if (horoscopeCache.has(cacheKey)) {
+        return horoscopeCache.get(cacheKey);
+    }
+    
+    try {
+        const timestamp = Date.now();
+        const imageUrl = `https://source.unsplash.com/600x600/?${sign},zodiac,astrology,stars&t=${timestamp}`;
+        
+        const response = await fetch(imageUrl, { method: 'HEAD' });
+        if (response.ok) {
+            horoscopeCache.set(cacheKey, response.url);
+            return response.url;
+        }
+    } catch (e) {
+        console.error('Error al obtener imagen:', e);
+    }
+    
+    // Imagen por defecto si falla
+    return `https://i.imgur.com/${sign === 'cancer' ? '5Q9s5vY' : '7G7W9bX'}.jpg`;
+}
+
+// Datos locales como respaldo
+async function sendLocalHoroscope(m, conn, signoName) {
+    const sign = signoName.split(' ')[1]?.toLowerCase() || 'cancer';
+    const localData = {
+        date: new Date().toLocaleDateString(),
+        prediction: getRandomPrediction(sign),
+        advice: getRandomAdvice(),
+        lucky_number: Math.floor(Math.random() * 10) + 1
+    };
+    
+    const message = `*${signoName}*\n` +
+                   `📅 *Fecha:* ${localData.date}\n\n` +
+                   `🔮 *Predicción:*\n${localData.prediction}\n\n` +
+                   `💫 *Consejo:* ${localData.advice}\n\n` +
+                   `🍀 *Número de suerte:* ${localData.lucky_number}`;
     
     await conn.sendMessage(m.chat, {
-        image: { url: `https://source.unsplash.com/600x600/?${signoName.toLowerCase()},universe&t=${Date.now()}` },
-        caption: backupMessage
+        image: { url: await getHoroscopeImage(sign) },
+        caption: message
     }, { quoted: m });
+}
+
+function getRandomPrediction(sign) {
+    const predictions = {
+        cancer: [
+            "Hoy es un buen día para conectar con tus emociones más profundas.",
+            "La luna favorece tu intuición, confía en tus corazonadas.",
+            "Momento ideal para fortalecer los lazos familiares."
+        ],
+        // Agrega predicciones para otros signos...
+        default: [
+            "Las estrellas indican que tendrás un día lleno de oportunidades.",
+            "Este es un día clave para tu crecimiento personal.",
+            "El universo está alineado a tu favor hoy."
+        ]
+    };
+    
+    const signPredictions = predictions[sign] || predictions.default;
+    return signPredictions[Math.floor(Math.random() * signPredictions.length)];
 }
 
 function getRandomAdvice() {
@@ -141,9 +169,7 @@ function getRandomAdvice() {
         "Es buen día para tomar decisiones importantes",
         "Evita los conflictos innecesarios",
         "El amor puede llegar cuando menos lo esperes",
-        "Cuida tu salud emocional",
-        "Un viaje corto podría ser beneficioso",
-        "La paciencia será tu mayor virtud hoy"
+        "Cuida tu salud emocional"
     ];
     return advices[Math.floor(Math.random() * advices.length)];
 }
