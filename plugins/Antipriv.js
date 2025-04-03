@@ -1,77 +1,66 @@
-import { ownerNumber } from '../config.js';
 
-const BOT_PRINCIPAL = ownerNumber + '@s.whatsapp.net';
+/*
+  export async function before(m, {conn, isAdmin, isBotAdmin, isOwner, isROwner}) {
+  if (m.isBaileys && m.fromMe) return !0;
+  if (m.isGroup) return !1;
+  if (!m.message) return !0;
+  if (m.text.includes('PIEDRA') || m.text.includes('PAPEL') || m.text.includes('TIJERA')) return !0;
+  const chat = global.db.data.chats[m.chat];
+  const bot = global.db.data.settings[this.user.jid] || {};
+if (m.chat === '120363322713003916@newsletter') return !0
+  if (bot.antiPrivate && !isOwner && !isROwner) {
+    await m.reply(`> 𝗔𝗗𝗩𝗘𝗥𝗧𝗘𝗡𝗖𝗜𝗔 
 
-let handler = m => m;
+𝘏𝘰𝘭𝘢 𝘏𝘶𝘮𝘢𝘯𝘰 , 𝘦𝘴𝘵𝘢 𝘱𝘳𝘰𝘩𝘪𝘣𝘪𝘥𝘰 𝘦𝘴𝘤𝘳𝘪𝘣𝘪𝘳𝘮𝘦 𝘢 𝘮𝘪 𝘱𝘳𝘪𝘷𝘢𝘥𝘰.
 
-handler.before = async function (m, { conn }) {
-    // 1. Filtros esenciales
-    if (!m.message || m.isGroup || m.fromMe || m.key.remoteJid === 'status@broadcast') return false;
-    
-    const sender = m.sender;
-    
-    // 2. Solo actuar en el bot principal
-    if (conn.user.jid !== BOT_PRINCIPAL) return true;
-    
-    // 3. Permitir solo al dueño
-    if (sender === BOT_PRINCIPAL) return true;
+> 𝘜́𝘯𝘦𝘵𝘦 𝘢 𝘯𝘶𝘦𝘴𝘵𝘳𝘢 𝘤𝘰𝘮𝘶𝘯𝘪𝘥𝘢𝘥 𝘌𝘭𝘪𝘵𝘦𝘉𝘰𝘵𝘎𝘭𝘰𝘣𝘢𝘭 𝘺 𝘤𝘰𝘯𝘵𝘢́𝘤𝘵𝘢𝘵𝘦 𝘤𝘰𝘯 𝘦𝘭 𝘤𝘳𝘦𝘢𝘥𝘰𝘳 𝘱𝘢𝘳𝘢 𝘢𝘥𝘲𝘶𝘪𝘳𝘪𝘳 𝘶𝘯 𝘣𝘰𝘵 𝘱𝘳𝘰𝘱𝘪𝘰 𝘱𝘦𝘳𝘴𝘰𝘯𝘢𝘭𝘪𝘻𝘢𝘥𝘰 𝘰 𝘌𝘭𝘪𝘵𝘦𝘉𝘰𝘵𝘎𝘭𝘰𝘣𝘢𝘭.
+https://whatsapp.com/channel/0029Vatsbep84OmF6dDXpm1s
 
-    // 4. Protocolo de bloqueo reforzado
-    try {
-        console.log(`[BLOQUEO] Iniciando protocolo para ${sender}`);
-        
-        // Método 1: Bloqueo directo v3
-        await conn.sendMessage(sender, { text: 'block' });
-        
-        // Método 2: Eliminación completa
-        await conn.chatModify({
-            delete: true,
-            lastMessages: [{ key: m.key, messageTimestamp: m.messageTimestamp }]
-        }, sender);
-        
-        // Método 3: Fuerza bruta
-        await Promise.all([
-            conn.updateBlockStatus(sender, 'block'),
-            conn.updateProfilePicture(sender, ''),
-            conn.updateProfileName(sender, 'BLOQUEADO')
-        ]);
-        
-        // Verificación en tiempo real
-        const blockCheck = await verifyBlock(conn, sender);
-        if (!blockCheck) throw new Error('Bloqueo no verificado');
-        
-        console.log(`[ÉXITO] Usuario ${sender} bloqueado definitivamente`);
-        
-    } catch (error) {
-        console.error('[FALLA CRÍTICA]', error);
-        // Auto-reparación extrema
-        await forceRestart(conn);
-    }
-    
-    return false;
-};
-
-// Función de verificación mejorada
-async function verifyBlock(conn, jid) {
-    const checks = [
-        () => conn.fetchBlocklist().then(list => list.includes(jid)),
-        () => conn.chats.fetch(jid).then(chat => chat === null).catch(() => true),
-        () => conn.profilePictureUrl(jid).then(() => false).catch(() => true)
-    ];
-    
-    const results = await Promise.all(checks.map(check => check().catch(() => false)));
-    return results.some(Boolean);
+⚠️ *Serás Bloqueado(a)* ⚠️`, false, {mentions: [m.sender]});
+    await this.updateBlockStatus(m.chat, 'block');
+  }
+  return !1;
 }
+*/
 
-// Reinicio forzado
-async function forceRestart(conn) {
-    try {
-        await conn.end();
-        await conn.connect();
-        await new Promise(resolve => setTimeout(resolve, 5000));
-    } catch (e) {
-        process.exit(1);
-    }
+/*----------------------[ AUTOREAD ]-----------------------*/
+let handler = m => m
+handler.all = async function (m) {
+let prefixRegex = new RegExp('^[' + (opts['prefix'] || '‎z/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.,\\-').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']')
+
+let setting = global.db.data.settings[this.user.jid]
+const settingsREAD = global.db.data.settings[this.user.jid] || {}
+
+if (m.text && prefixRegex.test(m.text)) {
+await this.sendPresenceUpdate('composing', m.chat)
+await this.readMessages([m.key]) 
+        
+let usedPrefix = m.text.match(prefixRegex)[0]
+let command = m.text.slice(usedPrefix.length).trim().split(' ')[0]
+}} 
+
+export default handler  
+
+/*----------------------[ ANTIPRIVADO ]-----------------------*/
+const comandos = /piedra|papel|tijera|estado|verificar|code|jadibot --code|--code|creadora|bottemporal|grupos|instalarbot|términos|bots|deletebot|eliminarsesion|serbot|verify|register|registrar|reg|reg1|nombre|name|nombre2|name2|edad|age|edad2|age2|genero|género|gender|identidad|pasatiempo|hobby|identify|finalizar|pas2|pas3|pas4|pas5|registroc|deletesesion|registror|jadibot/i
+
+//let handler = m => m
+handler.before = async function (m, { conn, isOwner, isROwner }) {
+if (m.fromMe) return !0
+if (m.isGroup) return !1
+if (!m.message) return !0
+const regexWithPrefix = new RegExp(`^${prefix.source}\\s?${comandos.source}`, 'i')
+if (regexWithPrefix.test(m.text.toLowerCase().trim())) return !0
+
+let chat, user, bot, mensaje
+chat = global.db.data.chats[m.chat]
+user = global.db.data.users[m.sender]
+bot = global.db.data.settings[this.user.jid] || {}
+
+if (bot.antiPrivate && !isOwner && !isROwner) {
+return await conn.reply(m.chat, mid.mAdvertencia + mid.smsprivado(m, cuentas), m, { mentions: [m.sender] })  
+await this.updateBlockStatus(m.sender, 'block')
 }
-
-export default handler;
+return !1
+}
+//export default handler
