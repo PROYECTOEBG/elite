@@ -1,7 +1,48 @@
 import fetch from 'node-fetch';
 
-// Cache para imágenes usadas recientemente
-const imageCache = new Map();
+// ↓↓↓ REEMPLAZA ESTOS ENLACES CON TUS IMÁGENES REALES DE INSTAGRAM ↓↓↓
+const zodiacImages = {
+    cancer: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw==',  // Reemplazar con enlace real
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='   // Reemplazar con enlace real
+    ],
+    piscis: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='   // Reemplazar con enlace real
+    ],
+    aries: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='    // Reemplazar con enlace real
+    ],
+    tauro: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='    // Reemplazar con enlace real
+    ],
+    geminis: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='  // Reemplazar con enlace real
+    ],
+    leo: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='      // Reemplazar con enlace real
+    ],
+    virgo: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='    // Reemplazar con enlace real
+    ],
+    libra: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='     // Reemplazar con enlace real
+    ],
+    escorpio: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw==' // Reemplazar con enlace real
+    ],
+    sagitario: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='// Reemplazar con enlace real
+    ],
+    capricornio: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='// Reemplazar
+    ],
+    acuario: [
+        'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw=='   // Reemplazar
+    ]
+};
+// ↑↑↑ REEMPLAZA LOS ENLACES ARRIBA ↑↑↑
+
+const usedImages = new Map();
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
     const zodiacSigns = {
@@ -19,47 +60,48 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         'piscis': '♓ Piscis'
     };
 
-    // Mostrar lista de signos si no se especifica uno
     if (!args[0]) {
         let signList = Object.entries(zodiacSigns)
             .map(([key, val]) => `▢ ${usedPrefix}${command} ${key} - ${val}`)
             .join('\n');
         
         return conn.reply(m.chat, 
-            `✨ *SIGNOS ZODIACALES DISPONIBLES* ✨\n\n${signList}\n\n` +
-            `Ejemplo: *${usedPrefix}${command} cancer*`, 
+            `✨ *SIGNOS ZODIACALES DISPONIBLES* ✨\n\n${signList}\n\nEjemplo: ${usedPrefix}${command} cancer`, 
             m
         );
     }
 
     const sign = args[0].toLowerCase();
     
-    // Verificar si el signo es válido
     if (!zodiacSigns[sign]) {
         return conn.reply(m.chat, 
-            `❌ Signo zodiacal no reconocido. Usa *${usedPrefix}${command}* para ver la lista de signos disponibles.`, 
+            `❌ Signo no reconocido. Usa *${usedPrefix}${command}* para ver la lista.`, 
             m
         );
     }
 
     try {
-        // Indicar que el bot está escribiendo
         await conn.sendPresenceUpdate('composing', m.chat);
 
-        // Obtener datos del horóscopo
-        const horoscopeData = await getHoroscopeData(sign);
+        const horoscopeData = {
+            date: new Date().toLocaleDateString('es-ES', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            }),
+            prediction: getRandomPrediction(sign),
+            advice: getRandomAdvice(),
+            luckyNumber: Math.floor(Math.random() * 10) + 1
+        };
         
-        // Obtener imagen única
-        const imageUrl = await getUniqueZodiacImage(sign);
+        const imageUrl = await getInstagramImage(sign);
 
-        // Construir mensaje
-        const message = `*${zodiacSigns[sign]}*\n` +
-                       `📆 *Fecha:* ${horoscopeData.date}\n\n` +
+        const message = `*${zodiacSigns[sign]}*\n📆 *Fecha:* ${horoscopeData.date}\n\n` +
                        `🔮 *Predicción:*\n${horoscopeData.prediction}\n\n` +
                        `💡 *Consejo:* ${horoscopeData.advice}\n\n` +
                        `🍀 *Número de la suerte:* ${horoscopeData.luckyNumber}`;
 
-        // Enviar mensaje con imagen
         await conn.sendMessage(m.chat, {
             image: { url: imageUrl },
             caption: message,
@@ -67,117 +109,63 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         }, { quoted: m });
 
     } catch (error) {
-        console.error('Error en comando horóscopo:', error);
-        // Usar la función de respaldo correctamente definida
-        await sendLocalHoroscope(m, conn, zodiacSigns[sign]);
-    }
-};
-
-// Función para obtener datos del horóscopo
-async function getHoroscopeData(sign) {
-    try {
-        // API funcional de horóscopos
-        const response = await fetch(`https://horoscope-app-api.vercel.app/api/v1/get-horoscope/daily?sign=${sign}&day=TODAY`);
-        const data = await response.json();
-
-        if (data?.data) {
-            return {
-                date: new Date().toLocaleDateString('es-ES', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                }),
-                prediction: data.data.horoscope_data,
-                advice: getRandomAdvice(),
-                luckyNumber: Math.floor(Math.random() * 10) + 1
-            };
-        }
-    } catch (e) {
-        console.error('Error al obtener datos del horóscopo:', e);
-    }
-
-    // Datos de respaldo si la API falla
-    return {
-        date: new Date().toLocaleDateString(),
-        prediction: getRandomPrediction(sign),
-        advice: getRandomAdvice(),
-        luckyNumber: Math.floor(Math.random() * 10) + 1
-    };
-}
-
-// Función para obtener imágenes únicas
-async function getUniqueZodiacImage(sign) {
-    try {
-        // Usar timestamp para evitar caché
-        const timestamp = Date.now();
-        const imageUrl = `https://source.unsplash.com/600x600/?${sign}-zodiac,astrology,stars&t=${timestamp}`;
-        
-        // Verificar si la imagen es nueva
-        const response = await fetch(imageUrl, { method: 'HEAD' });
-        const finalUrl = response.url;
-        
-        // Si la imagen no está en caché, usarla
-        if (!imageCache.has(finalUrl)) {
-            imageCache.set(finalUrl, true);
-            
-            // Limitar el cache a 30 imágenes
-            if (imageCache.size > 30) {
-                const [firstKey] = imageCache.keys();
-                imageCache.delete(firstKey);
-            }
-            
-            return finalUrl;
-        }
-        
-        // Si está en caché, intentar con parámetros diferentes
-        return `https://source.unsplash.com/600x600/?zodiac-${sign},constellation&t=${timestamp}`;
-    } catch (e) {
-        console.error('Error al obtener imagen:', e);
-        return `https://i.imgur.com/${sign === 'cancer' ? '5Q9s5vY' : '7G7W9bX'}.jpg?t=${Date.now()}`;
-    }
-}
-
-// Función de respaldo mejorada
-async function sendLocalHoroscope(m, conn, signoName) {
-    try {
-        const sign = signoName.split(' ')[1]?.toLowerCase() || 'cancer';
-        const localData = {
-            date: new Date().toLocaleDateString(),
-            prediction: getRandomPrediction(sign),
-            advice: getRandomAdvice(),
-            luckyNumber: Math.floor(Math.random() * 10) + 1
-        };
-        
-        const message = `*${signoName}*\n` +
-                       `📆 *Fecha:* ${localData.date}\n\n` +
-                       `🔮 *Predicción:*\n${localData.prediction}\n\n` +
-                       `💡 *Consejo:* ${localData.advice}\n\n` +
-                       `🍀 *Número de la suerte:* ${localData.luckyNumber}`;
-        
-        await conn.sendMessage(m.chat, {
-            image: { url: await getUniqueZodiacImage(sign) },
-            caption: message
-        }, { quoted: m });
-    } catch (e) {
-        console.error('Error en sendLocalHoroscope:', e);
+        console.error('Error:', error);
         await conn.reply(m.chat, 
-            '⚠️ Ocurrió un error al generar el horóscopo. Por favor intenta nuevamente.', 
+            '⚠️ Error al mostrar el horóscopo. Intenta nuevamente.', 
             m
         );
     }
+};
+
+async function getInstagramImage(sign) {
+    if (!zodiacImages[sign]?.length) {
+        throw new Error('No hay imágenes para este signo');
+    }
+
+    if (!usedImages.has(sign)) {
+        usedImages.set(sign, []);
+    }
+
+    const available = zodiacImages[sign].filter(url => !usedImages.get(sign).includes(url));
+    const selected = available.length ? 
+        available[Math.floor(Math.random() * available.length)] : 
+        zodiacImages[sign][0];
+    
+    usedImages.get(sign).push(selected);
+    return await instagramToDirect(selected);
 }
 
-// Funciones auxiliares
+async function instagramToDirect(url) {
+    try {
+        if (url.match(/\.(jpg|jpeg|png)$/i)) return url;
+        
+        const postId = url.match(/\/p\/([^\/]+)/)?.[1];
+        if (!postId) return url;
+        
+        // Intento 1: Formato simple
+        const simpleUrl = `https://www.instagram.com/p/${postId}/media/?size=l`;
+        const response = await fetch(simpleUrl, { method: 'HEAD' });
+        if (response.ok) return simpleUrl;
+        
+        // Intento 2: API alternativa
+        const apiUrl = `https://api.instagram.com/oembed/?url=${encodeURIComponent(url)}`;
+        const apiResponse = await fetch(apiUrl);
+        const data = await apiResponse.json();
+        return data.thumbnail_url || url;
+        
+    } catch (e) {
+        console.error('Error al convertir URL:', e);
+        return url;
+    }
+}
+
 function getRandomAdvice() {
     const advices = [
-        "Confía en tu intuición hoy",
-        "Es buen día para tomar decisiones importantes",
-        "Evita los conflictos innecesarios",
-        "El amor puede llegar cuando menos lo esperes",
-        "Cuida tu salud emocional",
-        "Un viaje corto podría ser beneficioso",
-        "La paciencia será tu mayor virtud hoy"
+        "Confía en tu intuición",
+        "Es buen día para decisiones importantes",
+        "Evita conflictos innecesarios",
+        "El amor puede sorprenderte hoy",
+        "Cuida tu salud emocional"
     ];
     return advices[Math.floor(Math.random() * advices.length)];
 }
@@ -185,25 +173,26 @@ function getRandomAdvice() {
 function getRandomPrediction(sign) {
     const predictions = {
         cancer: [
-            "Hoy es un buen día para conectar con tus emociones más profundas.",
-            "La luna favorece tu intuición, confía en tus corazonadas.",
-            "Momento ideal para fortalecer los lazos familiares."
+            "Hoy es un día para conectar con tus emociones.",
+            "La luna favorece tu intuición hoy.",
+            "Momento ideal para la familia."
+        ],
+        piscis: [
+            "Día propicio para la creatividad.",
+            "Las energías espirituales te guiarán.",
+            "Escucha tu voz interior con atención."
         ],
         default: [
-            "Las estrellas indican que tendrás un día lleno de oportunidades.",
-            "Este es un día clave para tu crecimiento personal.",
-            "El universo está alineado a tu favor hoy."
+            "Las estrellas indican oportunidades hoy.",
+            "Día clave para tu crecimiento.",
+            "El universo está a tu favor."
         ]
     };
-    
     const signPredictions = predictions[sign] || predictions.default;
     return signPredictions[Math.floor(Math.random() * signPredictions.length)];
 }
 
-// Configuración del comando
 handler.help = ['horoscopo <signo>'];
-handler.tags = ['fun', 'horoscope'];
-handler.command = /^(horoscopo|horóscopo|signo|zodiaco)$/i;
-handler.limit = false;
-
+handler.tags = ['fun'];
+handler.command = /^(horoscopo|horóscopo|signo)$/i;
 export default handler;
