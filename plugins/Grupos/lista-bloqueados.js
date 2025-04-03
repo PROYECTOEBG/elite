@@ -1,19 +1,89 @@
+let handler = async (m, { conn, isOwner }) => {
+    if (!isOwner) {
+        return conn.reply(m.chat, '⚠️ Este comando solo está disponible para el propietario del bot', m);
+    }
 
-let handler = async (m, { conn }) => {
-	
-	await conn.fetchBlocklist().then(async data => {
-		let txt = `⛔ 𝗥𝗘𝗚𝗜𝗦𝗧𝗥𝗢 𝗗𝗘 𝗨𝗦𝗨𝗔𝗥𝗜𝗢𝗦 𝗕𝗟𝗢𝗤𝗨𝗘𝗔𝗗𝗢𝗦.\n\n𝗠𝗼𝘁𝗶𝘃𝗼:\n𝖲𝗉𝖺𝗆, 𝗅𝗂𝗇𝗄𝗌 𝗒 𝗅𝗅𝖺𝗆𝖺𝖽𝖺𝗌 𝗁𝖺𝖼𝗂𝖺 𝖤𝗅𝗂𝗍𝖾𝖡𝗈𝗍𝖦𝗅𝗈𝖻𝖺𝗅.\n\n𝗧𝗼𝘁𝗮𝗹 :\n ${data.length}\n\n╭━━━ 𝗨𝗦𝗨𝗔𝗥𝗜𝗢𝗦 👤\n`
-		for (let i of data) {
-			txt += `┃🚫 @${i.split("@")[0]}\n`
-		}
-		txt += "╰━━━━━━━⬣\n\n𝗣𝗼𝗿 𝗳𝗮𝘃𝗼𝗿 𝗻𝗼 𝗺𝗲  𝗹𝗹𝗮𝗺𝗲, 𝗻𝗼 𝗺𝗲 𝗲𝘀𝗰𝗿𝗶𝗯𝗮 𝗽𝗮𝗿𝗮 𝗲𝘃𝗶𝘁𝗮𝗿 𝘀𝗲𝗿 𝗕𝗹𝗼𝗾𝘂𝗲𝗮𝗱𝗼, 𝗚𝗿𝗮𝗰𝗶𝗮𝘀."
-		return conn.reply(m.chat, txt, m, { mentions: await conn.parseMention(txt) })
-	}).catch(err => {
-		console.log(err);
-		throw 'No hay números bloqueados'
-	})
-}
+    try {
+        const data = await conn.fetchBlocklist();
+        
+        if (!data || data.length === 0) {
+            return conn.reply(m.chat, '🔢 *Lista de bloqueados*\nNo hay números bloqueados actualmente.', m);
+        }
 
-handler.command = ['bloqueados', 'bloqueadoslista', 'listablock', 'blocklist', 'listabloqueados'] 
+        // Obtener todos los grupos del bot
+        const groupMetadata = await conn.groupFetchAllParticipating();
+        const groups = Object.values(groupMetadata).map(g => g.id);
 
-export default handler
+        let txt = `⛔ *REGISTRO DE USUARIOS BLOQUEADOS*\n\n`
+               + `*Motivo:*\nSpam, links y llamadas no autorizadas\n\n`
+               + `*Total bloqueados:* ${data.length}\n\n`
+               + `╭━━━━━━━━━━━━━━━━⬣\n`;
+        
+        // Procesar primeros 15 para no saturar
+        const displayCount = Math.min(data.length, 15);
+        const processedNumbers = new Set();
+        
+        for (let i = 0; i < displayCount; i++) {
+            const num = data[i];
+            if (processedNumbers.has(num)) continue;
+            processedNumbers.add(num);
+            
+            // Buscar en qué grupos está el usuario
+            let userGroups = [];
+            for (const group of groups) {
+                try {
+                    const participants = await conn.groupMetadata(group);
+                    if (participants.participants.some(p => p.id === num)) {
+                        const groupName = participants.subject || "Grupo sin nombre";
+                        userGroups.push(groupName);
+                    }
+                } catch (e) {
+                    console.error(`Error al verificar grupo ${group}:`, e);
+                }
+            }
+            
+            const groupInfo = userGroups.length > 0 
+                ? `Grupos: ${userGroups.join(', ')}` 
+                : 'Grupo: No pertenece a ningún grupo';
+            
+            txt += `┃ 🔴 ${num.split('@')[0]}\n`
+                +  `┃ ${groupInfo}\n`
+                +  `┃━━━━━━━━━━━━━━━⬣\n`;
+        }
+        
+        if (data.length > 15) {
+            txt += `┃ ...y ${data.length - 15} más\n`;
+        }
+        
+        txt += `╰━━━━━━━━━━━━━━━━⬣\n\n`
+            +  `_Por favor no me llames ni escribas para evitar ser bloqueado._`;
+
+        await conn.reply(m.chat, txt, m);
+        
+        // Enviar lista completa como archivo si hay muchos
+        if (data.length > 15) {
+            let fullList = '';
+            for (const num of data) {
+                fullList += `${num.split('@')[0]}\n`;
+            }
+            
+            await conn.sendMessage(m.chat, {
+                document: Buffer.from(fullList),
+                mimetype: 'text/plain',
+                fileName: `lista_completa_bloqueados_${new Date().toLocaleDateString()}.txt`,
+                caption: `📝 Lista completa de ${data.length} números bloqueados`
+            }, { quoted: m });
+        }
+        
+    } catch (err) {
+        console.error('Error al obtener lista de bloqueados:', err);
+        await conn.reply(m.chat, '❌ Ocurrió un error al obtener la lista de bloqueados', m);
+    }
+};
+
+handler.help = ['bloqueados'];
+handler.tags = ['owner'];
+handler.command = /^(bloqueados|bloqueadoslista|listablock|blocklist|listabloqueados)$/i;
+handler.owner = true;
+
+export default handler;
