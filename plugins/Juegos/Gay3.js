@@ -1,23 +1,30 @@
 import axios from 'axios';
 
 const handler = async (m, { conn }) => {
-  const who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender;
+  // Determina quién es el usuario (mencionado o quien envió el mensaje)
+  const who = m.mentionedJid && m.mentionedJid[0] 
+    ? m.mentionedJid[0] 
+    : m.fromMe 
+      ? conn.user.jid 
+      : m.sender;
   
-  // Obtener la URL de la imagen de perfil del usuario mencionado (o del que manda el mensaje)
+  // Obtiene la URL de la imagen de perfil del usuario
   let avatarUrl = await conn.profilePictureUrl(who, 'image').catch((_) => 'https://telegra.ph/file/24fa902ead26340f3df2c.png');
-  
+
   try {
-    // Hacer la llamada a la API para generar la imagen
-    const response = await axios.get(`https://some-random-api.com/canvas/gay?avatar=${avatarUrl}`, { responseType: 'arraybuffer' });
-    
-    // Convertir la imagen a un buffer para enviarla
+    // Llama a la API para generar una imagen con fondo arcoíris
+    const response = await axios.get(`https://some-random-api.com/canvas/rainbow?avatar=${avatarUrl}`, { responseType: 'arraybuffer' });
+
+    // Convierte la respuesta binaria a un buffer
     const imageBuffer = Buffer.from(response.data, 'binary');
-    
-    // Enviar la imagen generada
-    await conn.sendFile(m.chat, imageBuffer, 'error.png', '*🏳️‍🌈 𝙼𝙸𝚁𝙴𝙽 𝙰 𝙴𝚂𝚃𝙴 𝙶𝙰𝚈 🏳️‍🌈*', m);
+
+    // Envía la imagen con fondo arcoíris al chat
+    await conn.sendFile(m.chat, imageBuffer, 'gay.png', '*🏳️‍🌈 𝙼𝙸𝚁𝙴𝙽 𝙰 𝙴𝚂𝚃𝙴 𝙶𝙰𝚈 🏳️‍🌈*', m);
   } catch (error) {
     console.error('Error al obtener la imagen:', error);
-    await conn.sendMessage(m.chat, 'Hubo un error al generar la imagen, por favor intenta de nuevo más tarde.', { quoted: m });
+
+    // Enviar mensaje de error si algo falla
+    await conn.sendMessage(m.chat, { text: 'Hubo un error al generar la imagen, por favor intenta de nuevo más tarde.' }, { quoted: m });
   }
 };
 
