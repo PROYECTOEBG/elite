@@ -1,7 +1,7 @@
 const commandTracker = new Map();
 const TRACKER_TTL = 60000; // 1 minuto
 
-export async function before(m, { command }) {
+export async function before(m) {
   if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe) return;
 
   const trackerId = `${m.chat}_${m.text.slice(0, 20).trim().toLowerCase()}`;
@@ -16,7 +16,7 @@ export async function before(m, { command }) {
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
     if (!cmd) return;
 
-    // Asegurar que se omitan comandos válidos conocidos
+    // Obtener todos los comandos registrados
     const allCommands = Object.values(global.plugins || {}).flatMap(plugin => {
       if (!plugin?.command) return [];
       return Array.isArray(plugin.command)
@@ -24,23 +24,25 @@ export async function before(m, { command }) {
         : [String(plugin.command).toLowerCase()];
     });
 
+    console.log('Comando recibido:', cmd);
+    console.log('Todos los comandos válidos:', allCommands);
+
+    // Verificación directa
     if (allCommands.includes(cmd)) {
-      // Es un comando válido, no responder
+      console.log('→ Es un comando válido. No responder.');
       return;
     }
 
-    // Comando inválido, responder
+    // Si llega aquí, es inválido
+    console.log('→ Comando NO válido. Responder al usuario.');
+
     commandTracker.set(trackerId, true);
     setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
-    const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-    const response = `✦ ¡Atención ${userMention}! ✦\n\n`
-      + `El comando *${usedPrefix}${cmd}* no está registrado.\n`
-      + `▶ Verifica la ortografía\n`
-      + `▶ Usa *${usedPrefix}help* para ayuda\n\n`
-      + `🔹 EliteBot Global 🔹`;
+    const response = `*✦ Comando no reconocido:* ${usedPrefix}${cmd}\n`
+      + `Verifica la ortografía o usa *${usedPrefix}help* para ayuda.`;
 
-    await m.reply(response, { mentions: [m.sender] });
+    await m.reply(response);
 
   } catch (error) {
     console.error('Error crítico en before handler:', error);
