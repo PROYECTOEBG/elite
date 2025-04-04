@@ -309,4 +309,4 @@ function getFraseCosmica(signo) {
 
 handler.help = ['horoscopo <signo>'];
 handler.tags = ['horoscope', 'fun'];
-handler.command = /^horoscopo
+handler.command = /^hor[óo]scopo$/i;
