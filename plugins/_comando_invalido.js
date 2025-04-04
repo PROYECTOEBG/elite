@@ -34,28 +34,27 @@ export async function all(m) {
     commandTracker.set(trackerId, true);
     setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
-    // Asegurarnos de que `jid` sea un string y esté correctamente formateado
-    let jid = m.sender;
-    if (typeof jid !== 'string') {
-      jid = String(jid); // Convertimos `jid` a string si no lo es
+    // Validación robusta del JID
+    let jid = m.sender || m.chat; // Fallback a m.chat si m.sender es undefined
+    if (typeof jid !== 'string') jid = String(jid);
+
+    // Asegurar formato correcto del JID (número@s.whatsapp.net)
+    if (!jid.endsWith('@s.whatsapp.net')) {
+      // Si no es un JID válido, usamos el chat como último recurso
+      jid = m.chat.endsWith('@g.us') ? m.chat : `${jid.split('@')[0]}@s.whatsapp.net`;
     }
 
-    // Si `jid` no está en el formato correcto, usamos `m.chat` como fallback
-    if (!jid.includes('@')) {
-      jid = String(m.chat); // Si no contiene '@', lo convertimos a `m.chat`
-    }
-
-    // Mensaje de respuesta
-    const userMention = `@${jid.split('@')[0]}`;
-    const response = `✦ ¡Atención ${userMention}! ✦\n\n`
+    // Crear mención segura
+    const mention = jid.startsWith('whatsapp://') ? jid.split('@')[0] : `@${jid.split('@')[0]}`;
+    const response = `✦ ¡Atención ${mention}! ✦\n\n`
       + `El comando *${usedPrefix}${cmd}* no está registrado.\n`
       + `▶ Verifica la ortografía\n`
       + `▶ Usa *${usedPrefix}help* para ayuda\n\n`
       + `🔹 EliteBot Global 🔹`;
 
-    // Enviar mensaje y mencionar al usuario correctamente
+    // Enviar mensaje con menciones válidas
     await m.reply(response, {
-      mentions: [jid] // Mencionamos correctamente al usuario
+      mentions: [jid],
     });
   }
 }
