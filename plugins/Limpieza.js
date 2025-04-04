@@ -3,6 +3,7 @@ import path from 'path';
 
 // Carpeta de sesión que se limpia (excepto creds.json)
 const sessionPath = './GataBotSession/';
+
 // Carpetas comunes para archivos temporales o medios
 const carpetasTemporales = ['./media', './temp', './downloads', './tmp'];
 
@@ -59,15 +60,8 @@ function monitorearMemoria() {
   console.log(`[MEMORIA] Uso actual: ${Math.round(memoria * 100) / 100} MB`);
 }
 
-// Limpieza de consola
-function limpiarConsola() {
-  console.clear();
-  console.log(`[CONSOLa] Consola limpiada automáticamente a las ${new Date().toLocaleTimeString()}`);
-}
-
 // Función principal
 async function mantenimiento() {
-  limpiarConsola();
   await limpiarSession();
   for (const carpeta of carpetasTemporales) {
     await limpiarCarpetaTemporal(carpeta);
