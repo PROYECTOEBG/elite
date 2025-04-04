@@ -1,16 +1,27 @@
-handler.before = async function (m, { conn, groupMetadata }) {
+handler.before = async function (m, { conn, groupMetadata }) => {
+  // 1. Validar si es un evento de creación de grupo
   if (!m.messageStubType || !m.isGroup || m.messageStubType !== 20) return;
 
+  // 2. Obtener nombre del grupo
   let subject = groupMetadata.subject || "el grupo";
-  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Sigan las reglas.`;
-
-  await conn.sendMessage(m.chat, {
-    text: welcomeBot,
+  
+  // 3. Mensaje de bienvenida con botones (formato compatible)
+  let welcomeMsg = {
+    text: `✨ ¡Hola! Soy el bot de *${subject}*. ¡Bienvenidos!`,
     buttons: [
-      { buttonId: '.guia1', buttonText: { displayText: '📖 Guía1' }, type: 1 },
-      { buttonId: '.guia2', buttonText: { displayText: '📘 Guía2' }, type: 1 }
+      { buttonId: '.comandos', buttonText: { displayText: '📜 Comandos' }, type: 1 },
+      { buttonId: '.reglas', buttonText: { displayText: '📌 Reglas' }, type: 1 }
     ],
-    footer: "Seleccione una opción:",
-    headerType: 4 // ¡Clave! Usa el mismo que en .tiktok
-  });
+    headerType: 4 // ¡Obligatorio para botones!
+  };
+
+  // 4. Enviar mensaje (con verificación de errores)
+  try {
+    await conn.sendMessage(m.chat, welcomeMsg);
+    console.log("✅ Mensaje enviado al chat:", m.chat);
+  } catch (e) {
+    console.error("❌ Error al enviar:", e);
+    // Enviar mensaje de texto simple si fallan los botones
+    await conn.sendMessage(m.chat, { text: "¡Bienvenidos al grupo! Usen .comandos" });
+  }
 };
