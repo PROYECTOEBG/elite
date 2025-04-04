@@ -4,26 +4,24 @@ let handler = m => m
 
 handler.before = async function (m, { conn, groupMetadata }) {
   if (!m.messageStubType || !m.isGroup) return
-  if (m.messageStubType !== 20) return // Detecta cuando el bot entra a un grupo
-
+  if (m.messageStubType !== 20) return // 20 = Creación de grupo
+  
   let subject = groupMetadata.subject || "el grupo"
-  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas del grupo.\n💡 Si necesitan ayuda, elijan una opción:`
+  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas del grupo.\n💡 Si necesitan ayuda, elijan una opción:`  
 
-  let message = generateWAMessageFromContent(m.chat, {
-    interactiveMessage: {
-      body: { text: welcomeBot },
-      footer: 'Super Bot 🤖',
-      action: {
-        buttons: [
-          { buttonId: '#menu', buttonText: { displayText: '📜 Menú' }, type: 1 },
-          { buttonId: '#reglas', buttonText: { displayText: '📌 Reglas' }, type: 1 },
-          { buttonId: '#info', buttonText: { displayText: 'ℹ️ Info del bot' }, type: 1 }
-        ]
-      }
-    }
-  }, {})
+  let templateMessage = {
+    text: welcomeBot,
+    footer: '📌 Super Bot 🤖', // CORREGIDO: Footer como string
+    templateButtons: [
+      { urlButton: { displayText: "🌐 Página Web", url: "https://example.com" } },
+      { quickReplyButton: { displayText: "📜 Menú", id: "#menu" } },
+      { quickReplyButton: { displayText: "📌 Reglas", id: "#reglas" } },
+      { quickReplyButton: { displayText: "ℹ️ Info del bot", id: "#info" } }
+    ],
+    headerType: 1
+  }
 
-  await conn.relayMessage(m.chat, message.message, { messageId: message.key.id })
+  await conn.sendMessage(m.chat, templateMessage, { quoted: m })
 }
 
 export default handler
