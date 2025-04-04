@@ -1,51 +1,38 @@
-const welcomeBotHandler = async (m, { conn, usedPrefix }) => {
-    // 1. Verificar si el bot fue agregado al grupo
-    const botId = conn.user.id.split(':')[0] + '@s.whatsapp.net'; // ID del bot
-    const newMembers = m.participants || [];
-    const wasBotAdded = newMembers.includes(botId);
+let handler = m => m;
 
-    if (wasBotAdded) {
-        const groupName = m.chat.name || "este grupo";
+handler.before = async function (m, { conn, groupMetadata, usedPrefix }) {
+  if (!m.messageStubType || !m.isGroup) return;
+  if (m.messageStubType !== 20) return; // 20 = Creación de grupo
 
-        // 2. Mensaje de bienvenida (como en tu código init)
-        const welcomeText = `
-¡Hola *${groupName}*! 👋
+  // 1. Texto de bienvenida (similar a tu init)
+  let subject = groupMetadata.subject || "el grupo";
+  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas.\n💡 Usen *${usedPrefix}menu* para ver mis comandos.`;
 
-🤖 *Soy el bot del grupo*, acabo de llegar. 
-Usen *${usedPrefix}menu* para ver mis comandos. 
-¡Estoy aquí para ayudar! 🛠️
-        `.trim();
+  // 2. Botones (estructura idéntica a tu initHandler)
+  const buttons = [
+    {
+      buttonId: `${usedPrefix}menu`,
+      buttonText: { displayText: "📜 VER MENÚ" },
+      type: 1,
+    },
+    {
+      buttonId: `${usedPrefix}owner`,
+      buttonText: { displayText: "👑 CREADOR" },
+      type: 1,
+    },
+  ];
 
-        // 3. Botones (estructura idéntica a tu código init)
-        const buttons = [
-            {
-                buttonId: `${usedPrefix}menu`,
-                buttonText: { displayText: "📜 VER MENÚ" },
-                type: 1
-            },
-            {
-                buttonId: `${usedPrefix}owner`,
-                buttonText: { displayText: "👑 CREADOR" },
-                type: 1
-            }
-        ];
-
-        // 4. Enviar mensaje (misma sintaxis que tu initHandler)
-        await conn.sendMessage(
-            m.chat,
-            {
-                text: welcomeText,
-                buttons: buttons,
-                footer: "¡Gracias por agregarme!",
-                viewOnce: true // Opcional: como en tu código original
-            },
-            { quoted: m }
-        );
-    }
+  // 3. Envío con botones (como en tu init)
+  await conn.sendMessage(
+    m.chat,
+    {
+      text: welcomeBot,
+      buttons: buttons,
+      footer: "¡Gracias por agregarme!",
+      // viewOnce: true // Opcional (si lo usabas en init)
+    },
+    { quoted: m }
+  );
 };
 
-// 5. Configuración del evento (como necesitas)
-welcomeBotHandler.event = 'group-participants-update';
-welcomeBotHandler.action = 'add'; // Se activa al agregar miembros
-
-export default welcomeBotHandler;
+export default handler;
