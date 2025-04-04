@@ -1,30 +1,19 @@
-const handler = async (m, { conn }) => {
-  if (!m.isGroup) return;  // Asegúrate de que el mensaje es en un grupo
+const handler = async (m, { conn, command }) => {
+  // Verifica si el mensaje fue un comando que no está en la base de datos
+  const validCommands = ['comando1', 'comando2', 'comando3']; // Aquí agrega los comandos válidos
+  const who = m.mentionedJid && m.mentionedJid[0] || m.sender; // Identificar al usuario que envió el mensaje
   
-  // Obtén los participantes del grupo
-  const groupMetadata = await conn.groupMetadata(m.chat);
-  const participants = groupMetadata.participants;
-
-  // Si el mensaje contiene un nuevo miembro, o si es el último miembro que interactuó
-  const newMember = m.mentionedJid && m.mentionedJid[0] || m.sender;
-
-  // Obtener información del contacto (esto incluye si es un bot)
-  const contact = await conn.getContact(newMember); 
-
-  // Verificar si el nuevo miembro es un bot
-  if (contact.isBot) {
-    // Expulsar al bot del grupo
-    await conn.groupRemove(m.chat, [newMember]);
-
-    // Enviar un mensaje de alerta al grupo
+  if (!validCommands.includes(command)) {
+    // Enviar mensaje si el comando no existe y etiquetar al usuario
     await conn.sendMessage(m.chat, {
-      text: `⚠️ *¡Un bot ha sido expulsado del grupo!* \nEl miembro con número ${newMember} fue detectado como un bot.`,
+      text: `👋 *Hola humano @${who.split('@')[0]}*!\nEste comando no existe en mi base de datos, por favor verifica si escribiste bien. Si necesitas ayuda, usa el comando *#menu* para ver los comandos disponibles.`,
+      mentions: [who], // Etiquetar al usuario que cometió el error
     });
   }
 };
 
-handler.help = ['botcheck'];
-handler.tags = ['moderación'];
-handler.command = /^(botcheck)$/i;
+handler.help = ['comando1', 'comando2', 'comando3']; // Lista de comandos válidos
+handler.tags = ['general'];
+handler.command = /^(comando1|comando2|comando3)$/i; // Comandos válidos que el bot puede reconocer
 
 export default handler;
