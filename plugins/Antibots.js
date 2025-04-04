@@ -1,14 +1,26 @@
-const commandRegistry = new Map();
+const processedCommands = new Set();
 
 export async function before(m) {
-  // 1. Verificación básica del mensaje
+  // 1. Filtrado estricto de mensajes
   if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe) return;
 
+  // 2. Sistema anti-duplicados reforzado
+  const msgId = `${m.chat}_${m.id}`;
+  if (processedCommands.has(msgId)) return;
+  processedCommands.add(msgId);
+
+  // 3. Limpieza periódica
+  if (processedCommands.size > 100) {
+    const recent = Array.from(processedCommands).slice(-50);
+    processedCommands.clear();
+    recent.forEach(id => processedCommands.add(id));
+  }
+
   try {
-    // 2. Configuración del prefijo (a prueba de fallos)
+    // 4. Configuración a prueba de fallos
     const prefix = global.prefix instanceof RegExp ? global.prefix : /^[\.\!\#\/]/i;
 
-    // 3. Extracción del comando
+    // 5. Extracción del comando
     const prefixMatch = m.text.match(prefix);
     if (!prefixMatch) return;
     
@@ -16,86 +28,61 @@ export async function before(m) {
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
     if (!cmd) return;
 
-    // 4. Comandos especiales que se ignoran
+    // 6. Comandos especiales silenciados
     if (cmd === 'bot') return;
 
-    // 5. Verificación de existencia del comando (sistema nuevo)
+    // 7. Verificación de existencia
     const exists = await checkCommandExistence(cmd);
     
     if (!exists) {
-      await handleNonexistentCommand(m, usedPrefix, cmd);
-      return;
+      await handleInvalidCommand(m, usedPrefix, cmd);
     }
-
-    // ... (tu lógica para comandos válidos)
+    // 8. NO responder a comandos válidos aquí
+    // El handler específico del comando debe responder
 
   } catch (error) {
     console.error('Error en before handler:', error);
   }
 }
 
-// Nuevo sistema de verificación de comandos
 async function checkCommandExistence(cmd) {
-  // Primera verificación: caché local
-  if (commandRegistry.has(cmd)) {
-    return commandRegistry.get(cmd);
-  }
-
-  // Segunda verificación: plugins globales
-  if (!global.plugins || typeof global.plugins !== 'object') {
-    console.error('Error: global.plugins no está definido correctamente');
-    return false;
-  }
-
-  let exists = false;
+  if (!global.plugins || typeof global.plugins !== 'object') return false;
   
-  for (const [name, plugin] of Object.entries(global.plugins)) {
+  for (const plugin of Object.values(global.plugins)) {
     try {
-      if (!plugin || typeof plugin !== 'object') continue;
+      if (!plugin?.command) continue;
       
-      if (plugin.command) {
-        const commands = Array.isArray(plugin.command) ? 
-                       plugin.command.map(String) : 
-                       [String(plugin.command)];
-        
-        if (commands.some(c => c.toLowerCase() === cmd)) {
-          exists = true;
-          break;
-        }
+      const commands = Array.isArray(plugin.command) ?
+        plugin.command.map(String) :
+        [String(plugin.command)];
+      
+      if (commands.some(c => c.toLowerCase() === cmd)) {
+        return true;
       }
     } catch (e) {
-      console.error(`Error verificando plugin ${name}:`, e);
+      console.error('Error verificando plugin:', e);
     }
   }
-
-  // Actualizar caché
-  commandRegistry.set(cmd, exists);
-  return exists;
+  return false;
 }
 
-// Handler mejorado para comandos no existentes
-async function handleNonexistentCommand(m, prefix, invalidCmd) {
+async function handleInvalidCommand(m, prefix, invalidCmd) {
   try {
-    // 1. Preparar mención al usuario
     const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
     
-    // 2. Construir mensaje de respuesta
     const replyMsg = `❌ *${userMention}, el comando \`${prefix}${invalidCmd}\` no existe.*\n\n` +
                     `📌 Usa *${prefix}help* para ver los comandos disponibles.`;
     
-    // 3. Enviar respuesta con dos métodos alternativos
-    try {
-      await m.reply(replyMsg, { mentions: [m.sender] });
-    } catch (error) {
-      console.error('Error con m.reply, intentando método alternativo...');
-      await this.sendMessage(m.chat, { text: replyMsg }, { quoted: m });
-    }
+    await m.reply(replyMsg, { mentions: [m.sender] });
     
   } catch (error) {
-    console.error('Error crítico en handleNonexistentCommand:', error);
-    // Respuesta mínima de emergencia
+    console.error('Error al manejar comando inválido:', error);
     try {
-      await m.reply(`⚠️ El comando \`${prefix}${invalidCmd}\` no existe.`);
+      await this.sendMessage(
+        m.chat,
+        { text: `⚠️ Comando \`${prefix}${invalidCmd}\` no reconocido` },
+        { quoted: m }
+      );
     } catch (finalError) {
       console.error('Fallo al enviar respuesta mínima:', finalError);
     }
