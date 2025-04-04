@@ -1,10 +1,10 @@
 let handler = async (m, { conn, args, command, usedPrefix, isAdmin, isROwner }) => {
-  // Comandos de configuración (.on welcome/.of welcome)
+  // Sistema de activación/desactivación
   if (command === 'welcome') {
-    if (!m.isGroup) return m.reply('🚫 Este comando solo funciona en grupos');
-    if (!isAdmin && !isROwner) return m.reply('🔐 Solo administradores pueden configurar bienvenidas');
+    if (!m.isGroup) return m.reply('🚫 Solo para grupos');
+    if (!isAdmin && !isROwner) return m.reply('🔐 Solo admins');
     
-    if (!global.db.data.chats[m.chat]) global.db.data.chats[m.chat] = {};
+    global.db.data.chats[m.chat] = global.db.data.chats[m.chat] || {};
     
     if (args[0]?.toLowerCase() === 'on') {
       global.db.data.chats[m.chat].welcome = true;
@@ -13,13 +13,13 @@ let handler = async (m, { conn, args, command, usedPrefix, isAdmin, isROwner }) 
       global.db.data.chats[m.chat].welcome = false;
       m.reply('❌ Bienvenidas desactivadas');
     } else {
-      m.reply(`📌 Uso:\n*${usedPrefix}on welcome* - Activar\n*${usedPrefix}of welcome* - Desactivar`);
+      m.reply(`📌 Uso:\n${usedPrefix}on welcome\n${usedPrefix}of welcome`);
     }
     return;
   }
 
-  // Handler para eventos de grupo
-  if (!m.isGroup || !m.messageStubType || ![27, 28].includes(m.messageStubType)) return;
+  // Handler de eventos
+  if (!m.isGroup || !m.messageStubType) return;
 
   try {
     const chat = global.db.data.chats[m.chat] || {};
@@ -28,44 +28,34 @@ let handler = async (m, { conn, args, command, usedPrefix, isAdmin, isROwner }) 
     const userJid = m.messageStubParameters?.[0];
     if (!userJid) return;
 
-    // Solución para el error: Verificar si es ADD o REMOVE independientemente del type
-    const eventType = m.messageStubType; // 27 (entrada) o 28 (salida)
+    // Solución definitiva para el error
+    const eventType = m.messageStubType; // Usamos solo este valor
 
-    // Obtener metadatos del grupo solo cuando sea necesario
-    const getGroupData = async () => {
-      try {
-        return await conn.groupMetadata(m.chat);
-      } catch {
-        return { subject: "este grupo", desc: "" };
-      }
+    // Configuración de imágenes (reemplázalas)
+    const IMAGENES = {
+      bienvenida: 'https://telegra.ph/file/bienvenida.jpg',
+      despedida: 'https://telegra.ph/file/despedida.jpg'
     };
 
-    const groupData = eventType === 27 ? await getGroupData() : null;
-    const groupName = groupData?.subject || "el grupo";
     const userName = `@${userJid.split('@')[0]}`;
-
-    // URLs de imágenes (¡cámbialas por las tuyas!)
-    const IMAGEN_BIENVENIDA = 'https://qu.ax/wDNjj.jpg';
-    const IMAGEN_DESPEDIDA = 'https://qu.ax/wDNjj.jpg';
-
-    // Bienvenida
-    if (eventType === 27) {
+    
+    if (eventType === 27) { // Entrada
+      const groupData = await conn.groupMetadata(m.chat).catch(() => null);
       await conn.sendMessage(m.chat, {
-        image: { url: IMAGEN_BIENVENIDA },
-        caption: `🎉 ¡Bienvenido/a ${userName} a ${groupName}!`,
+        image: { url: IMAGENES.bienvenida },
+        caption: `🎊 ¡Bienvenido/a ${userName}!\nAl grupo: ${groupData?.subject || ''}`,
         mentions: [userJid]
       });
     } 
-    // Despedida
-    else if (eventType === 28) {
+    else if (eventType === 28) { // Salida
       await conn.sendMessage(m.chat, {
-        image: { url: IMAGEN_DESPEDIDA },
-        caption: `😢 ${userName} ha dejado el grupo`,
+        image: { url: IMAGENES.despedida },
+        caption: `👋 Adiós ${userName}`,
         mentions: [userJid]
       });
     }
   } catch (error) {
-    console.error('Error en handler de bienvenidas:', error);
+    console.error('Error en bienvenidas:', error);
   }
 }
 
