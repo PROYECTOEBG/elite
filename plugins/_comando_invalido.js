@@ -70,11 +70,10 @@ export async function all(m) {
   const mentionId = jid.split('@')[0];
   const mention = mentionId ? `@${mentionId}` : '@unknown';
 
-  const response = `✦ ¡Atención ${mention}! ✦\n\n` +
-    `El comando *${usedPrefix}${cmd}* no está registrado.\n` +
-    `▶ Verifica la ortografía\n` +
-    `▶ Usa *${usedPrefix}menu* para ver comandos disponibles\n\n` +
-    `🔹 ${global.botname} 🔹`;
+  const response = `✦ ¡Hey! 
+Parece que escribiste mal el comando verifica si está bien escrito e intenta de nuevo.
+
+©EliteBotGlobal 2023`;
 
   try {
     if (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@g.us')) {
