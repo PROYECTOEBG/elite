@@ -32,10 +32,10 @@ function ejecutarSubbot(numero) {
     }
 }
 
-// Crear subbots (bot 1, bot 2, bot 3...)
-registrarSubbot(1);
-registrarSubbot(2);
-registrarSubbot(3);
+// Crear subbots (en este caso, 10 subbots: bot 1, bot 2, ..., bot 10)
+for (let i = 1; i <= 10; i++) {  // Cambié el 4 por 10 para crear exactamente 10 subbots
+    registrarSubbot(i);
+}
 
 // Función para detectar si los subbots están activos
 function verificarSubbots() {
@@ -76,14 +76,14 @@ function reiniciarBot() {
 // Verificar el estado de los subbots cada 1 segundo
 setInterval(verificarSubbots, 1000); // Ejecuta cada 1 segundo
 
-// Simular que un subbot se vuelve inactivo
+// Simular que un subbot se vuelve inactivo (por ejemplo, bot 1)
 setTimeout(() => {
     cambiarEstadoSubbot(1, false); // Desactivamos el bot 1 para probar
 }, 5000); // Después de 5 segundos
 
 // Simulamos que el bot sigue funcionando
 setInterval(() => {
-    console.log(ejecutarSubbot(1));
-    console.log(ejecutarSubbot(2));
-    console.log(ejecutarSubbot(3));
+    for (let i = 1; i <= 10; i++) {  // Para 10 subbots, ejecutamos todos
+        console.log(ejecutarSubbot(i));
+    }
 }, 2000); // Ejecuta cada 2 segundos
