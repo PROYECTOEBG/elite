@@ -4,7 +4,7 @@ handler.before = async function (m, { conn, participants, groupMetadata, isBotAd
   if (!m.messageStubType || !m.isGroup) return
 
   // Foto predeterminada (reemplaza con tu URL)
-  const FOTO_PREDETERMINADA = 'https://qu.ax/wDNjj.jpg' 
+  const FOTO_PREDETERMINADA = 'https://telegra.ph/file/0541d4ac7ecf51a1faca9.jpg' 
   
   // Obtener foto de perfil o usar predeterminada
   let pp
