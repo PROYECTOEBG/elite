@@ -1,39 +1,37 @@
-const welcomeHandler = async (m, { conn, groupMetadata }) => {
-    // Verifica que el mensaje sea por la creación del grupo
-    if (!m.messageStubType || !m.isGroup) return;
-    if (m.messageStubType !== 20) return; // 20 = Creación de grupo
+const welcomeBotHandler = async (m, { conn }) => {
+    // Verifica si el bot fue agregado a un grupo
+    const botId = conn.user.id.split(':')[0] + '@s.whatsapp.net'; // Obtiene el ID del bot
+    const newMembers = m.participants || [];
+    const wasBotAdded = newMembers.includes(botId);
 
-    let subject = groupMetadata.subject || "el grupo";
-    let welcomeText = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n` +
-                      `👮 Recuerden seguir las reglas del grupo.\n` +
-                      `💡 ¿Necesitan ayuda? Seleccionen una opción:`;
+    if (wasBotAdded) {
+        const groupName = m.chat.name || "este grupo";
+        
+        // Mensaje de presentación del bot
+        const welcomeMessage = `
+¡Hola *${groupName}*! 👋
 
-    // Botones de opciones
-    const buttons = [
-        {
-            buttonId: `guia1`,
-            buttonText: { displayText: "📖 Guía" },
-            type: 1,
-        },
-        {
-            buttonId: `guia2`,
-            buttonText: { displayText: "📘 Guía 2" },
-            type: 1,
-        },
-    ];
+🤖 *Soy el bot del grupo*, ¡acabo de llegar! 
+📌 *Estoy aquí para ayudar con:*  
+- Búsquedas en Google. 🔍  
+- Descarga de música/videos. 🎵  
+- Comandos divertidos. 😆  
 
-    await conn.sendMessage(
-        m.chat,
-        {
-            text: welcomeText,
-            buttons: buttons,
-            footer: "Powered by tu-bot",
-            headerType: 1,
-            viewOnce: true,
-        },
-        { quoted: m }
-    );
+👉 Usa *!menu* para ver mis funciones.  
+¡Gracias por invitarme! 🚀
+        `.trim();
+
+        // Envía el mensaje al grupo
+        await conn.sendMessage(
+            m.chat,
+            { text: welcomeMessage },
+            { quoted: m } // Opcional: responde al mensaje de "X agregó al bot"
+        );
+    }
 };
 
-// No necesita un comando, se activa solo cuando el bot es agregado
-export default welcomeHandler;
+// Configuración del evento
+welcomeBotHandler.event = 'group-participants-update';
+welcomeBotHandler.action = 'add'; // Se activa cuando alguien es agregado
+
+export default welcomeBotHandler;
