@@ -1,4 +1,4 @@
-const subbots = {};
+/*const subbots = {};
 
 // Función para registrar un subbot con nombre genérico (bot 1, bot 2, etc.)
 function registrarSubbot(numero) {
@@ -87,3 +87,4 @@ setInterval(() => {
         console.log(ejecutarSubbot(i));
     }
 }, 2000); // Ejecuta cada 2 segundos
+*/
