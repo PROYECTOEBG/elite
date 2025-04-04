@@ -13,7 +13,7 @@ let handler = async (m, { conn, participants, usedPrefix, command }) => {
   await conn.sendMessage(
     m.chat,
     { 
-      text: `Adios basura 🤮@${user.split('@')[0]}\n\n *¡Tienes 15 segundos para decir tus últimas palabras!* ⏳`,
+      text: `*ADIOS BASURA🤮\n@${user.split('@')[0]}\n\n *¡Tienes 15 segundos para decir tus últimas palabras!* ⏳`,
       mentions: [user]
     }
   );
@@ -25,7 +25,7 @@ let handler = async (m, { conn, participants, usedPrefix, command }) => {
       await conn.sendMessage(
         m.chat,
         { 
-          text: `Le mandamos botando a esta basura *@${user.split('@')[0]}, ojalá no vuelva.`,
+          text: `Le mandamos botando a esta basura\n@${user.split('@')[0]}\n\nOjalá no vuelva.`,
           mentions: [user]
         }
       );
