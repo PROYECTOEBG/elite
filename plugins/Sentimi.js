@@ -1,6 +1,7 @@
-// Definimos el subbot de motivación
+// Estructura para gestionar los subbots
 const subbots = {};
 
+// Registrar un subbot
 function registrarSubbot(nombre, funcion) {
     subbots[nombre] = {
         activo: true,
@@ -9,6 +10,7 @@ function registrarSubbot(nombre, funcion) {
     console.log(`Subbot '${nombre}' registrado y activo.`);
 }
 
+// Cambiar el estado (activo/inactivo) de un subbot
 function cambiarEstadoSubbot(nombre, estado) {
     if (subbots[nombre]) {
         subbots[nombre].activo = estado;
@@ -18,6 +20,7 @@ function cambiarEstadoSubbot(nombre, estado) {
     }
 }
 
+// Ejecutar un subbot específico si está activo
 function ejecutarSubbot(nombre) {
     const subbot = subbots[nombre];
     if (subbot && subbot.activo) {
@@ -27,7 +30,7 @@ function ejecutarSubbot(nombre) {
     }
 }
 
-// Registrar subbot de motivación
+// Subbot de motivación
 registrarSubbot("motivacion", () => {
     const frases = [
         "¡Sigue adelante, lo estás haciendo genial!",
@@ -38,15 +41,32 @@ registrarSubbot("motivacion", () => {
     return frases[Math.floor(Math.random() * frases.length)];
 });
 
-// Enviar motivación cada 10 segundos
+// Subbot de chistes
+registrarSubbot("chistes", () => {
+    const chistes = [
+        "¿Por qué los programadores confunden Halloween con Navidad? Porque OCT 31 = DEC 25.",
+        "¿Cómo se llama un oso sin dientes? ¡Oso gomoso!",
+        "¿Qué le dijo el 0 al 8? ¡Bonito cinturón!"
+    ];
+    return chistes[Math.floor(Math.random() * chistes.length)];
+});
+
+// Mantener subbots activos en intervalos
 setInterval(() => {
     if (subbots["motivacion"]?.activo) {
         console.log("Subbot motivación dice: " + ejecutarSubbot("motivacion"));
     }
-}, 10000); // Cada 10 segundos
+}, 10000); // Cada 10 segundos para motivación
 
-// Puedes cambiar el estado del subbot en cualquier momento
-// Por ejemplo, para desactivarlo después de un tiempo (5 segundos):
+setInterval(() => {
+    if (subbots["chistes"]?.activo) {
+        console.log("Subbot chistes dice: " + ejecutarSubbot("chistes"));
+    }
+}, 15000); // Cada 15 segundos para chistes
+
+// Desactivación de un subbot después de cierto tiempo (por ejemplo, 50 segundos)
 setTimeout(() => {
-    cambiarEstadoSubbot("motivacion", false);  // Desactiva el subbot
-}, 50000); // 50 segundos (el subbot se desactivará después de 50 segundos)
+    cambiarEstadoSubbot("motivacion", false);  // Desactivar motivación después de 50 segundos
+}, 50000);
+
+// Puedes añadir más subbots aquí de forma sencilla, sólo registra más subbots con "registrarSubbot".
