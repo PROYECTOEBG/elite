@@ -1,26 +1,28 @@
-export async function before(m, { conn, participants, groupMetadata }) {
-  // Verifica que sea un mensaje de grupo y que se active un evento de bienvenida/despedida
-  if (!m.messageStubType || !m.isGroup) return;
-  
-  // Verifica que el chat esté configurado para subbots
-  let chat = global.db.data.chats[m.chat];
-  if (!chat.subbot) return; // Solo se ejecuta si es un subbot
+module.exports = {
+  name: 'bienvenida',
+  description: 'Comando de bienvenida',
+  async execute(message, args) {
+    const member = message.mentions.members.first() || message.guild.members.cache.get(args[0]);
+    if (!member) {
+      return message.reply('¡Por favor menciona a un miembro del servidor!');
+    }
 
-  // Extrae el nombre del grupo (con valor por defecto)
-  const subject = groupMetadata && groupMetadata.subject ? groupMetadata.subject : "Grupo sin nombre";
+    // Crear el mensaje de bienvenida
+    const bienvenida = `
+*╔══════════════*
+*╟🏆𝐵𝐼𝐸𝑁𝑉𝐸𝑁𝐼𝐷𝑂/𝐴*
+*╠══════════════*
+*╟*🛡️Pruebas ProyectoX -
+*╟👤${member.user.tag}*
+*╟📄𝐼𝑁𝐹𝑂𝑅𝑀𝐴𝐶𝐼𝑂́𝑁:*
 
-  // Evento de bienvenida (por ejemplo, messageStubType 27 para nuevos miembros)
-  if (m.messageStubType === 27 && m.messageStubParameters.length > 0) {
-    // El primer parámetro suele ser el ID del usuario agregado
-    let newUser = m.messageStubParameters[0];
-    let welcomeMsg = `¡Bienvenido(a) @${newUser.split('@')[0]} al grupo *${subject}*!\nEsperamos que disfrutes tu estadía.`;
-    await conn.sendMessage(m.chat, { text: welcomeMsg, mentions: [newUser] });
+𝑆𝐼𝑁 𝐷𝐸𝑆𝐶𝐿𝑅𝐼𝑃𝐶𝐼𝑂́𝑁
+
+*╟* ¡🇼‌🇪‌🇱‌🇨‌🇴‌🇲‌🇪!
+*╚══════════════*
+`;
+
+    // Enviar el mensaje de bienvenida en el canal adecuado
+    message.channel.send(bienvenida);
   }
-
-  // Evento de despedida (por ejemplo, messageStubType 28 o 32 para salida de miembros)
-  if ((m.messageStubType === 28 || m.messageStubType === 32) && m.messageStubParameters.length > 0) {
-    let leftUser = m.messageStubParameters[0];
-    let farewellMsg = `Adiós @${leftUser.split('@')[0]}, te extrañaremos en *${subject}*. ¡Hasta pronto!`;
-    await conn.sendMessage(m.chat, { text: farewellMsg, mentions: [leftUser] });
-  }
-}
+};
