@@ -1,5 +1,5 @@
-import uploadFile from '../lib/uploadFile.js';
-import uploadImage from '../lib/uploadImage.js';
+import uploadFile from '../../lib/uploadFile.js';
+import uploadImage from '../../lib/uploadImage.js';
 const handler = async (m) => {
   const q = m.quoted ? m.quoted : m;
   const mime = (q.msg || q).mimetype || '';
