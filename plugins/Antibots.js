@@ -1,12 +1,28 @@
-export async function fail(m, { usedPrefix }) {
-  const prefix = (global.prefix instanceof RegExp) ? global.prefix : /^[\.\!\#\/]/i;
-  const prefixMatch = m.text?.match(prefix);
-  if (!prefixMatch) return;
+export const customPrefix = /^[\.\!\#\/]/i;
 
-  const cmd = m.text.slice(prefixMatch[0].length).trim().split(/\s+/)[0]?.toLowerCase();
+export const handler = async (m, { usedPrefix }) => {
+  if (!m.text) return;
+
+  const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
   if (!cmd) return;
 
-  // Responder solo si no es válido
-  const response = `✦ El comando *${usedPrefix}${cmd}* no está registrado.\nUsa *${usedPrefix}help* para ver los comandos disponibles.`;
-  await m.reply(response);
-}
+  // Obtener todos los comandos válidos
+  const allCommands = Object.values(global.plugins || {}).flatMap(plugin => {
+    if (!plugin?.command) return [];
+    return Array.isArray(plugin.command)
+      ? plugin.command.map(c => String(c).toLowerCase())
+      : [String(plugin.command).toLowerCase()];
+  });
+
+  if (allCommands.includes(cmd)) return; // ES VÁLIDO, no respondas
+
+  // Comando no válido → responde
+  const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
+  const response = `✦ ¡Hola ${userMention}!\n\nEl comando *${usedPrefix}${cmd}* no existe.\nUsa *${usedPrefix}help* para ver los comandos válidos.`;
+
+  await m.reply(response, { mentions: [m.sender] });
+};
+
+export const tags = ['info'];
+export const help = ['Comando inválido handler'];
+export const disabled = false;
