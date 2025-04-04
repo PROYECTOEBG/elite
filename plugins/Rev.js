@@ -22,8 +22,8 @@ handler.before = async function (m, { conn, groupMetadata }) {
 ▸  .menu → *Menú general*  
 ▸  .menuimg → *Imágenes AI*  
 ▸  .menuhot → *Contenido hot*  
-▸  .menuaudios→ *Audios y efectos*  
-▸  .menujuegos → *Juegos grupales*  
+▸  .menuaudios→ *Efectos*  
+▸  .menujuegos → *Juegos grupal*  
 ▸  .menufreefire → *Free Fire tools*  
 ━━━━━━━━━━━━━━━━━━━  
 ©EliteBotGlobal 2023`
