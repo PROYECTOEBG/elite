@@ -6,7 +6,7 @@ handler.before = async function (m, { conn, groupMetadata }) {
   
   let subject = groupMetadata.subject || "el grupo"
   let botName = conn.user.name // Obtiene el nombre de la cuenta del bot
-  let imageUrl = 'https://linkdeimagen.com/imagen.jpg' // Aquí pones el enlace de la imagen
+  let imageUrl = 'https://qu.ax/nxskN.jpg' // Aquí pones el enlace de la imagen
   
   let welcomeBot = `🥇 ¡𝗛𝗢𝗟𝗔 𝗚𝗥𝗨𝗣𝗢!🥇  
 ¡Soy ${botName}, su nuevo asistente digital!  
@@ -28,11 +28,11 @@ handler.before = async function (m, { conn, groupMetadata }) {
 ━━━━━━━━━━━━━━━━━━━  
 ©EliteBotGlobal 2023`
 
-  // Enviar el mensaje con la imagen
-  await this.sendMessage(m.chat, { 
+  // Enviar la imagen junto con el texto
+  await conn.sendMessage(m.chat, { 
     text: welcomeBot, 
     caption: welcomeBot, 
-    image: { url: imageUrl } 
+    image: { url: imageUrl } // Utilizando el enlace directo de la imagen
   }, { quoted: m })
 }
 
