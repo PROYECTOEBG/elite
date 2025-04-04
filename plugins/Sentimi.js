@@ -20,7 +20,5 @@ function detectarEmocion(texto) {
     return 'No estoy seguro de cómo te sientes. ¿Podrías contarme más?';
 }
 
-// Ejemplo de uso:
-console.log(detectarEmocion("Hoy me siento muy feliz y emocionado"));
-console.log(detectarEmocion("Estoy un poco triste por lo que pasó"));
-console.log(detectarEmocion("Meh, solo otro día normal"));
+// Aquí llamas la función
+console.log(detectarEmocion("feliz"));
