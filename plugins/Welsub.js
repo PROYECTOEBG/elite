@@ -42,7 +42,7 @@ handler.before = async function (m, { conn, participants, groupMetadata, isBotAd
           showAdAttribution: true,
           renderLargerThumbnail: true,
           thumbnailUrl: pp, 
-          title: '🌟 BIENVENIDO/A 🌟',
+          title: '𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃',
           containsAutoReply: true,
           mediaType: 1, 
           sourceUrl: 'https://whatsapp.com'
@@ -72,7 +72,7 @@ handler.before = async function (m, { conn, participants, groupMetadata, isBotAd
           showAdAttribution: true,
           renderLargerThumbnail: true,
           thumbnailUrl: pp, 
-          title: '👋 ¡ADIÓS! 👋',
+          title: '𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃 ',
           containsAutoReply: true,
           mediaType: 1, 
           sourceUrl: 'https://whatsapp.com'
