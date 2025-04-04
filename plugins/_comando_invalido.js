@@ -37,13 +37,16 @@ export async function all(m) {
     // Asegurarse de que `m.sender` sea una cadena de texto válida
     let jid = m.sender;
     if (typeof jid !== 'string') {
-      // Asegurándonos de que siempre sea una cadena de texto válida
-      jid = m.key?.participant || m.chat; // Si no está en `sender`, utilizamos el participante del mensaje o el chat
+      // Verificamos si `m.key` tiene la propiedad `participant`, de no ser así usamos `m.chat`
+      jid = m.key?.participant || m.chat;
     }
 
-    // Si `jid` no es válido, se debe tratar como una cadena
-    if (typeof jid !== 'string' || !jid.includes('@')) {
-      jid = String(m.chat); // Usamos el ID del chat como fallback
+    // Si `jid` no es una cadena de texto, la convertimos a una
+    jid = String(jid);
+
+    // Verificamos que el `jid` tenga el formato correcto (contenga '@')
+    if (!jid.includes('@')) {
+      jid = String(m.chat); // Usamos el ID del chat como fallback si no es válido
     }
 
     // Asegurándonos de que no se pase un valor no válido a `mentions`
