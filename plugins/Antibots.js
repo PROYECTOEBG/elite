@@ -1,143 +1,88 @@
 export async function before(m) {
-  // Verificación inicial de requisitos
-  if (!global.prefix || typeof global.prefix.test !== 'function') {
-    console.error('Error: El prefijo no está configurado correctamente');
+  // 1. Verificaciones básicas
+  if (!m.text) return;
+  if (!global.prefix) {
+    console.error('Error: No se ha definido global.prefix');
     return;
   }
 
-  if (!m.text) return; // Si no hay texto, no hacer nada
+  // 2. Detección del prefijo
+  const prefixRegex = new RegExp(`^(${escapeRegex(global.prefix)})`, 'i');
+  if (!prefixRegex.test(m.text)) return;
 
-  // Verificar si el mensaje comienza con el prefijo
-  if (!global.prefix.test(m.text)) return;
+  // 3. Extraer comando
+  const usedPrefix = m.text.match(prefixRegex)[0];
+  const [command, ...args] = m.text.slice(usedPrefix.length).trim().split(' ');
+  const cmd = command.toLowerCase();
 
-  try {
-    const prefixMatch = global.prefix.exec(m.text);
-    if (!prefixMatch) return;
-    
-    const usedPrefix = prefixMatch[0];
-    const fullCommand = m.text.slice(usedPrefix.length).trim();
-    const [command, ...args] = fullCommand.split(' ');
-    const commandLower = command.toLowerCase();
-
-    // Comando especial "bot" (no hacer nada)
-    if (commandLower === "bot") return;
-
-    // Verificar si el comando existe
-    if (!isValidCommand(commandLower, global.plugins)) {
-      await handleInvalidCommand(m, usedPrefix, fullCommand);
-      return;
-    }
-
-    // Procesar comando válido
-    await processValidCommand(m, usedPrefix, commandLower);
-    
-  } catch (error) {
-    console.error('Error en el manejo del comando:', error);
-    await m.reply('《✖》Ocurrió un error al procesar tu comando. Por favor intenta nuevamente.');
+  // 4. Manejo de comandos incorrectos
+  if (!isValidCommand(cmd)) {
+    return await handleWrongCommand(m, usedPrefix, cmd);
   }
+
+  // 5. Resto de tu lógica original...
+  // (Mantén aquí tu código para comandos válidos)
 }
 
-// Función para validar comandos
-function isValidCommand(command, plugins) {
-  if (!plugins) return false;
+// Función auxiliar para escapar regex
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Función mejorada para validar comandos
+function isValidCommand(cmd) {
+  if (!global.plugins) return false;
   
-  return Object.values(plugins).some(plugin => {
+  return Object.values(global.plugins).some(plugin => {
     if (!plugin.command) return false;
-    
-    const commands = Array.isArray(plugin.command) ? 
-                    plugin.command : 
-                    [plugin.command];
-                    
-    return commands.includes(command);
+    const commands = Array.isArray(plugin.command) ? plugin.command : [plugin.command];
+    return commands.includes(cmd);
   });
 }
 
-// Manejo de comandos inválidos
-async function handleInvalidCommand(m, usedPrefix, fullCommand) {
-  const commandAttempt = fullCommand.split(' ')[0];
-  const similarCommands = findSimilarCommands(commandAttempt, global.plugins);
+// Manejo mejorado de comandos erróneos
+async function handleWrongCommand(m, prefix, wrongCmd) {
+  const allCommands = getAllCommands();
+  const suggestions = getSuggestions(wrongCmd, allCommands, 3);
   
-  let replyMessage = `《✖》El comando *${usedPrefix}${commandAttempt}* no existe.`;
+  let reply = `❌ Comando *"${prefix}${wrongCmd}"* no reconocido.`;
   
-  if (similarCommands.length > 0) {
-    replyMessage += `\n\n¿Quizás quisiste decir:\n${similarCommands
-      .map(cmd => `» *${usedPrefix}${cmd}*`)
-      .join('\n')}`;
+  if (suggestions.length > 0) {
+    reply += `\n\n¿Quisiste decir?\n${suggestions.map(cmd => `▸ *${prefix}${cmd}*`).join('\n')}`;
   }
   
-  replyMessage += `\n\nEscribe *${usedPrefix}help* para ver todos los comandos disponibles.`;
+  reply += `\n\nUsa *${prefix}help* para ver todos los comandos.`;
   
-  await m.reply(replyMessage);
+  await m.reply(reply);
 }
 
-// Función para encontrar comandos similares (ayuda al usuario)
-function findSimilarCommands(inputCommand, plugins, maxSuggestions = 3) {
-  if (!plugins) return [];
+// Obtener todos los comandos disponibles
+function getAllCommands() {
+  if (!global.plugins) return [];
   
-  const allCommands = [];
-  Object.values(plugins).forEach(plugin => {
+  const commands = [];
+  Object.values(global.plugins).forEach(plugin => {
     if (plugin.command) {
       if (Array.isArray(plugin.command)) {
-        allCommands.push(...plugin.command);
+        commands.push(...plugin.command);
       } else {
-        allCommands.push(plugin.command);
+        commands.push(plugin.command);
       }
     }
   });
   
-  // Eliminar duplicados
-  const uniqueCommands = [...new Set(allCommands)];
-  
-  // Calcular similitud (puedes mejorar este algoritmo)
-  return uniqueCommands
-    .map(cmd => ({
-      command: cmd,
-      similarity: calculateSimilarity(inputCommand, cmd)
-    }))
-    .filter(item => item.similarity > 0.3) // Umbral de similitud
-    .sort((a, b) => b.similarity - a.similarity)
-    .slice(0, maxSuggestions)
-    .map(item => item.command);
+  return [...new Set(commands)]; // Eliminar duplicados
 }
 
-// Función simple para calcular similitud entre strings
-function calculateSimilarity(a, b) {
-  const longer = a.length > b.length ? a : b;
-  const shorter = a.length > b.length ? b : a;
-  
-  if (longer.includes(shorter)) return 0.8;
-  if (shorter.includes(longer)) return 0.5;
-  
-  // Implementación básica - puedes usar un algoritmo más sofisticado
-  let matches = 0;
-  for (let i = 0; i < shorter.length; i++) {
-    if (longer.includes(shorter[i])) matches++;
-  }
-  
-  return matches / longer.length;
-}
-
-// Procesamiento de comandos válidos
-async function processValidCommand(m, usedPrefix, command) {
-  if (!global.db.data?.chats || !global.db.data?.users) {
-    console.error('Error: Estructura de base de datos incompleta');
-    return;
-  }
-  
-  const chat = global.db.data.chats[m.chat] || {};
-  const user = global.db.data.users[m.sender] || { commands: 0 };
-  
-  // Verificar si el bot está baneado en el chat
-  if (chat.isBanned) {
-    const botname = global.botname || "este bot"; // Usar nombre configurado o genérico
-    await m.reply(
-      `《✖》El bot *${botname}* está desactivado en este grupo.\n\n` +
-      `> Un *administrador* puede activarlo con:\n` +
-      `> » *${usedPrefix}bot on*`
-    );
-    return;
-  }
-  
-  // Incrementar contador de comandos del usuario
-  user.commands = (user.commands || 0) + 1;
-}
+// Sistema de sugerencias mejorado
+function getSuggestions(wrongCmd, allCommands, max = 3) {
+  return allCommands
+    .filter(cmd => {
+      // Coincidencia de inicio
+      if (cmd.startsWith(wrongCmd)) return true;
+      // Coincidencia de letras
+      const wrongChars = wrongCmd.split('');
+      return wrongChars.some(c => cmd.includes(c));
+    })
+    .slice(0, max);
+                                     }
