@@ -1,38 +1,49 @@
 let handler = m => m;
 
 handler.before = async function (m, { conn, groupMetadata, usedPrefix }) {
-  if (!m.messageStubType || !m.isGroup) return;
-  if (m.messageStubType !== 20) return; // 20 = Creación de grupo
+  // 1. Verificar si es la creación de un grupo (stubType 20) y si el bot está presente
+  if (!m.messageStubType || m.messageStubType !== 20 || !m.isGroup) return;
 
-  // 1. Texto de bienvenida (similar a tu init)
-  let subject = groupMetadata.subject || "el grupo";
-  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas.\n💡 Usen *${usedPrefix}menu* para ver mis comandos.`;
+  // 2. Obtener metadatos del grupo (asegurarse de que el bot es miembro)
+  try {
+    const groupData = await conn.groupMetadata(m.chat);
+    const botId = conn.user.jid.split('@')[0] + '@s.whatsapp.net';
+    const isBotInGroup = groupData.participants.some(p => p.id === botId);
 
-  // 2. Botones (estructura idéntica a tu initHandler)
-  const buttons = [
-    {
-      buttonId: `${usedPrefix}menu`,
-      buttonText: { displayText: "📜 VER MENÚ" },
-      type: 1,
-    },
-    {
-      buttonId: `${usedPrefix}owner`,
-      buttonText: { displayText: "👑 CREADOR" },
-      type: 1,
-    },
-  ];
+    if (!isBotInGroup) return; // Si el bot no está en el grupo, no hacer nada
 
-  // 3. Envío con botones (como en tu init)
-  await conn.sendMessage(
-    m.chat,
-    {
-      text: welcomeBot,
-      buttons: buttons,
-      footer: "¡Gracias por agregarme!",
-      // viewOnce: true // Opcional (si lo usabas en init)
-    },
-    { quoted: m }
-  );
+    // 3. Mensaje y botones (estructura idéntica a tu .init)
+    const subject = groupMetadata.subject || "el grupo";
+    const welcomeMsg = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas.\n💡 Usen *${usedPrefix}menu* para ver mis comandos.`;
+
+    const buttons = [
+      {
+        buttonId: `${usedPrefix}menu`,
+        buttonText: { displayText: "📜 VER MENÚ" },
+        type: 1
+      },
+      {
+        buttonId: `${usedPrefix}owner`,
+        buttonText: { displayText: "👑 CREADOR" },
+        type: 1
+      }
+    ];
+
+    // 4. Enviar mensaje con botones (¡clave!)
+    await conn.sendMessage(
+      m.chat,
+      {
+        text: welcomeMsg,
+        buttons: buttons,
+        footer: "¡Gracias por agregarme!",
+        mentions: [m.sender] // Opcional: menciona al creador del grupo
+      },
+      { quoted: m }
+    );
+
+  } catch (error) {
+    console.error("Error en welcomeBot:", error); // Debug
+  }
 };
 
 export default handler;
