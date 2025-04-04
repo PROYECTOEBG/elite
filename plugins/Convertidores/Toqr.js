@@ -1,9 +1,15 @@
-import {toDataURL} from 'qrcode';
-const handler = async (m, {text, conn}) => {
-  if (!text) throw `*[❗𝐈𝐍𝐅𝐎❗] 𝙸𝙽𝙶𝚁𝙴𝚂𝙴 𝙴𝙻 𝚃𝙴𝚇𝚃𝙾 𝚀𝚄𝙴 𝚀𝚄𝙸𝙴𝚁𝙰 𝙲𝙾𝙽𝚅𝙴𝚁𝚃𝙸𝚁 𝙴𝙽 𝙲𝙾𝙳𝙸𝙶𝙾 𝚀𝚁*`;
-  conn.sendFile(m.chat, await toDataURL(text.slice(0, 2048), {scale: 8}), 'qrcode.png', '¯\\_(ツ)_/¯', m);
+import uploadFile from '../lib/uploadFile.js';
+import uploadImage from '../lib/uploadImage.js';
+const handler = async (m) => {
+  const q = m.quoted ? m.quoted : m;
+  const mime = (q.msg || q).mimetype || '';
+  if (!mime) throw '*[❗𝐈𝐍𝐅𝐎❗] 𝚁𝙴𝚂𝙿𝙾𝙽𝙳𝙰 𝙰 𝚄𝙽𝙰 𝙸𝙼𝙰𝙶𝙴𝙽 𝙾 𝚅𝙸𝙳𝙴𝙾 𝙴𝙻 𝙲𝚄𝙰𝙻 𝚂𝙴𝚁𝙰 𝙲𝙾𝙽𝚅𝙴𝚁𝚃𝙸𝙳𝙾 𝙰 𝙴𝙽𝙻𝙰𝙲𝙴*';
+  const media = await q.download();
+  const isTele = /image\/(png|jpe?g|gif)|video\/mp4/.test(mime);
+  const link = await (isTele ? uploadImage : uploadFile)(media);
+  m.reply(`\`\`\`[ ⭐ ] Aquí tienes la URL de tu archivo:\`\`\`\n✅ ${link}`);
 };
-handler.help = ['', 'code'].map((v) => 'qr' + v + ' <teks>');
-handler.tags = ['tools'];
-handler.command = /^to(qr)?$/i;
+handler.help = ['tourl <reply image>'];
+handler.tags = ['sticker'];
+handler.command = /^(upload|tourl)$/i;
 export default handler;
