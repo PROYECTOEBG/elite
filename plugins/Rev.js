@@ -13,22 +13,27 @@ handler.before = async function (m, { conn, groupMetadata }) {
 ━━━━━━━━━━━━━━━━━━━  
 ⚡ *Mis funciones :*  
 ▸  Descargar música/videos  
-▸  Búsquedas en Google 
-▸  Juegos y diversión   
+▸  Búsquedas en Google/Wikipedia  
+▸  Juegos y diversión grupal  
 ▸  Generar imágenes con IA  
 ▸  Herramientas para Free Fire  
 ━━━━━━━━━━━━━━━━━━━  
 📂 *Mis menus:*  
 ▸  .menu → *Menú general*  
 ▸  .menuimg → *Imágenes AI*  
-▸  .menuhot → *Contenido hot*  
+▸  .menuhot → *Contenido destacado*  
 ▸  .menuaudios→ *Audios y efectos*  
 ▸  .menujuegos → *Juegos grupales*  
 ▸  .menufreefire → *Free Fire tools*  
 ━━━━━━━━━━━━━━━━━━━  
 ©EliteBotGlobal 2023`
 
-  await this.sendMessage(m.chat, { text: welcomeBot, image: { url: imageUrl }, caption: welcomeBot }, { quoted: m })
+  // Enviar el mensaje de bienvenida junto con la imagen
+  await this.sendMessage(m.chat, { 
+    text: welcomeBot, 
+    image: { url: imageUrl }, 
+    caption: welcomeBot 
+  }, { quoted: m })
 }
 
 export default handler
