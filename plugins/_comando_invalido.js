@@ -35,11 +35,15 @@ export async function all(m) {
     setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
     // Asegurarse de que `m.sender` sea una cadena de texto válida
-    let jid = typeof m.sender === 'string' && m.sender.includes('@') ? m.sender : m.key?.participant || m.chat;
+    let jid = m.sender;
+    if (typeof jid !== 'string') {
+      // Asegurándonos de que siempre sea una cadena de texto válida
+      jid = m.key?.participant || m.chat; // Si no está en `sender`, utilizamos el participante del mensaje o el chat
+    }
 
     // Si `jid` no es válido, se debe tratar como una cadena
-    if (typeof jid !== 'string') {
-      jid = String(m.chat); // Utilizamos el ID de chat como fallback
+    if (typeof jid !== 'string' || !jid.includes('@')) {
+      jid = String(m.chat); // Usamos el ID del chat como fallback
     }
 
     // Asegurándonos de que no se pase un valor no válido a `mentions`
@@ -54,4 +58,4 @@ export async function all(m) {
       mentions: [jid] // Mencionamos correctamente al usuario
     });
   }
-      }
+}
