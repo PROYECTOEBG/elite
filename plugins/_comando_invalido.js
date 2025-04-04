@@ -34,15 +34,15 @@ export async function all(m) {
     commandTracker.set(trackerId, true);
     setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
-    // Asegúrate de que `m.sender` sea un JID válido y es una cadena
+    // Asegurarse de que `m.sender` sea una cadena de texto válida
     let jid = typeof m.sender === 'string' && m.sender.includes('@') ? m.sender : m.key?.participant || m.chat;
 
-    // Asegurarnos de que `jid` es una cadena
+    // Si `jid` no es válido, se debe tratar como una cadena
     if (typeof jid !== 'string') {
-      jid = m.chat; // Alternativa si no es válido
+      jid = String(m.chat); // Utilizamos el ID de chat como fallback
     }
 
-    // Si no se encuentra un JID válido, evitamos el error
+    // Asegurándonos de que no se pase un valor no válido a `mentions`
     const userMention = `@${jid.split('@')[0]}`;
     const response = `✦ ¡Atención ${userMention}! ✦\n\n`
       + `El comando *${usedPrefix}${cmd}* no está registrado.\n`
@@ -51,7 +51,7 @@ export async function all(m) {
       + `🔹 EliteBot Global 🔹`;
 
     await m.reply(response, {
-      mentions: [jid] // Asegúrate de mencionar correctamente
+      mentions: [jid] // Mencionamos correctamente al usuario
     });
   }
-}
+      }
