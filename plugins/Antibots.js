@@ -86,9 +86,11 @@ async function sendInvalidCommandResponse(m, prefix, invalidCmd) {
   let success = false;
   
   const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-  const responseText = `👋 *Hola ${userMention}*, el comando *${prefix}${invalidCmd}* no se encuentra en mi base de datos.\n\n` +
-                      `🔍 *Por favor verifica si está bien escrito e intenta de nuevo.*\n\n` +
-                      `💡 *Tip:* Usa *${prefix}help* para ver mis comandos disponibles.`;
+  const responseText = `✦ ¡Hey! *${userMention}*
+
+Parece que escribiste mal el comando verifica si está bien escrito e intenta de nuevo . 
+
+©EliteBotGlobal 2023`;
 
   while (attempts < MAX_ATTEMPTS && !success) {
     try {
