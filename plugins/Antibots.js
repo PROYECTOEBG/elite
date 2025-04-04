@@ -1,61 +1,69 @@
-const processedCommands = new Set();
+const activeCommands = new Set();
 
 export async function before(m) {
   // 1. Filtrado básico de mensajes
   if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe) return;
 
-  // 2. ID único para cada interacción
-  const commandId = `${m.chat}_${m.id}_${m.text.slice(0, 10)}`;
-  if (processedCommands.has(commandId)) return;
-  processedCommands.add(commandId);
+  // 2. Crear un ID único para el comando
+  const commandId = `${m.chat}_${m.id}_${m.text.trim().toLowerCase().slice(0, 15)}`;
+  if (activeCommands.has(commandId)) return;
+  activeCommands.add(commandId);
 
   try {
-    // 3. Detección de prefijo mejorada
-    const prefix = global.prefix instanceof RegExp ? global.prefix : /^[\.\!\#\/]/i;
-    const prefixMatch = m.text.match(prefix);
+    // 3. Detección de prefijo infalible
+    const prefix = (global.prefix instanceof RegExp) ? global.prefix : /^[\.\!\#\/]/i;
+    const prefixMatch = m.text.trim().match(prefix);
     if (!prefixMatch) return;
 
     const usedPrefix = prefixMatch[0];
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
     if (!cmd) return;
 
-    // 4. Comandos que se ignoran
+    // 4. Comandos que se ignoran completamente
     if (['bot', 'menu', 'help'].includes(cmd)) return;
 
-    // 5. Verificación directa en plugins
-    let commandExists = false;
-    pluginLoop: for (const plugin of Object.values(global.plugins || {})) {
-      if (!plugin?.command) continue;
+    // 5. Verificación directa y exhaustiva en plugins
+    let commandFound = false;
+    
+    for (const plugin of Object.values(global.plugins || {})) {
+      if (!plugin || typeof plugin !== 'object') continue;
       
-      const commands = Array.isArray(plugin.command) 
-        ? plugin.command.map(c => c?.toLowerCase?.())
-        : [plugin.command?.toLowerCase?.()];
-      
-      if (commands.includes(cmd)) {
-        commandExists = true;
-        break pluginLoop;
+      try {
+        if (plugin.command) {
+          const commands = Array.isArray(plugin.command) 
+            ? plugin.command.map(c => String(c).toLowerCase())
+            : [String(plugin.command).toLowerCase()];
+          
+          if (commands.includes(cmd)) {
+            commandFound = true;
+            break;
+          }
+        }
+      } catch (e) {
+        console.error(`Error verificando plugin:`, e);
       }
     }
 
-    // 6. Solo responder a comandos no reconocidos
-    if (!commandExists) {
-      const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-      const response = `✦ ¡Hey! *${userMention}*\n\n`
-        + `El comando *${usedPrefix}${cmd}* no existe en mi sistema.\n\n`
-        + `Verifica la ortografía o escribe *${usedPrefix}help* para ver comandos disponibles.\n\n`
-        + `©EliteBotGlobal ${new Date().getFullYear()}`;
+    // 6. Respuesta solo para comandos no encontrados
+    if (!commandFound) {
+      const userTag = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
+      const errorMessage = `✦ ¡Hey! *${userTag}*\n\n`
+        + `El comando *${usedPrefix}${cmd}* no existe en mi base de datos.\n\n`
+        + `Por favor verifica la ortografía o escribe *${usedPrefix}help*.\n\n`
+        + `© ${new Date().getFullYear()} EliteBot Global`;
       
-      await m.reply(response, { mentions: [m.sender] });
+      await m.reply(errorMessage, { mentions: [m.sender] });
     }
 
   } catch (error) {
-    console.error('Error en before handler:', error);
+    console.error('Error crítico en before handler:', error);
   } finally {
-    // Limpieza periódica
-    if (processedCommands.size > 100) {
-      const recent = Array.from(processedCommands).slice(-50);
-      processedCommands.clear();
-      recent.forEach(id => processedCommands.add(id));
+    // Limpieza programada
+    setTimeout(() => activeCommands.delete(commandId), 60000); // Limpiar después de 1 minuto
+    if (activeCommands.size > 200) {
+      const recent = Array.from(activeCommands).slice(-100);
+      activeCommands.clear();
+      recent.forEach(id => activeCommands.add(id));
     }
   }
 }
