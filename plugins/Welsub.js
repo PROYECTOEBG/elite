@@ -24,7 +24,17 @@ handler.before = async function (m, { conn, participants, groupMetadata, isBotAd
     let subject = groupMetadata.subject
     let descs = groupMetadata.desc || "🌟 ¡Bienvenido al grupo! 🌟"
     let userName = `${m.messageStubParameters[0].split`@`[0]}`
-    let defaultWelcome = `*╭━━━━━━━━━━━━━╮*\n┃ *¡BIENVENIDO/A!* ┃\n┃ *@${userName}* ┃\n╰━━━━━━━━━━━━━╯\n📌 *Grupo:* ${subject}\n📝 *Descripción:* ${descs}`
+    let defaultWelcome = `*╔══════════════*
+*╟* 𝗕𝗜𝗘𝗡𝗩𝗘𝗡𝗜𝗗𝗢/𝗔
+*╠══════════════*
+*╟*🛡️ *${subject}*
+*╟*👤 *@${userName}*
+*╟* 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗖𝗜𝗢́𝗡 
+
+${descs}
+
+*╟* ¡🇼‌🇪‌🇱‌🇨‌🇴‌🇲‌🇪!
+*╚══════════════*`
 
     let textWel = chat.sWelcome ? chat.sWelcome
       .replace(/@user/g, `@${userName}`)
@@ -55,7 +65,10 @@ handler.before = async function (m, { conn, participants, groupMetadata, isBotAd
   else if (chat.welcome && m.messageStubType == 28 && this.user.jid != global.conn.user.jid) {
     let subject = groupMetadata.subject
     let userName = `${m.messageStubParameters[0].split`@`[0]}`
-    let defaultBye = `*╭━━━━━━━━━━━━━╮*\n┃ *¡HASTA PRONTO!* ┃\n┃ *@${userName}* ┃\n╰━━━━━━━━━━━━━╯\n😿 Lamentamos que te vayas...`
+    let defaultBye = `*╔══════════════*
+*╟* *SE FUE UNA BASURA*
+*╟👤 @${userName}* 
+*╚══════════════* `
 
     let textBye = chat.sBye ? chat.sBye
       .replace(/@user/g, `@${userName}`)
