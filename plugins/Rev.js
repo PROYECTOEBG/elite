@@ -12,7 +12,7 @@ handler.before = async function (m, { conn, groupMetadata }) {
 ━━━━━━━━━━━━━━━━━━━  
 ⚡ *Mis funciones :*  
 ▸  Descargar música/videos  
-▸  Búsquedas en Google/Wikipedia  
+▸  Búsquedas en Google  
 ▸  Juegos y diversión grupal  
 ▸  Generar imágenes con IA  
 ▸  Herramientas para Free Fire  
@@ -20,7 +20,7 @@ handler.before = async function (m, { conn, groupMetadata }) {
 📂 *Mis menus:*  
 ▸  .menu → *Menú general*  
 ▸  .menuimg → *Imágenes AI*  
-▸  .menuhot → *Contenido destacado*  
+▸  .menuhot → *Contenido hot*  
 ▸  .menuaudios→ *Audios y efectos*  
 ▸  .menujuegos → *Juegos grupales*  
 ▸  .menufreefire → *Free Fire tools*  
