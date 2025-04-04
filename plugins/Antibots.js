@@ -14,56 +14,47 @@ export async function before(m) {
 
     const usedPrefix = prefixMatch[0];
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
-    
-    console.log(`Detectado: Prefix: ${usedPrefix}, Command: ${cmd}`);
-
     if (!cmd) return;
 
-    if (['bot', 'menu', 'help'].includes(cmd)) {
-      commandTracker.set(trackerId, true);
-      setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
-      return;
-    }
+    // Solo para probar: muestra el comando aunque sí exista
+    console.log("Verificando comando:", cmd);
 
+    // Búsqueda en plugins
     let commandExists = false;
-    console.log("Buscando en plugins...");
-
-    pluginSearch: for (const plugin of Object.values(global.plugins || {})) {
+    for (const plugin of Object.values(global.plugins || {})) {
       try {
         if (!plugin?.command) continue;
 
-        const commands = Array.isArray(plugin.command) 
+        const commands = Array.isArray(plugin.command)
           ? plugin.command.map(c => String(c).toLowerCase())
           : [String(plugin.command).toLowerCase()];
-        
+
         if (commands.includes(cmd)) {
           commandExists = true;
-          break pluginSearch;
+          break;
         }
       } catch (e) {
-        console.error(`Error en plugin ${plugin.name || 'unnamed'}:`, e);
+        console.error(`Error al buscar en plugin:`, e);
       }
     }
 
-    console.log(`Comando encontrado: ${commandExists}`);
-
     if (!commandExists) {
+      console.log("Comando NO encontrado:", cmd);
+
       commandTracker.set(trackerId, true);
       setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
-      
-      const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-      const response = `✦ ¡Atención ${userMention}! ✦\n\n`
-        + `El comando *${usedPrefix}${cmd}* no está registrado.\n`
-        + `▶ Verifica la ortografía\n`
-        + `▶ Usa *${usedPrefix}help* para ayuda\n\n`
-        + `🔹 EliteBot Global 🔹`;
 
-      console.log(`Enviando respuesta: ${response}`);
-      
-      await m.reply(response, { mentions: [m.sender] });
+      const response = `*Comando no válido:* ${usedPrefix}${cmd}\nUsa *${usedPrefix}help* para ver los comandos disponibles.`;
+
+      // Aquí probamos directamente con reply
+      if (typeof m.reply === 'function') {
+        await m.reply(response);
+      } else {
+        console.error('m.reply no es una función válida');
+      }
     }
 
   } catch (error) {
-    console.error('Error crítico en before handler:', error);
+    console.error('Error crítico en before:', error);
   }
 }
