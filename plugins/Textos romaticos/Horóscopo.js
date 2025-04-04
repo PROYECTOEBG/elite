@@ -1,7 +1,5 @@
-
-      
 let handler = async (m, { conn, usedPrefix, command, text }) => {
-  // Base de datos completa de horóscopos
+  // Base de datos completa con los 12 signos
   const horoscopos = {
     aries: {
       simbolo: '♈️',
@@ -43,173 +41,173 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
     },
     geminis: {
       simbolo: '♊️',
-      elemento: '🌬️ Aire',
+      elemento: '💨 Aire',
       color: 'Amarillo brillante',
       predicciones: [
-        "Hoy estarás lleno de energía y nuevas ideas, ¡aprovéchalas!",
-        "Las redes sociales jugarán un papel clave en tu día de hoy.",
-        "Alguien cercano te ofrecerá una perspectiva diferente que te será útil.",
-        "Tu mente rápida te ayudará a resolver problemas complejos.",
-        "Un encuentro casual podría convertirte en el centro de atención."
+        "Una conversación casual podría convertirse en una gran oportunidad laboral.",
+        "Viajes cortos traerán perspectivas reveladoras sobre tu vida.",
+        "Resolverás un conflicto con tu elocuencia característica.",
+        "Dos opciones interesantes se presentarán simultáneamente.",
+        "Tu ingenio te sacará de un apuro económico inesperado."
       ],
       consejos: [
-        "No te dejes llevar por la prisa, reflexiona antes de actuar.",
-        "Comunica con claridad tus intenciones para evitar malentendidos.",
-        "Si tienes dudas, consulta con un amigo de confianza.",
-        "Tómate un tiempo para meditar y calmar tu mente activa.",
-        "Mantén un equilibrio entre tus responsabilidades y tu tiempo personal."
+        "Lleva un registro de tus ideas brillantes que suelen olvidarse.",
+        "Equilibra tu lado social con momentos de introspección hoy.",
+        "No comprometas tu verdad para agradar a los demás.",
+        "Explora ese tema intelectual que ha captado tu curiosidad.",
+        "Comparte tus conocimientos con alguien que los necesita."
       ]
     },
     cancer: {
       simbolo: '♋️',
-      elemento: '🌊 Agua',
+      elemento: '💧 Agua',
       color: 'Blanco plateado',
       predicciones: [
-        "Tu intuición será tu mejor aliada hoy, confía en ella.",
-        "Un problema emocional del pasado volverá a surgir, pero podrás manejarlo.",
-        "Alguien de tu familia necesitará tu apoyo, tu presencia será importante.",
-        "Hoy será un buen día para cuidar de ti mismo y reflexionar.",
-        "La creatividad fluye en ti, es el momento de expresar tus emociones."
+        "Un sueño revelador te dará claridad sobre una situación confusa.",
+        "La energía lunar intensificará tu intuición esta semana.",
+        "Un reencuentro familiar traerá sanación emocional.",
+        "Tu hogar se convertirá en un centro de armonía y creatividad.",
+        "Una oportunidad laboral surgirá a través de conexiones personales."
       ],
       consejos: [
-        "No tengas miedo de pedir ayuda cuando la necesites.",
-        "Haz ejercicio para liberar tensiones acumuladas.",
-        "Escucha tus emociones y actúa en consecuencia.",
-        "Evita caer en discusiones innecesarias, mantén la calma.",
-        "Date tiempo para desconectar y recargar energías."
+        "Protege tu energía emocional estableciendo límites saludables.",
+        "Cocina algo especial para tus seres queridos hoy.",
+        "Escucha tu intuición acerca de esa decisión financiera.",
+        "Renueva algún espacio de tu casa para mejorar el flujo energético.",
+        "Expresa tus sentimientos a esa persona especial sin miedo."
       ]
     },
     leo: {
       simbolo: '♌️',
       elemento: '🔥 Fuego',
-      color: 'Dorado brillante',
+      color: 'Dorado',
       predicciones: [
-        "Hoy tu carisma estará a su máximo nivel, atraerás a todos a tu alrededor.",
-        "Un evento social te permitirá expandir tu red de contactos.",
-        "Un cambio en tu actitud te permitirá mejorar tu relación con los demás.",
-        "Tu creatividad te llevará a destacar en proyectos grupales.",
-        "Una noticia que esperabas podría llegar hoy, pero ten paciencia."
+        "Tu carisma atraerá oportunidades profesionales importantes.",
+        "Una inversión creativa dará resultados sorprendentes.",
+        "El reconocimiento por tus talentos llegará de forma inesperada.",
+        "Un romance apasionado comenzará bajo cielos favorables.",
+        "Tu liderazgo inspirará a otros a superarse."
       ],
       consejos: [
-        "Haz uso de tu poder de persuasión para lograr tus objetivos.",
-        "No descuides tus relaciones personales, son importantes para tu bienestar.",
-        "Mantén los pies en el suelo, incluso cuando las cosas vayan bien.",
-        "Dedica tiempo a la autoreflexión para fortalecer tu autoestima.",
-        "Sé generoso con tus palabras, inspiras a los demás."
+        "Comparte el protagonismo, deja que otros también brillen.",
+        "Usa tu influencia para promover una causa noble hoy.",
+        "Invierte en tu apariencia, tu confianza se disparará.",
+        "Escribe tus metas audaces donde puedas verlas diariamente.",
+        "Dedica tiempo a actividades puramente divertidas."
       ]
     },
     virgo: {
       simbolo: '♍️',
-      elemento: '🌾 Tierra',
-      color: 'Verde oliva',
+      elemento: '🌍 Tierra',
+      color: 'Verde menta',
       predicciones: [
-        "El orden será clave para mantenerte productivo hoy.",
-        "Tu enfoque detallado te permitirá resolver problemas complicados.",
-        "Hoy recibirás buenas noticias relacionadas con tus finanzas.",
-        "Alguien de tu entorno te pedirá consejo, y tu sabiduría será valiosa.",
-        "Un nuevo proyecto profesional te traerá satisfacciones."
+        "Tu atención al detalle evitará un error costoso en el trabajo.",
+        "Un hábito saludable que inicies hoy tendrá efectos duraderos.",
+        "Ayudarás a alguien cercano a resolver un problema práctico.",
+        "Descubrirás una solución elegante a un problema complejo.",
+        "Tu organización financiera te dará una ventaja inesperada."
       ],
       consejos: [
-        "No te obsesiones con los detalles, a veces lo global es más importante.",
-        "Dedica tiempo a tu bienestar emocional, es igual de importante que el físico.",
-        "Si te sientes abrumado, no dudes en delegar tareas.",
-        "Haz una pausa para descansar y recargar energías cuando sea necesario.",
-        "Sé más flexible y abierto a nuevas ideas."
+        "Practica la autocompasión, no solo la autodisciplina.",
+        "Aprende algo nuevo sobre salud y bienestar hoy.",
+        "Organiza ese espacio desordenado que te molesta tanto.",
+        "Comparte tus conocimientos prácticos con alguien necesitado.",
+        "Date permiso para relajar tus altos estándares ocasionalmente."
       ]
     },
     libra: {
       simbolo: '♎️',
-      elemento: '🌬️ Aire',
-      color: 'Azul celeste',
+      elemento: '💨 Aire',
+      color: 'Rosa suave',
       predicciones: [
-        "Tu deseo de armonía será clave en la resolución de conflictos.",
-        "Hoy es un buen día para hacer acuerdos importantes.",
-        "Una situación en tu vida amorosa te traerá claridad.",
-        "Alguien te pedirá tu opinión sobre una cuestión delicada.",
-        "Recibirás noticias que cambiarán tu perspectiva sobre algo importante."
+        "Resolverás un conflicto con tu diplomacia característica.",
+        "Una colaboración artística traerá satisfacción creativa.",
+        "El equilibrio entre trabajo y vida personal mejorará notablemente.",
+        "Una decisión importante sobre relaciones se clarificará.",
+        "Tu buen gusto atraerá oportunidades sociales interesantes."
       ],
       consejos: [
-        "Mantén la paz en tus relaciones, evita las confrontaciones.",
-        "Haz lo que sea necesario para equilibrar tu vida profesional y personal.",
-        "Hoy es un buen día para hacer un cambio de imagen o renovar tu estilo.",
-        "Escucha con empatía antes de ofrecer una solución.",
-        "Dedica tiempo a tu propio bienestar emocional."
+        "Busca la belleza en lo simple hoy, te inspirará.",
+        "Toma esa decisión pendiente usando lógica y corazón por igual.",
+        "Rodéate de colores y objetos que te generen armonía.",
+        "Expresa tu aprecio a alguien que ha sido justo contigo.",
+        "Medita sobre el equilibrio entre dar y recibir en tu vida."
       ]
     },
     escorpio: {
       simbolo: '♏️',
-      elemento: '🔥 Fuego',
-      color: 'Rojo sangre',
+      elemento: '💧 Agua',
+      color: 'Morado intenso',
       predicciones: [
-        "Hoy podrás superar un obstáculo que te había preocupado.",
-        "Recibirás una oferta que te hará reconsiderar tus objetivos a largo plazo.",
-        "Una relación personal se fortalecerá, te sentirás más unido/a a esa persona.",
-        "Tus habilidades para resolver problemas serán puestas a prueba.",
-        "Un cambio en tu vida laboral traerá nuevas oportunidades."
+        "Descubrirás información oculta que cambiará tu perspectiva.",
+        "Tu intensidad emocional atraerá a alguien especial hoy.",
+        "Un proyecto secreto comenzará a dar frutos inesperados.",
+        "Transformarás una debilidad percibida en tu mayor fortaleza.",
+        "Tu determinación superará obstáculos que parecían imposibles."
       ],
       consejos: [
-        "No dejes que los miedos te frenen, eres más fuerte de lo que piensas.",
-        "Escucha tu intuición, te está guiando por el camino correcto.",
-        "No te apresures a tomar decisiones importantes, tómate tu tiempo.",
-        "Aprovecha las oportunidades para reinventarte y crecer.",
-        "Confía en el proceso, todo ocurre por una razón."
+        "Usa tu poder de observación para entender antes de actuar.",
+        "Escribe tus pensamientos más profundos para liberar emociones.",
+        "No dejes que los celos nublen tu juicio hoy.",
+        "Aprovecha tu magnetismo para causas positivas.",
+        "Perdona un resentimiento antiguo para liberarte."
       ]
     },
     sagitario: {
       simbolo: '♐️',
       elemento: '🔥 Fuego',
-      color: 'Violetas intensos',
+      color: 'Púrpura real',
       predicciones: [
-        "Tu optimismo será contagioso, atraerás a personas con buenas energías.",
-        "Un viaje o un cambio de escenario traerá nuevas perspectivas.",
-        "Hoy tendrás oportunidades para ampliar tus conocimientos.",
-        "Tu carácter aventurero te llevará a explorar nuevos horizontes.",
-        "Recibirás noticias de una persona que está lejos."
+        "Una oportunidad de viaje se presentará inesperadamente.",
+        "Tu optimismo inspirará a alguien que pasa por dificultades.",
+        "Aprenderás algo que expandirá significativamente tus horizontes.",
+        "Una aventura romántica exótica está en tu futuro cercano.",
+        "Tu filosofía de vida atraerá a personas afines importantes."
       ],
       consejos: [
-        "Mantén una mente abierta para nuevas experiencias.",
-        "No te olvides de tu bienestar, es importante mantener el equilibrio.",
-        "Sé generoso/a con los demás, la buena energía vuelve a ti.",
-        "Realiza una actividad que te conecte con la naturaleza.",
-        "Elige con cuidado las personas con las que compartes tu tiempo."
+        "Explora una cultura o filosofía diferente a la tuya hoy.",
+        "Mantén tus promesas, especialmente las que hiciste a ti mismo.",
+        "Planifica ese viaje que has estado posponiendo por responsabilidades.",
+        "Comparte tu sabiduría con alguien más joven que la necesita.",
+        "Busca el significado más profundo en experiencias cotidianas."
       ]
     },
     capricornio: {
       simbolo: '♑️',
       elemento: '🌍 Tierra',
-      color: 'Gris oscuro',
+      color: 'Negro elegante',
       predicciones: [
-        "Hoy serás capaz de tomar decisiones importantes con claridad.",
-        "Tu enfoque disciplinado te ayudará a alcanzar metas profesionales.",
-        "Alguien que admiras te ofrecerá una oportunidad para aprender.",
-        "Un cambio en tu entorno te llevará a una mayor estabilidad.",
-        "Tu dedicación será recompensada pronto."
+        "Tu disciplina dará resultados tangibles en el trabajo.",
+        "Un mentor te ofrecerá consejos valiosos para tu carrera.",
+        "La estabilidad financiera que buscas está más cerca de lo que crees.",
+        "Un proyecto a largo plazo finalmente mostrará progreso.",
+        "Tu reputación profesional alcanzará nuevos niveles."
       ],
       consejos: [
-        "Mantén el enfoque, pero no te olvides de disfrutar el proceso.",
-        "Ten paciencia, todo llega a su debido tiempo.",
-        "Confía en tus habilidades y capacidades, no hay límites para ti.",
-        "Haz una pausa para reflexionar sobre tus logros y metas.",
-        "No tengas miedo de pedir ayuda cuando la necesites."
+        "Revisa tus metas a largo plazo y ajusta lo necesario.",
+        "Date permiso para disfrutar de un lujo bien merecido.",
+        "Reconecta con un colega o mentor del pasado.",
+        "Invierte en educación o herramientas que mejoren tus habilidades.",
+        "Equilibra tu ambición con momentos de simple disfrute."
       ]
     },
     acuario: {
       simbolo: '♒️',
-      elemento: '🌬️ Aire',
+      elemento: '💨 Aire',
       color: 'Azul eléctrico',
       predicciones: [
-        "Tu creatividad estará en su punto máximo, ¡aprovéchala!",
-        "Las ideas innovadoras te harán destacar en tu entorno.",
-        "Hoy te sentirás más conectado/a con tus amigos y seres queridos.",
-        "Una oportunidad inesperada te hará repensar tus planes a futuro.",
-        "Tu visión del futuro será más clara que nunca."
+        "Una idea revolucionaria cambiará tu perspectiva hoy.",
+        "Conectarás con alguien que comparte tus ideales más elevados.",
+        "Lo inesperado será tu aliado en situaciones importantes.",
+        "Tu círculo social se expandirá con personas influyentes.",
+        "Un proyecto humanitario te traerá profunda satisfacción."
       ],
       consejos: [
-        "Sé flexible con los cambios que se te presenten.",
-        "No te dejes llevar por las expectativas de los demás.",
-        "Haz una pausa para reflexionar sobre lo que realmente deseas.",
-        "Confía en tus instintos, te están guiando correctamente.",
-        "Deja espacio para la diversión, no todo tiene que ser serio."
+        "Comparte tus ideas más innovadoras sin miedo al rechazo.",
+        "Desconéctate de la tecnología para reconectar contigo mismo.",
+        "Únete a una causa que refleje tus valores más profundos.",
+        "Experimenta con nuevas formas de expresión creativa.",
+        "Rodéate de personas que desafíen tu pensamiento."
       ]
     },
     piscis: {
@@ -238,11 +236,11 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
   
   // Validación
   if (!horoscopos[signo]) {
-    let listaSignos = '';
+    let listaSignos = '✨ *SIGNOS DISPONIBLES:*\n\n';
     for (const [s, data] of Object.entries(horoscopos)) {
-      listaSignos += `▸ ${usedPrefix}horoscopo ${s} ${data.simbolo}\n`;
+      listaSignos += `▸ ${usedPrefix}horoscopo ${s} ${data.simbolo} (${data.elemento})\n`;
     }
-    return m.reply(`🔮 *Signo no válido!*\n\nUsa:\n${listaSignos}\nEjemplo: *${usedPrefix}horoscopo cancer*`);
+    return m.reply(`${listaSignos}\n📌 *Ejemplo:* ${usedPrefix}horoscopo cancer`);
   }
 
   // Datos del signo
@@ -272,7 +270,7 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
 ✨ *Número de la suerte:* ${numeroSuerte}
 🎨 *Color favorable:* ${color}
 
-🌌 *Frase cósmica:* 
+🌙 *Frase cósmica:*
 "${getFraseCosmica(signo)}"
   `;
 
@@ -281,7 +279,7 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
     contextInfo: {
       externalAdReply: {
         title: `Horóscopo ${signo.toUpperCase()}`,
-        body: "Descubre lo que las estrellas tienen preparado para ti",
+        body: "Descubre lo que las estrellas tienen preparado para ti...",
         thumbnailUrl: 'https://telegra.ph/file/c2f5d3d26b6c9f0e7a1e3.jpg' // Reemplaza con tu imagen
       }
     }
@@ -293,15 +291,15 @@ function getFraseCosmica(signo) {
   const frases = {
     aries: "El valor abre caminos donde otros solo ven obstáculos",
     tauro: "La paciencia construye catedrales donde la prisa solo hace chozas",
-    geminis: "El futuro pertenece a quienes creen en la belleza de sus sueños",
-    cancer: "La serenidad proviene de la aceptación de uno mismo",
-    leo: "El poder de tu corazón te guía hacia grandes logros",
-    virgo: "La perfección radica en los pequeños detalles",
-    libra: "La armonía solo puede nacer del respeto mutuo",
-    escorpio: "El coraje es la llave que abre las puertas de tu destino",
-    sagitario: "La aventura es el mejor maestro de la vida",
-    capricornio: "La disciplina es el puente entre tus sueños y la realidad",
-    acuario: "La innovación es el primer paso hacia un futuro brillante",
+    geminis: "Dos mentes ven más lejos que una, pero un corazón verdadero ve más profundo",
+    cancer: "La luna conoce tus mareas internas mejor que el sol",
+    leo: "Brilla con la fuerza de mil estrellas, pero calienta con la constancia de una",
+    virgo: "En los detalles más pequeños habitan las verdades más grandes",
+    libra: "El equilibrio no es punto fijo, sino danza constante",
+    escorpio: "Las transformaciones más profundas ocurren en la oscuridad silenciosa",
+    sagitario: "Cada horizonte alcanzado revela nuevos horizontes por explorar",
+    capricornio: "Las montañas se escalan paso a paso, pero la vista vale cada esfuerzo",
+    acuario: "El futuro pertenece a quienes sueñan con los ojos abiertos",
     piscis: "El océano del alma no tiene fronteras, solo conexiones infinitas"
   };
   return frases[signo] || "Las estrellas hablan a quienes saben escuchar";
@@ -310,3 +308,4 @@ function getFraseCosmica(signo) {
 handler.help = ['horoscopo <signo>'];
 handler.tags = ['horoscope', 'fun'];
 handler.command = /^hor[óo]scopo$/i;
+export default handler;
