@@ -1,165 +1,160 @@
 import chalk from 'chalk'
-let WAMessageStubType = (await import("@whiskeysockets/baileys")).default
-import { readdirSync, unlinkSync, existsSync, promises as fs, rmSync } from 'fs'
-import path from 'path';
+import { promises as fs } from 'fs'
+import path from 'path'
 import './_content.js'
 
-let handler = m => m
-handler.before = async function (m, { conn, participants, groupMetadata, isBotAdmin }) {
-
-  if (!m.messageStubType || !m.isGroup) return
-  let pp = await conn.profilePictureUrl(m.messageStubParameters[0], 'image').catch(_ => gataMenu)
-  let img = await (await fetch(`${pp}`)).buffer()
-  let usuario = `@${m.sender.split`@`[0]}`
-  let chat = global.db.data.chats[m.chat]
-  let users = participants.map(u => conn.decodeJid(u.id))
-  const groupAdmins = participants.filter(p => p.admin)
-  const listAdmin = groupAdmins.map((v, i) => `*» ${i + 1}. @${v.id.split('@')[0]}*`).join('\n')
-
-  let fkontak = {
+// Definición de variables esenciales
+const fkontak = {
     key: {
-      remoteJid: m.chat,  // ID del chat de destino
-      fromMe: false,      // No es el bot quien envió este mensaje
-      id: 'message_id',   // Un identificador único para el mensaje
-      participant: m.sender // El participante que envió el mensaje
+        fromMe: false,
+        participant: '0@s.whatsapp.net',
+        remoteJid: 'status@broadcast'
     },
     message: {
-      conversation: "Este es el mensaje de prueba"  // Aquí va el contenido del mensaje citado
+        contactMessage: {
+            displayName: 'EliteBot',
+            vcard: `BEGIN:VCARD\nVERSION:3.0\nN:;EliteBot;;;\nFN:EliteBot\nORG:EliteBot;\nTEL;type=CELL;type=VOICE;waid=0:0\nEND:VCARD`
+        }
     }
-  };
+}
 
-  if (chat.detect && m.messageStubType == 2) {
-    const uniqid = (m.isGroup ? m.chat : m.sender).split('@')[0]
-    const sessionPath = './GataBotSession/'
-    for (const file of await fs.readdir(sessionPath)) {
-      if (file.includes(uniqid)) {
-        await fs.unlink(path.join(sessionPath, file))
-        console.log(`${chalk.yellow.bold('[ ⚠️ Archivo Eliminado ]')} ${chalk.greenBright(`'${file}'`)}\n` +
-          `${chalk.blue('(Session PreKey)')} ${chalk.redBright('que provoca el "undefined" en el chat')}`
-        )
-      }
+// Handler principal
+let handler = m => m
+handler.before = async function (m, { conn, participants, groupMetadata, isBotAdmin }) {
+    // Validaciones iniciales
+    if (!m.messageStubType || !m.isGroup) return
+
+    const chat = global.db.data.chats[m.chat]
+    const usuario = `@${m.sender.split`@`[0]}`
+    const groupAdmins = participants.filter(p => p.admin)
+    const listAdmin = groupAdmins.map((v, i) => `*» ${i + 1}. @${v.id.split('@')[0]}*`).join('\n')
+    const pp = await conn.profilePictureUrl(m.messageStubParameters?.[0], 'image').catch(_ => null)
+
+    // Sistema de detección de eventos
+    if (chat.detect) {
+        switch (m.messageStubType) {
+            case 2: // Eliminación de sesión
+                const uniqid = m.chat.split('@')[0]
+                const sessionPath = './GataBotSession/'
+                try {
+                    for (const file of await fs.readdir(sessionPath)) {
+                        if (file.includes(uniqid)) {
+                            await fs.unlink(path.join(sessionPath, file))
+                            console.log(chalk.yellow.bold('[⚠️] Archivo eliminado:'), chalk.green(file))
+                        }
+                    }
+                } catch (e) {
+                    console.error(chalk.red.bold('[ERROR]'), e)
+                }
+                break
+
+            case 21: // Cambio de ícono
+            case 22: // Cambio de título
+            case 23: // Cambio de descripción
+            case 24: // Cambio de configuración
+            case 25: // Mensaje de anuncio
+            case 26: // Restricción de grupo
+            case 29: // Eliminación de admin
+            case 30: // Promoción de admin
+            case 72: // Modificación de configuración
+            case 123: // Otro evento
+                await conn.sendMessage(m.chat, { 
+                    text: lenguajeGB['smsAvisoIIG']() + mid[`smsAutodetec${m.messageStubType}`](usuario, m, groupMetadata),
+                    mentions: [m.sender, ...groupAdmins.map(v => v.id)]
+                }, { quoted: m })
+                break
+
+            case 27: // Bienvenida
+                if (chat.welcome && this.user.jid !== global.conn.user.jid) {
+                    await handleWelcome(m, conn, chat, groupMetadata, pp)
+                }
+                break
+
+            case 28: // Despedida
+            case 32: // Eliminación de miembro
+                if (chat.welcome && this.user.jid !== global.conn.user.jid) {
+                    await handleGoodbye(m, conn, chat, groupMetadata, pp)
+                }
+                break
+
+            case 172: // Solicitud de unirse
+                if (m.messageStubParameters?.length > 0) {
+                    await handleJoinRequest(m, conn, chat, isBotAdmin)
+                }
+                break
+        }
     }
-  } else if (chat.detect && m.messageStubType == 21) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoAG']() + mid.smsAutodetec1(usuario, m),
-      mentions: [m.sender],
-      contextInfo: {
-        externalAdReply: {
-          showAdAttribution: true,
-          renderLargerThumbnail: true,
-          thumbnailUrl: pp,
-          title: ['𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝕒𝕃 '].getRandom(),
-          containsAutoReply: true,
-          mediaType: 1,
-          sourceUrl: [canal1, canal2, canal3, canal4, yt, grupo1, grupo2, grupo_collab1, grupo_collab2, grupo_collab3, md].getRandom()
-        }
-      }
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 22) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoIIG']() + mid.smsAutodetec2(usuario, groupMetadata),
-      mentions: [m.sender]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 23) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoIIG']() + mid.smsAutodetec5(groupMetadata, usuario),
-      mentions: [m.sender]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 24) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoIIG']() + mid.smsAutodetec3(usuario, m),
-      mentions: [m.sender]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 25) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoIIG']() + mid.smsAutodetec4(usuario, m, groupMetadata),
-      mentions: [m.sender]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 26) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoIIG']() + mid.smsAutodetec6(m),
-      mentions: [m.sender]
-    }, { quoted: fkontak })
-  } else if (chat.welcome && m.messageStubType == 27 && this.user.jid != global.conn.user.jid) {
-    let subject = groupMetadata.subject
-    let descs = groupMetadata.desc || "Sin descripción ";
-    let userName = `${m.messageStubParameters[0].split`@`[0]}`;
-    let defaultWelcome = `*╔══════════════*
-*╟* *BIENVENIDO*
-*╟* ${subject}
-*╟👤@${userName}* 
-*╟📄𝐼𝑁𝐹𝑂𝑅𝑀𝐴𝐶𝐼𝑂́𝑁:*
+}
 
-${descs}
+// Funciones auxiliares
+async function handleWelcome(m, conn, chat, groupMetadata, pp) {
+    const userName = m.messageStubParameters[0].split('@')[0]
+    const defaultWelcome = `*╔══════════════*\n*╟* ¡BIENVENIDO/A!\n*╟* ${groupMetadata.subject}\n*╟👤 @${userName}*\n*╚══════════════*`
+    
+    const textWel = chat.sWelcome 
+        ? chat.sWelcome
+            .replace(/@user/g, `@${userName}`)
+            .replace(/@group/g, groupMetadata.subject)
+            .replace(/@desc/g, groupMetadata.desc || "Sin descripción")
+        : defaultWelcome
 
-*╚══════════════*`;
-    let textWel = chat.sWelcome ? chat.sWelcome
-      .replace(/@user/g, `@${userName}`)
-      .replace(/@group/g, subject)
-      .replace(/@desc/g, descs)
-      : defaultWelcome;
+    await conn.sendMessage(m.chat, { 
+        text: textWel,
+        mentions: [m.sender, m.messageStubParameters[0]],
+        contextInfo: {
+            forwardingScore: 9999999,
+            isForwarded: true,
+            externalAdReply: {
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                thumbnailUrl: pp,
+                title: '𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃',
+                mediaType: 1
+            }
+        }
+    }, { quoted: m })
+}
 
-    await this.sendMessage(m.chat, {
-      text: textWel,
-      contextInfo: {
-        forwardingScore: 9999999,
-        isForwarded: true,
-        mentionedJid: [m.sender, m.messageStubParameters[0]],
-        externalAdReply: {
-          showAdAttribution: true,
-          renderLargerThumbnail: true,
-          thumbnailUrl: pp,
-          title: ['𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃 '].getRandom(),
-          containsAutoReply: true,
-          mediaType: 1,
-          sourceUrl: [canal1, canal2, canal3, canal4, yt, grupo1, grupo2, grupo_collab1, grupo_collab2, grupo_collab3, md].getRandom()
+async function handleGoodbye(m, conn, chat, groupMetadata, pp) {
+    const userName = m.messageStubParameters[0].split('@')[0]
+    const defaultBye = `*╔══════════════*\n*╟* ¡ADIÓS! 👋\n*╟👤 @${userName}*\n*╚══════════════*`
+    
+    const textBye = chat.sBye 
+        ? chat.sBye
+            .replace(/@user/g, `@${userName}`)
+            .replace(/@group/g, groupMetadata.subject)
+        : defaultBye
+
+    await conn.sendMessage(m.chat, { 
+        text: textBye,
+        mentions: [m.sender, m.messageStubParameters[0]],
+        contextInfo: {
+            forwardingScore: 9999999,
+            isForwarded: true,
+            externalAdReply: {
+                showAdAttribution: true,
+                renderLargerThumbnail: true,
+                thumbnailUrl: pp,
+                title: '𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃',
+                mediaType: 1
+            }
         }
-      }
-    }, { quoted: fkontak })
-  } else if (chat.welcome && (m.messageStubType == 28 || m.messageStubType == 32) && this.user.jid != global.conn.user.jid) {
-    let subject = groupMetadata.subject;
-    let userName = `${m.messageStubParameters[0].split`@`[0]}`;
-    let defaultBye = `*╔══════════════*
-*╟* *SE FUE UNA BASURA*
-*╟👤@${userName}* 
-*╚══════════════*`;
-    let textBye = chat.sBye ? chat.sBye
-      .replace(/@user/g, `@${userName}`)
-      .replace(/@group/g, subject)
-      : defaultBye;
-    await this.sendMessage(m.chat, {
-      text: textBye,
-      contextInfo: {
-        forwardingScore: 9999999,
-        isForwarded: true,
-        mentionedJid: [m.sender, m.messageStubParameters[0]],
-        externalAdReply: {
-          showAdAttribution: true,
-          renderLargerThumbnail: true,
-          thumbnailUrl: pp,
-          title: ['𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃 '].getRandom(),
-          containsAutoReply: true,
-          mediaType: 1,
-          sourceUrl: [canal1, canal2, canal3, canal4, yt, grupo1, grupo2, grupo_collab1, grupo_collab2, grupo_collab3, md].getRandom()
-        }
-      }
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 29) {
-    await this.sendMessage(m.chat, {
-      text: mid.smsAutodetec7(m, usuario),
-      mentions: [m.sender, m.messageStubParameters[0], ...groupAdmins.map(v => v.id)]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 30) {
-    await this.sendMessage(m.chat, {
-      text: mid.smsAutodetec8(m, usuario),
-      mentions: [m.sender, m.messageStubParameters[0], ...groupAdmins.map(v => v.id)]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType == 72) {
-    await this.sendMessage(m.chat, {
-      text: lenguajeGB['smsAvisoIIG']() + mid.smsAutodetec9(usuario, m),
-      mentions: [m.sender]
-    }, { quoted: fkontak })
-  } else if (chat.detect && m.messageStubType === 172 && m.messageStubParameters.length > 0) {
-    const rawUser = m.messageStubParameters[0];
-    const users = rawUser.split('@')[0];
-    const prefijosProhibidos = ['91', '92', '222', '93', '265', '61', '
+    }, { quoted: m })
+}
+
+async function handleJoinRequest(m, conn, chat, isBotAdmin) {
+    const rawUser = m.messageStubParameters[0]
+    const prefijosProhibidos = ['91', '92', '222', '93', '265', '61', '62', '966', '229', '40', '49', '20', '963', '967', '234', '210', '212']
+    const action = chat.antifake && isBotAdmin && prefijosProhibidos.some(prefijo => rawUser.startsWith(prefijo)) 
+        ? 'reject' 
+        : 'approve'
+
+    try {
+        await conn.groupRequestParticipantsUpdate(m.chat, [rawUser], action)
+        console.log(chalk.blue.bold(`[AUTO] Solicitud ${action === 'reject' ? 'rechazada' : 'aprobada'} para ${rawUser}`))
+    } catch (error) {
+        console.error(chalk.red.bold('[ERROR]'), error)
+    }
+}
+
+export default handler
