@@ -45,8 +45,8 @@ let handler = async (m, { conn, args, command, usedPrefix, isAdmin, isROwner }) 
     const userName = `@${userJid.split('@')[0]}`;
 
     // URLs de imágenes (¡cámbialas por las tuyas!)
-    const IMAGEN_BIENVENIDA = 'https://ejemplo.com/bienvenida.jpg';
-    const IMAGEN_DESPEDIDA = 'https://ejemplo.com/despedida.jpg';
+    const IMAGEN_BIENVENIDA = 'https://qu.ax/wDNjj.jpg';
+    const IMAGEN_DESPEDIDA = 'https://qu.ax/wDNjj.jpg';
 
     // Bienvenida
     if (eventType === 27) {
