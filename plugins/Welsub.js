@@ -1,9 +1,30 @@
-let handler = m => m
-handler.before = async function (m, { conn }) {
+let handler = async (m, { conn, args, command, usedPrefix }) => {
+  // Comando para activar/desactivar (.on welcome / .of welcome)
+  if (command === 'welcome') {
+    if (!m.isGroup) return m.reply('Este comando solo funciona en grupos')
+    if (!args[0]) return m.reply(`Usa: *${usedPrefix}on welcome* para activar o *${usedPrefix}of welcome* para desactivar`)
+
+    const chat = global.db.data.chats[m.chat] || {}
+    
+    if (args[0].toLowerCase() === 'on') {
+      chat.welcome = true
+      m.reply('✅ Bienvenidas activadas en este grupo')
+    } else if (args[0].toLowerCase() === 'of') {
+      chat.welcome = false
+      m.reply('❌ Bienvenidas desactivadas en este grupo')
+    } else {
+      m.reply(`Opción no válida. Usa *${usedPrefix}on welcome* o *${usedPrefix}of welcome*`)
+    }
+    return
+  }
+
+  // Handler para las bienvenidas/despedidas
   if (!m.isGroup || !m.messageStubType) return
 
   try {
-    const chat = global.db.data.chats?.[m.chat] || {}
+    const chat = global.db.data.chats[m.chat] || {}
+    if (!chat.welcome) return // Si las bienvenidas están desactivadas
+
     const groupData = await conn.groupMetadata(m.chat)
     const userJid = m.messageStubParameters?.[0]
     
@@ -16,7 +37,7 @@ handler.before = async function (m, { conn }) {
     const groupName = groupData.subject || "Este grupo"
 
     // Mensaje de BIENVENIDA (solo imagen)
-    if (m.messageStubType === 27 && chat.welcome) {
+    if (m.messageStubType === 27) {
       await conn.sendMessage(m.chat, {
         image: { url: TU_IMAGEN_URL },
         caption: `🎉 Bienvenido/a @${userName} a ${groupName}`,
@@ -24,7 +45,7 @@ handler.before = async function (m, { conn }) {
       })
     }
     // Mensaje de DESPEDIDA (solo imagen)
-    else if (m.messageStubType === 28 && chat.welcome) {
+    else if (m.messageStubType === 28) {
       await conn.sendMessage(m.chat, { 
         image: { url: TU_IMAGEN_URL },
         caption: `👋 Adiós @${userName}, gracias por estar en ${groupName}`,
@@ -36,4 +57,5 @@ handler.before = async function (m, { conn }) {
   }
 }
 
+handler.command = /^(welcome)$/i
 export default handler
