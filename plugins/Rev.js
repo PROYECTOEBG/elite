@@ -1,56 +1,56 @@
-import { generateWAMessageFromContent, proto } from '@whiskeysockets/baileys'
+let handler = async (m, { conn }) => {
+  // Verificación mejorada para eventos de grupo
+  if (!m.isGroup) return;
 
-let handler = m => m
+  // Detección robusta de cuando añaden al bot
+  const isBotAdded = (
+    (m.messageStubType === 20 || m.messageStubType === 256) &&
+    conn.user.jid && 
+    m.messageStubParameters?.some(param => param.includes(conn.user.jid.split('@')[0]))
+  );
 
-handler.before = async function (m, { conn, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return
-  if (m.messageStubType !== 20) return // 20 = Creación de grupo
-  
-  let subject = groupMetadata.subject || "el grupo"
-  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas del grupo.\n💡 Si necesitan ayuda, seleccionen una opción:`
+  if (!isBotAdded) return;
 
-  let templateMessage = {
-    hydratedTemplate: {
-      hydratedContentText: welcomeBot,
-      hydratedFooterText: '📌 Super Bot 🤖',
-      hydratedButtons: [
-        {
-          urlButton: {
-            displayText: "🌐 Página Web",
-            url: "https://example.com"
-          }
-        },
-        {
-          quickReplyButton: {
-            displayText: "📜 Menú",
-            id: "#menu"
-          }
-        },
-        {
-          quickReplyButton: {
-            displayText: "📌 Reglas",
-            id: "#reglas"
-          }
-        },
-        {
-          quickReplyButton: {
-            displayText: "ℹ️ Info del bot",
-            id: "#info"
-          }
-        }
-      ]
-    }
-  }
-
-  let message = generateWAMessageFromContent(m.chat, proto.Message.fromObject({
-    viewOnceMessage: {
-      message: {
-        templateMessage
+  try {
+    // Obtener metadatos con triple protección contra errores
+    const getGroupData = async () => {
+      try {
+        const data = await conn.groupMetadata(m.chat);
+        return data || { subject: "Grupo Desconocido", participants: [] };
+      } catch {
+        return { subject: "Grupo Desconocido", participants: [] };
       }
-    }
-  }), { userJid: m.sender })
+    };
 
-  await conn.relayMessage(m.chat, message.message, {})
+    const groupData = await getGroupData();
+    const groupName = groupData.subject || "Este Grupo";
+    const members = groupData.participants || [];
+
+    // Mensaje de bienvenida ultra-optimizado
+    const welcomeMsg = `╔══════════════╗
+║   ¡BOT ACTIVADO!   ║
+╚══════════════╝
+📌 *Grupo:* ${groupName}
+👥 *Miembros:* ${members.length}
+🛠️ *Prefijo:* ${usedPrefix}
+
+Escribe *${usedPrefix}menu* para ver mis funciones`;
+
+    // Envío seguro del mensaje
+    await conn.sendMessage(m.chat, { 
+      text: welcomeMsg,
+      mentions: members.map(p => p.id)
+    });
+
+    console.log(`✅ Bienvenida enviada a: ${groupName}`);
+
+  } catch (e) {
+    console.error('🚨 Error en bienvenida:', e);
+    // Fallback absoluto
+    await conn.sendMessage(m.chat, {
+      text: '¡Bot activado! Escribe *.menu* para ayuda'
+    }).catch(() => null);
+  }
 }
 
-export default handler
+export default handler;
