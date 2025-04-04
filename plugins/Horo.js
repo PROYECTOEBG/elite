@@ -5,6 +5,7 @@ import fetch from 'node-fetch';
 const zodiacImages = {
     aries: [
         'https://qu.ax/OuVMP.jpg',
+        'https://ibb.co/4g9GBCKM',
         'https://qu.ax/Dnfcl.jpg'
     ],
     tauro: [
