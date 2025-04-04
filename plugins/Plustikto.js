@@ -1,71 +1,96 @@
-// TikTok View Simulator con comando .plus
+// Versión mejorada con manejo de errores y diagnóstico
 class TikTokViewBot {
   constructor() {
-    console.log('🤖 Bot de Simulación de TikTok');
-    console.log('Comando: .plus [url] [vistas]');
+    console.log('🤖 Bot Mejorado - Simulador de TikTok');
   }
 
   validateUrl(url) {
-    const tiktokPattern = /^(https?:\/\/)?(www\.)?tiktok\.com\/@.+\/video\/\d+/i;
-    if (!tiktokPattern.test(url)) {
-      throw new Error('❌ Enlace TikTok no válido. Ejemplo: https://www.tiktok.com/@user/video/123456');
+    try {
+      // Patrón mejorado que acepta más variantes de URLs
+      const tiktokPattern = /^(https?:\/\/)?(www\.|vm\.|m\.)?tiktok\.com\/.+\/video\/\d+|tiktok\.com\/@.+/i;
+      return tiktokPattern.test(url);
+    } catch (e) {
+      return false;
     }
-    return true;
   }
 
   async simulateViews(url, views) {
     try {
-      // Validaciones
-      if (isNaN(views) throw new Error('El número de vistas debe ser un valor numérico');
-      if (views <= 0) throw new Error('El número de vistas debe ser mayor a 0');
-      this.validateUrl(url);
-
-      console.log(`\n🎬 Video: ${url}`);
-      console.log(`🎯 Vistas solicitadas: ${views}`);
-      console.log('⏳ Simulando...\n');
-
-      // Barra de progreso animada
-      const progressSteps = 20;
-      for (let i = 0; i <= progressSteps; i++) {
-        await new Promise(resolve => setTimeout(resolve, 300));
-        const percent = (i * 100) / progressSteps;
-        const progressBar = '█'.repeat(i) + '░'.repeat(progressSteps - i);
-        console.log(`📊 ${progressBar} ${percent.toFixed(0)}% | ~${Math.round(views * (percent/100))} vistas`);
+      if (!this.validateUrl(url)) {
+        throw new Error('Formato de URL inválido. Ejemplo válido: https://www.tiktok.com/@usuario/video/123456');
       }
 
-      console.log(`\n✅ ¡Simulación completada! (Total: ${views} vistas)`);
-      console.log('⚠️ Recordatorio: Esto es una simulación educativa\n');
+      const numericViews = Number(views);
+      if (isNaN(numericViews) || numericViews <= 0) {
+        throw new Error('El número de vistas debe ser un valor numérico mayor a 0');
+      }
+
+      console.log(`\n🔍 Analizando comando...`);
+      console.log(`📌 URL: ${url}`);
+      console.log(`🎯 Vistas: ${numericViews.toLocaleString()}`);
+
+      // Simulación mejorada
+      const steps = 5;
+      for (let i = 1; i <= steps; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const progress = (i/steps)*100;
+        console.log(`🔄 Progreso: ${progress}% | ${Math.round(numericViews*(i/steps))} vistas simuladas`);
+      }
+
+      console.log(`\n✅ Simulación completada para:\n${url}\nVistas simuladas: ${numericViews.toLocaleString()}`);
 
     } catch (error) {
-      console.error(`\n🔴 Error: ${error.message}\n`);
+      console.error(`\n❌ Error: ${error.message}`);
+      console.log(`💡 Ejemplo de uso correcto:\n.plus https://www.tiktok.com/@user/video/123456 1000`);
     }
   }
 
-  processCommand(command) {
-    const args = command.split(' ');
-    if (args[0] !== '.plus' || args.length < 3) {
-      console.log('ℹ️ Uso correcto: .plus [url_tiktok] [num_vistas]');
-      return;
+  processCommand(rawCommand) {
+    try {
+      // Limpieza y validación mejorada del comando
+      const cleanedCommand = rawCommand.trim().replace(/\s+/g, ' ');
+      const args = cleanedCommand.split(' ');
+      
+      if (args.length < 3 || !args[0].startsWith('.plus')) {
+        throw new Error('Formato de comando incorrecto');
+      }
+
+      // Extraer URL (puede contener espacios si está entre comillas)
+      let url = '';
+      let viewCount = 0;
+      
+      if (cleanedCommand.includes('"')) {
+        // Manejo de URLs con espacios entre comillas
+        const quoteParts = cleanedCommand.split('"');
+        url = quoteParts[1];
+        viewCount = quoteParts[2].trim().split(' ')[0];
+      } else {
+        url = args[1];
+        viewCount = args[2];
+      }
+
+      this.simulateViews(url, viewCount);
+    } catch (error) {
+      console.error(`\n⚠️ Error al procesar el comando: ${error.message}`);
+      console.log(`🔧 Revise el formato. Ejemplo válido:\n.plus "https://www.tiktok.com/@user/video/123456" 1000`);
     }
-    
-    const url = args[1];
-    const views = parseInt(args[2]);
-    this.simulateViews(url, views);
   }
 }
 
-// Ejemplo de uso
+// 1. Prueba básica automática
 const bot = new TikTokViewBot();
 
-// Simular el comando (en un bot real esto vendría de un mensaje de chat)
-bot.processCommand('.plus https://www.tiktok.com/@example/video/123456789 5000');
+// 2. Simulación de diferentes casos (descomenta para probar)
+// bot.processCommand('.plus https://www.tiktok.com/@example/video/123456789 5000'); // Caso normal
+// bot.processCommand('.plus "https://www.tiktok.com/@user with spaces/video/123456" 1000'); // URL con espacios
+// bot.processCommand('.plus invalid_url 500'); // URL inválida
+// bot.processCommand('.plus https://www.tiktok.com/@user/video/123456 not_number'); // Vistas no numéricas
 
-/* 
-   Para usar en un bot real, reemplazaría la línea anterior por algo como:
-   
-   client.on('message', msg => {
-     if (msg.content.startsWith('.plus')) {
-       bot.processCommand(msg.content);
-     }
-   });
+// 3. Para integrar con tu bot real:
+/*
+client.on('message', msg => {
+  if (msg.content.trim().startsWith('.plus')) {
+    bot.processCommand(msg.content);
+  }
+});
 */
