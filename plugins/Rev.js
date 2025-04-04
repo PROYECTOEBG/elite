@@ -1,13 +1,23 @@
-const initHandler = async (m, { conn, usedPrefix }) => {
+const welcomeHandler = async (m, { conn, groupMetadata }) => {
+    // Verifica que el mensaje sea por la creación del grupo
+    if (!m.messageStubType || !m.isGroup) return;
+    if (m.messageStubType !== 20) return; // 20 = Creación de grupo
+
+    let subject = groupMetadata.subject || "el grupo";
+    let welcomeText = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n` +
+                      `👮 Recuerden seguir las reglas del grupo.\n` +
+                      `💡 ¿Necesitan ayuda? Seleccionen una opción:`;
+
+    // Botones de opciones
     const buttons = [
         {
-            buttonId: `${usedPrefix}owner`,
-            buttonText: { displayText: "👑 Owner" },
+            buttonId: `guia1`,
+            buttonText: { displayText: "📖 Guía" },
             type: 1,
         },
         {
-            buttonId: `${usedPrefix}ping`,
-            buttonText: { displayText: "🏓 Ping" },
+            buttonId: `guia2`,
+            buttonText: { displayText: "📘 Guía 2" },
             type: 1,
         },
     ];
@@ -15,14 +25,15 @@ const initHandler = async (m, { conn, usedPrefix }) => {
     await conn.sendMessage(
         m.chat,
         {
-            text: "🔹 Selecciona una opción:",
+            text: welcomeText,
             buttons: buttons,
+            footer: "Powered by tu-bot",
+            headerType: 1,
             viewOnce: true,
         },
         { quoted: m }
     );
 };
 
-initHandler.command = /^init$/i;
-
-export default initHandler;
+// No necesita un comando, se activa solo cuando el bot es agregado
+export default welcomeHandler;
