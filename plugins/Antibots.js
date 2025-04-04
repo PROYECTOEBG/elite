@@ -16,45 +16,35 @@ export async function before(m) {
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
     if (!cmd) return;
 
-    // Solo para probar: muestra el comando aunque sí exista
-    console.log("Verificando comando:", cmd);
+    // Saltar algunos comandos comunes
+    if (['bot', 'menu', 'help'].includes(cmd)) return;
 
-    // Búsqueda en plugins
     let commandExists = false;
     for (const plugin of Object.values(global.plugins || {})) {
-      try {
-        if (!plugin?.command) continue;
+      if (!plugin?.command) continue;
 
-        const commands = Array.isArray(plugin.command)
-          ? plugin.command.map(c => String(c).toLowerCase())
-          : [String(plugin.command).toLowerCase()];
+      const commands = Array.isArray(plugin.command)
+        ? plugin.command.map(c => String(c).toLowerCase())
+        : [String(plugin.command).toLowerCase()];
 
-        if (commands.includes(cmd)) {
-          commandExists = true;
-          break;
-        }
-      } catch (e) {
-        console.error(`Error al buscar en plugin:`, e);
+      if (commands.includes(cmd)) {
+        commandExists = true;
+        break;
       }
     }
 
+    // Solo responde si NO existe el comando
     if (!commandExists) {
-      console.log("Comando NO encontrado:", cmd);
-
       commandTracker.set(trackerId, true);
       setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
-      const response = `*Comando no válido:* ${usedPrefix}${cmd}\nUsa *${usedPrefix}help* para ver los comandos disponibles.`;
+      const response = `✦ Comando *${usedPrefix}${cmd}* no reconocido.\n`
+        + `Usa *${usedPrefix}help* para ver los comandos disponibles.`;
 
-      // Aquí probamos directamente con reply
-      if (typeof m.reply === 'function') {
-        await m.reply(response);
-      } else {
-        console.error('m.reply no es una función válida');
-      }
+      await m.reply(response);
     }
 
   } catch (error) {
-    console.error('Error crítico en before:', error);
+    console.error('Error en before handler:', error);
   }
 }
