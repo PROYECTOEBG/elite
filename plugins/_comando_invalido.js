@@ -18,7 +18,7 @@ export async function all(m) {
   const trackerId = `${m.chat}_${cmd}`;
   if (commandTracker.has(trackerId)) return;
 
-  // Verificación de comandos existentes
+  // Verificación de comandos existentes (modificado)
   let commandExists = false;
   for (const name in global.plugins) {
     const plugin = global.plugins[name];
@@ -34,63 +34,57 @@ export async function all(m) {
     }
   }
 
-  if (!commandExists) {
-    commandTracker.set(trackerId, true);
-    setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
+  // SOLO responder si el comando NO existe (cambio clave)
+  if (commandExists) return;
 
-    // SOLUCIÓN DEFINITIVA PARA EL JID
-    const getValidJid = (input) => {
-      if (!input) return null;
+  commandTracker.set(trackerId, true);
+  setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
+
+  // Función mejorada para obtener JID válido
+  const getValidJid = () => {
+    const sources = [m.sender, m.chat, m.from, m.key?.remoteJid];
+    for (const source of sources) {
+      if (!source) continue;
       
-      // Si es un objeto, intentamos extraer el JID
-      if (typeof input === 'object') {
-        return input.id || input.jid || input.from || null;
+      // Si es string con formato correcto
+      if (typeof source === 'string' && source.includes('@')) {
+        const cleaned = source.replace(/[^0-9@]/g, '');
+        if (cleaned.includes('@s.whatsapp.net') || cleaned.includes('@g.us')) {
+          return cleaned;
+        }
+        return `${cleaned.split('@')[0]}@s.whatsapp.net`;
       }
       
-      // Si es string, verificamos formato
-      if (typeof input === 'string') {
-        // Limpieza básica del JID
-        let cleaned = input.split('@')[0].replace(/\D+/g, '');
-        if (cleaned.length > 0) {
-          return `${cleaned}@s.whatsapp.net`;
+      // Si es objeto con propiedad jid/id
+      if (typeof source === 'object') {
+        const jid = source.jid || source.id || source.from;
+        if (jid && typeof jid === 'string' && jid.includes('@')) {
+          return jid;
         }
       }
-      
-      return null;
-    };
-
-    // Obtenemos JID con múltiples fallbacks
-    let jid = getValidJid(m.sender) || 
-              getValidJid(m.chat) || 
-              getValidJid(m.from) || 
-              getValidJid(m.key?.remoteJid) || 
-              'unknown@s.whatsapp.net';
-
-    // Creación segura de la mención
-    const mentionId = jid.split('@')[0];
-    const mention = mentionId ? `@${mentionId}` : '@unknown';
-
-    // Construcción del mensaje
-    const response = `✦ ¡Atención ${mention}! ✦\n\n` +
-      `El comando *${usedPrefix}${cmd}* no está registrado.\n` +
-      `▶ Verifica la ortografía\n` +
-      `▶ Usa *${usedPrefix}help* para ayuda\n\n` +
-      `🔹 EliteBot Global 🔹`;
-
-    try {
-      // Envío con validación final
-      if (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@g.us')) {
-        await m.reply(response, {
-          mentions: [jid]
-        });
-      } else {
-        console.error('JID no válido detectado:', jid);
-        await m.reply(response); // Envío sin mención como fallback
-      }
-    } catch (error) {
-      console.error('Error al enviar mensaje:', error);
-      // Fallback final sin usar mentions
-      await conn.sendMessage(m.chat, { text: response });
     }
+    return 'unknown@s.whatsapp.net'; // Fallback seguro
+  };
+
+  const jid = getValidJid();
+  const mentionId = jid.split('@')[0];
+  const mention = mentionId ? `@${mentionId}` : '@unknown';
+
+  const response = `✦ ¡Atención ${mention}! ✦\n\n` +
+    `El comando *${usedPrefix}${cmd}* no está registrado.\n` +
+    `▶ Verifica la ortografía\n` +
+    `▶ Usa *${usedPrefix}menu* para ver comandos disponibles\n\n` +
+    `🔹 ${global.botname} 🔹`;
+
+  try {
+    if (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@g.us')) {
+      await m.reply(response, { mentions: [jid] });
+    } else {
+      await m.reply(response); // Sin mención si el JID no es válido
+    }
+  } catch (error) {
+    console.error('Error al responder a comando inválido:', error);
+    // Último fallback
+    await conn.sendMessage(m.chat, { text: response });
   }
 }
