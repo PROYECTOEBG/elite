@@ -1,41 +1,17 @@
-let handler = async (m, { conn }) => {
-  // Verificación más robusta para eventos de grupo
-  if (!m.isGroup) return;
+let handler = m => m;
+
+handler.before = async function (m, { conn, groupMetadata }) {
+  // Verifica si el mensaje indica que el bot ha sido agregado al grupo
+  if (!m.messageStubType || !m.isGroup) return;
   
-  // Solución definitiva para el error - Detección mejorada
-  const isBotAdded = (
-    (m.messageStubType === 20 || m.messageStubType === 256) && 
-    m.messageStubParameters?.includes(conn.user.jid.split('@')[0])
-  );
-
-  if (!isBotAdded) return;
-
-  try {
-    // Obtener metadatos con múltiples fallbacks
-    const groupData = await conn.groupMetadata(m.chat).catch(() => ({ 
-      subject: "Nuevo Grupo", 
-      participants: [] 
-    }));
-
-    const groupName = groupData.subject || "Este Grupo";
-    const memberCount = groupData.participants?.length || 0;
-
-    // Mensaje de bienvenida optimizado
-    await conn.sendMessage(m.chat, {
-      text: `🤖 *¡Bot activado!*\n\n` +
-            `📌 Grupo: *${groupName}*\n` +
-            `👥 Miembros: *${memberCount}*\n\n` +
-            `Escribe *.menu* para ver mis funciones`,
-      mentions: [conn.user.jid]
-    });
-
-  } catch (e) {
-    console.error('Error en bienvenida del bot:', e);
-    // Fallback básico si todo falla
-    await conn.sendMessage(m.chat, {
-      text: '¡Bot activado! Escribe *.menu* para ayuda'
-    });
+  if (m.messageStubType === 27 && m.messageStubParameters.includes(conn.user.jid)) {
+    let subject = groupMetadata.subject;
+    let descs = groupMetadata.desc || "😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁 😻";
+    
+    let welcomeBotMessage = `*Hola a todos!* 🤖✨\n\nSoy *Super GataBot-MD* y estoy aquí para ayudar en *${subject}*.\n\n📌 Escribe *!menu* para ver mis comandos.\n📄 No olvides leer la descripción del grupo.\n\n¡Gracias por agregarme! 😺💖\n\n${descs}`;
+    
+    await conn.sendMessage(m.chat, { text: welcomeBotMessage }, { quoted: m });
   }
-}
+};
 
 export default handler;
