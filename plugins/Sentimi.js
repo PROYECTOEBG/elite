@@ -1,16 +1,17 @@
-// Estructura para gestionar los subbots
-const subbots = {};
+const subbots = {
+    motivacion: { activo: true },
+    chistes: { activo: true },
+};
 
-// Registrar un subbot
-function registrarSubbot(nombre, funcion) {
+// Función para registrar un subbot
+function registrarSubbot(nombre) {
     subbots[nombre] = {
-        activo: true,
-        ejecutar: funcion
+        activo: true, // El subbot se activa al registrarse
     };
     console.log(`Subbot '${nombre}' registrado y activo.`);
 }
 
-// Cambiar el estado (activo/inactivo) de un subbot
+// Función para cambiar el estado (activo/inactivo) de un subbot
 function cambiarEstadoSubbot(nombre, estado) {
     if (subbots[nombre]) {
         subbots[nombre].activo = estado;
@@ -20,53 +21,67 @@ function cambiarEstadoSubbot(nombre, estado) {
     }
 }
 
-// Ejecutar un subbot específico si está activo
+// Función para ejecutar un subbot
 function ejecutarSubbot(nombre) {
     const subbot = subbots[nombre];
     if (subbot && subbot.activo) {
-        return subbot.ejecutar();
+        console.log(`Ejecutando subbot '${nombre}'...`);
+        return `${nombre} está activo.`;
     } else {
-        return `El subbot '${nombre}' está inactivo o no existe.`;
+        return `El subbot '${nombre}' está inactivo.`;
     }
 }
 
-// Subbot de motivación
-registrarSubbot("motivacion", () => {
-    const frases = [
-        "¡Sigue adelante, lo estás haciendo genial!",
-        "Cada día es una nueva oportunidad.",
-        "No te rindas, el esfuerzo vale la pena.",
-        "Eres más fuerte de lo que crees."
-    ];
-    return frases[Math.floor(Math.random() * frases.length)];
-});
+// Crear subbots
+registrarSubbot("motivacion");
+registrarSubbot("chistes");
 
-// Subbot de chistes
-registrarSubbot("chistes", () => {
-    const chistes = [
-        "¿Por qué los programadores confunden Halloween con Navidad? Porque OCT 31 = DEC 25.",
-        "¿Cómo se llama un oso sin dientes? ¡Oso gomoso!",
-        "¿Qué le dijo el 0 al 8? ¡Bonito cinturón!"
-    ];
-    return chistes[Math.floor(Math.random() * chistes.length)];
-});
-
-// Mantener subbots activos en intervalos
-setInterval(() => {
-    if (subbots["motivacion"]?.activo) {
-        console.log("Subbot motivación dice: " + ejecutarSubbot("motivacion"));
+// Función para detectar si los subbots están activos
+function verificarSubbots() {
+    let todoActivo = true;
+    
+    // Verificamos el estado de cada subbot
+    for (const nombre in subbots) {
+        const subbot = subbots[nombre];
+        if (!subbot.activo) {
+            console.log(`Subbot '${nombre}' está inactivo. Reiniciando...`);
+            todoActivo = false;
+            break;
+        }
     }
-}, 10000); // Cada 10 segundos para motivación
-
-setInterval(() => {
-    if (subbots["chistes"]?.activo) {
-        console.log("Subbot chistes dice: " + ejecutarSubbot("chistes"));
+    
+    // Si algún subbot está inactivo, reiniciar el bot
+    if (!todoActivo) {
+        reiniciarBot();
+    } else {
+        console.log("Todos los subbots están activos.");
     }
-}, 15000); // Cada 15 segundos para chistes
+}
 
-// Desactivación de un subbot después de cierto tiempo (por ejemplo, 50 segundos)
+// Función para reiniciar el bot (se reinician los subbots)
+function reiniciarBot() {
+    console.log("Reiniciando el bot...");
+
+    // Reactivar todos los subbots
+    for (const nombre in subbots) {
+        subbots[nombre].activo = true;
+        console.log(`Subbot '${nombre}' reactivado.`);
+    }
+
+    // Puedes agregar aquí un código para reiniciar el bot completamente si es necesario
+    // En este caso, solo estamos reactivando los subbots.
+}
+
+// Verificar el estado de los subbots cada 10 segundos
+setInterval(verificarSubbots, 10000); // Ejecuta cada 10 segundos
+
+// Simular que un subbot se vuelve inactivo
 setTimeout(() => {
-    cambiarEstadoSubbot("motivacion", false);  // Desactivar motivación después de 50 segundos
-}, 50000);
+    cambiarEstadoSubbot("motivacion", false); // Desactivamos el subbot de motivación para probar
+}, 25000); // Después de 25 segundos
 
-// Puedes añadir más subbots aquí de forma sencilla, sólo registra más subbots con "registrarSubbot".
+// Simulamos que el bot sigue funcionando
+setInterval(() => {
+    console.log(ejecutarSubbot("motivacion"));
+    console.log(ejecutarSubbot("chistes"));
+}, 5000);
