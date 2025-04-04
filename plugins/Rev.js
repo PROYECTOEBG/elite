@@ -1,35 +1,40 @@
 let handler = async (m, { conn }) => {
-  // Detectar cuando el bot es añadido a un grupo (messageStubType 20)
-  if (!m.isGroup || m.messageStubType !== 20) return;
+  // Verificación más robusta para eventos de grupo
+  if (!m.isGroup) return;
+  
+  // Solución definitiva para el error - Detección mejorada
+  const isBotAdded = (
+    (m.messageStubType === 20 || m.messageStubType === 256) && 
+    m.messageStubParameters?.includes(conn.user.jid.split('@')[0])
+  );
+
+  if (!isBotAdded) return;
 
   try {
-    const groupMetadata = await conn.groupMetadata(m.chat).catch(() => null);
-    if (!groupMetadata) return;
+    // Obtener metadatos con múltiples fallbacks
+    const groupData = await conn.groupMetadata(m.chat).catch(() => ({ 
+      subject: "Nuevo Grupo", 
+      participants: [] 
+    }));
 
-    const groupName = groupMetadata.subject || "este grupo";
-    const participants = groupMetadata.participants || [];
-    const botNumber = conn.user.jid.split('@')[0];
+    const groupName = groupData.subject || "Este Grupo";
+    const memberCount = groupData.participants?.length || 0;
 
-    // Mensaje de bienvenida mejorado
-    const welcomeMessage = `╭━━━━━━━━━━━━━━╮
-┃   *¡GRACIAS POR INVITARME!*   ┃
-╰━━━━━━━━━━━━━━╯
-📛 *Nombre del grupo:* ${groupName}
-👥 *Miembros:* ${participants.length}
-🤖 *Mi prefijo:* !
-
-Escribe *!menu* para ver mis comandos.`;
-
-    // Enviar solo mensaje de texto (más confiable)
-    await conn.sendMessage(m.chat, { 
-      text: welcomeMessage,
-      mentions: participants.map(p => p.id)
+    // Mensaje de bienvenida optimizado
+    await conn.sendMessage(m.chat, {
+      text: `🤖 *¡Bot activado!*\n\n` +
+            `📌 Grupo: *${groupName}*\n` +
+            `👥 Miembros: *${memberCount}*\n\n` +
+            `Escribe *.menu* para ver mis funciones`,
+      mentions: [conn.user.jid]
     });
 
-    console.log(`Mensaje de bienvenida enviado al grupo: ${groupName}`);
-
-  } catch (error) {
-    console.error('Error al enviar bienvenida:', error);
+  } catch (e) {
+    console.error('Error en bienvenida del bot:', e);
+    // Fallback básico si todo falla
+    await conn.sendMessage(m.chat, {
+      text: '¡Bot activado! Escribe *.menu* para ayuda'
+    });
   }
 }
 
