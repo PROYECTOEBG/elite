@@ -1,45 +1,41 @@
-// Alex-X >> https://github.com/OfcKing
+let handler = async (m, { conn }) => {
+  // Detectar cuando añaden al bot a un grupo (código 256)
+  if (!m.isGroup || m.messageStubType !== 256) return
+  
+  try {
+    const groupMetadata = await conn.groupMetadata(m.chat)
+    const groupName = groupMetadata.subject || "este grupo"
+    const participants = groupMetadata.participants.map(p => p.id)
+    const botNumber = conn.user.jid.split('@')[0]
 
-import fs from 'fs';
-import path from 'path';
+    // Mensaje de bienvenida para el bot
+    const welcomeMessage = `╭━━━━━━━━━━━━━━╮
+│   *¡GRACIAS POR INVITARME!*   │
+╰━━━━━━━━━━━━━━╯
+📌 *Nombre del grupo:* ${groupName}
+👥 *Miembros:* ${participants.length}
+🤖 *Mi prefijo:* !
 
-var handler = async (m, { usedPrefix, command }) => {
-    try {
-        await m.react('🕒'); 
-        conn.sendPresenceUpdate('composing', m.chat);
+*¡Listo para ayudarlos!* Escriban *!menu* para ver mis funciones.`
 
-        const pluginsDir = './plugins';
+    // Enviar mensaje al grupo
+    await conn.sendMessage(m.chat, { 
+      text: welcomeMessage,
+      contextInfo: {
+        mentionedJid: participants,
+        forwardingScore: 999,
+        isForwarded: true
+      }
+    })
 
-        const files = fs.readdirSync(pluginsDir).filter(file => file.endsWith('.js'));
+    // Opcional: Enviar sticker de bienvenida
+    await conn.sendMessage(m.chat, {
+      sticker: fs.readFileSync('./src/welcome.webp') // Ruta de tu sticker
+    })
 
-        let response = `📂 *Revisión de Syntax Errors:*\n\n`;
-        let hasErrors = false;
+  } catch (error) {
+    console.error('Error en bienvenida del bot:', error)
+  }
+}
 
-        for (const file of files) {
-            try {
-                await import(path.resolve(pluginsDir, file));
-            } catch (error) {
-                hasErrors = true;
-                response += `🚩 *Error en:* ${file}\n${error.message}\n\n`;
-            }
-        }
-
-        if (!hasErrors) {
-            response += '✅ ¡Todo está en orden! No se detectaron errores de sintaxis.';
-        }
-
-        await conn.reply(m.chat, response, m);
-        await m.react('✅');
-    } catch (err) {
-        await m.react('✖️'); 
-        console.error(err);
-        conn.reply(m.chat, '🚩 *Ocurrió un fallo al verificar los plugins.*', m);
-    }
-};
-
-handler.command = ['rev'];
-handler.help = ['rev'];
-handler.tags = ['tools'];
-handler.register = true;
-
-export default handler;
+export default handler
