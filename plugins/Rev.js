@@ -1,41 +1,36 @@
 let handler = async (m, { conn }) => {
-  // Detectar cuando añaden al bot a un grupo (código 256)
-  if (!m.isGroup || m.messageStubType !== 256) return
-  
-  try {
-    const groupMetadata = await conn.groupMetadata(m.chat)
-    const groupName = groupMetadata.subject || "este grupo"
-    const participants = groupMetadata.participants.map(p => p.id)
-    const botNumber = conn.user.jid.split('@')[0]
+  // Detectar cuando el bot es añadido a un grupo (messageStubType 20)
+  if (!m.isGroup || m.messageStubType !== 20) return;
 
-    // Mensaje de bienvenida para el bot
+  try {
+    const groupMetadata = await conn.groupMetadata(m.chat).catch(() => null);
+    if (!groupMetadata) return;
+
+    const groupName = groupMetadata.subject || "este grupo";
+    const participants = groupMetadata.participants || [];
+    const botNumber = conn.user.jid.split('@')[0];
+
+    // Mensaje de bienvenida mejorado
     const welcomeMessage = `╭━━━━━━━━━━━━━━╮
-│   *¡GRACIAS POR INVITARME!*   │
+┃   *¡GRACIAS POR INVITARME!*   ┃
 ╰━━━━━━━━━━━━━━╯
-📌 *Nombre del grupo:* ${groupName}
+📛 *Nombre del grupo:* ${groupName}
 👥 *Miembros:* ${participants.length}
 🤖 *Mi prefijo:* !
 
-*¡Listo para ayudarlos!* Escriban *!menu* para ver mis funciones.`
+Escribe *!menu* para ver mis comandos.`;
 
-    // Enviar mensaje al grupo
+    // Enviar solo mensaje de texto (más confiable)
     await conn.sendMessage(m.chat, { 
       text: welcomeMessage,
-      contextInfo: {
-        mentionedJid: participants,
-        forwardingScore: 999,
-        isForwarded: true
-      }
-    })
+      mentions: participants.map(p => p.id)
+    });
 
-    // Opcional: Enviar sticker de bienvenida
-    await conn.sendMessage(m.chat, {
-      sticker: fs.readFileSync('./src/welcome.webp') // Ruta de tu sticker
-    })
+    console.log(`Mensaje de bienvenida enviado al grupo: ${groupName}`);
 
   } catch (error) {
-    console.error('Error en bienvenida del bot:', error)
+    console.error('Error al enviar bienvenida:', error);
   }
 }
 
-export default handler
+export default handler;
