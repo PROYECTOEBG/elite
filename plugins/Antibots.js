@@ -2,36 +2,36 @@ const commandTracker = new Map();
 const TRACKER_TTL = 60000; // 1 minuto
 
 export async function before(m) {
-  // 1. Filtrado estricto de mensajes
   if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe) return;
 
-  // 2. ID único basado en contenido y contexto
   const trackerId = `${m.chat}_${m.text.slice(0, 20).trim().toLowerCase()}`;
   if (commandTracker.has(trackerId)) return;
 
   try {
-    // 3. Configuración de prefijo infalible
     const prefix = (global.prefix instanceof RegExp) ? global.prefix : /^[\.\!\#\/]/i;
     const prefixMatch = m.text.match(prefix);
     if (!prefixMatch) return;
 
     const usedPrefix = prefixMatch[0];
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
+    
+    console.log(`Detectado: Prefix: ${usedPrefix}, Command: ${cmd}`);
+
     if (!cmd) return;
 
-    // 4. Comandos que se ignoran explícitamente
     if (['bot', 'menu', 'help'].includes(cmd)) {
       commandTracker.set(trackerId, true);
       setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
       return;
     }
 
-    // 5. Verificación exhaustiva en plugins
     let commandExists = false;
+    console.log("Buscando en plugins...");
+
     pluginSearch: for (const plugin of Object.values(global.plugins || {})) {
       try {
         if (!plugin?.command) continue;
-        
+
         const commands = Array.isArray(plugin.command) 
           ? plugin.command.map(c => String(c).toLowerCase())
           : [String(plugin.command).toLowerCase()];
@@ -45,7 +45,8 @@ export async function before(m) {
       }
     }
 
-    // 6. Respuesta solo para comandos no existentes
+    console.log(`Comando encontrado: ${commandExists}`);
+
     if (!commandExists) {
       commandTracker.set(trackerId, true);
       setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
@@ -56,6 +57,8 @@ export async function before(m) {
         + `▶ Verifica la ortografía\n`
         + `▶ Usa *${usedPrefix}help* para ayuda\n\n`
         + `🔹 EliteBot Global 🔹`;
+
+      console.log(`Enviando respuesta: ${response}`);
       
       await m.reply(response, { mentions: [m.sender] });
     }
