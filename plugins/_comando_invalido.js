@@ -34,8 +34,10 @@ export async function all(m) {
     commandTracker.set(trackerId, true);
     setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
-    const jid = typeof m.sender === 'string' ? m.sender : m.key?.participant || m.chat;
+    // Asegúrate de que `m.sender` sea un JID válido
+    const jid = typeof m.sender === 'string' && m.sender.includes('@') ? m.sender : m.key?.participant || m.chat;
 
+    // Si no se encuentra un JID válido, evitamos el error
     const userMention = jid ? `@${jid.split('@')[0]}` : 'Usuario';
     const response = `✦ ¡Atención ${userMention}! ✦\n\n`
       + `El comando *${usedPrefix}${cmd}* no está registrado.\n`
