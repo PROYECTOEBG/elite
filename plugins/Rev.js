@@ -1,17 +1,13 @@
-let handler = m => m;
+let handler = m => m
 
 handler.before = async function (m, { conn, groupMetadata }) {
-  // Verifica si el mensaje indica que el bot ha sido agregado al grupo
-  if (!m.messageStubType || !m.isGroup) return;
+  if (!m.messageStubType || !m.isGroup) return
+  if (m.messageStubType !== 20) return // 20 = Creación de grupo
   
-  if (m.messageStubType === 27 && m.messageStubParameters.includes(conn.user.jid)) {
-    let subject = groupMetadata.subject;
-    let descs = groupMetadata.desc || "😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁 😻";
-    
-    let welcomeBotMessage = `*Hola a todos!* 🤖✨\n\nSoy *Super GataBot-MD* y estoy aquí para ayudar en *${subject}*.\n\n📌 Escribe *!menu* para ver mis comandos.\n📄 No olvides leer la descripción del grupo.\n\n¡Gracias por agregarme! 😺💖\n\n${descs}`;
-    
-    await conn.sendMessage(m.chat, { text: welcomeBotMessage }, { quoted: m });
-  }
-};
+  let subject = groupMetadata.subject || "el grupo"
+  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas del grupo.\n💡 Si necesitan ayuda, escriban *#menu* para ver mis comandos.`
 
-export default handler;
+  await this.sendMessage(m.chat, { text: welcomeBot }, { quoted: m })
+}
+
+export default handler
