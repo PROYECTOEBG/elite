@@ -9,59 +9,26 @@ handler.before = async function (m, { conn }) {
     
     if (!userJid || ![27, 28].includes(m.messageStubType)) return
 
-    // Configuración de imagen (REEMPLAZA ESTA URL CON LA TUYA)
-    const FOTO_PREDETERMINADA = 'https://qu.ax/wDNjj.jpg' // ← Cambia este enlace
+    // Configuración de imagen (REEMPLAZA ESTA URL)
+    const TU_IMAGEN_URL = 'https://qu.ax/wDNjj.jpg' // ← Tu enlace aquí
+    
     const userName = userJid.split('@')[0]
     const groupName = groupData.subject || "Este grupo"
-    const groupDesc = groupData.desc || "Sin descripción disponible"
 
-    // Obtener imagen (usará la predeterminada si falla)
-    let ppUrl = await conn.profilePictureUrl(userJid, 'image').catch(() => FOTO_PREDETERMINADA)
-
-    // Mensaje de BIENVENIDA
+    // Mensaje de BIENVENIDA (solo imagen)
     if (m.messageStubType === 27 && chat.welcome) {
-      const welcomeMsg = `╭━━━━━━━━━━━━━━╮
-│  🎉 BIENVENIDO/A 🎉  │
-│  @${userName}  │
-╰━━━━━━━━━━━━━━╯
-📌 *Grupo:* ${groupName}
-📝 *Descripción:* ${groupDesc}`
-
       await conn.sendMessage(m.chat, {
-        text: welcomeMsg,
-        mentions: [userJid],
-        contextInfo: {
-          externalAdReply: {
-            title: groupName,
-            body: groupDesc,
-            thumbnailUrl: ppUrl, // Usa la imagen aquí
-            mediaType: 1,
-            sourceUrl: 'https://whatsapp.com',
-            showAdAttribution: true
-          }
-        }
+        image: { url: TU_IMAGEN_URL },
+        caption: `🎉 Bienvenido/a @${userName} a ${groupName}`,
+        mentions: [userJid]
       })
     }
-    // Mensaje de DESPEDIDA
+    // Mensaje de DESPEDIDA (solo imagen)
     else if (m.messageStubType === 28 && chat.welcome) {
-      const goodbyeMsg = `╭━━━━━━━━━━━━━━╮
-│  👋 HASTA PRONTO 👋  │
-│  @${userName}  │
-╰━━━━━━━━━━━━━━╯
-😿 Lamentamos que te vayas de ${groupName}`
-
       await conn.sendMessage(m.chat, { 
-        text: goodbyeMsg,
-        mentions: [userJid],
-        contextInfo: {
-          externalAdReply: {
-            title: groupName,
-            body: `Se fue @${userName}`,
-            thumbnailUrl: ppUrl, // Usa la imagen aquí
-            mediaType: 1,
-            showAdAttribution: true
-          }
-        }
+        image: { url: TU_IMAGEN_URL },
+        caption: `👋 Adiós @${userName}, gracias por estar en ${groupName}`,
+        mentions: [userJid]
       })
     }
   } catch (error) {
