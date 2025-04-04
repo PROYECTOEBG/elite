@@ -1,19 +1,56 @@
+// Importa fetch si es necesario para otras partes
 import fetch from 'node-fetch';
 
-// ENLACES DE INSTAGRAM PARA CADA SIGNO ZODIACAL
-const zodiacLinks = {
-    aries: 'https://www.instagram.com/explore/tags/aries/',
-    tauro: 'https://www.instagram.com/explore/tags/tauro/',
-    geminis: 'https://www.instagram.com/explore/tags/geminis/',
-    cancer: 'https://www.instagram.com/cancer.horoscopoverde?igsh=MXVjNGdxdm5pZnlwbw==',
-    leo: 'https://www.instagram.com/explore/tags/leo/',
-    virgo: 'https://www.instagram.com/explore/tags/virgo/',
-    libra: 'https://www.instagram.com/explore/tags/libra/',
-    escorpio: 'https://www.instagram.com/explore/tags/escorpio/',
-    sagitario: 'https://www.instagram.com/explore/tags/sagitario/',
-    capricornio: 'https://www.instagram.com/explore/tags/capricornio/',
-    acuario: 'https://www.instagram.com/explore/tags/acuario/',
-    piscis: 'https://www.instagram.com/explore/tags/piscis/'
+// IMÁGENES DE CADA SIGNO — usa enlaces directos (.jpg/.png)
+const zodiacImages = {
+    aries: [
+        'https://qu.ax/OuVMP.jpg',
+        'https://qu.ax/Dnfcl.jpg'
+    ],
+    tauro: [
+        'https://source.unsplash.com/400x400/?taurus',
+        'https://source.unsplash.com/400x400/?bull'
+    ],
+    geminis: [
+        'https://source.unsplash.com/400x400/?gemini',
+        'https://source.unsplash.com/400x400/?twins'
+    ],
+    cancer: [
+        'https://source.unsplash.com/400x400/?cancer',
+        'https://source.unsplash.com/400x400/?moon'
+    ],
+    leo: [
+        'https://source.unsplash.com/400x400/?leo',
+        'https://source.unsplash.com/400x400/?lion'
+    ],
+    virgo: [
+        'https://source.unsplash.com/400x400/?virgo',
+        'https://source.unsplash.com/400x400/?woman'
+    ],
+    libra: [
+        'https://source.unsplash.com/400x400/?libra',
+        'https://source.unsplash.com/400x400/?scales'
+    ],
+    escorpio: [
+        'https://source.unsplash.com/400x400/?scorpio',
+        'https://source.unsplash.com/400x400/?scorpion'
+    ],
+    sagitario: [
+        'https://source.unsplash.com/400x400/?sagittarius',
+        'https://source.unsplash.com/400x400/?archer'
+    ],
+    capricornio: [
+        'https://source.unsplash.com/400x400/?capricorn',
+        'https://source.unsplash.com/400x400/?mountain'
+    ],
+    acuario: [
+        'https://source.unsplash.com/400x400/?aquarius',
+        'https://source.unsplash.com/400x400/?water'
+    ],
+    piscis: [
+        'https://source.unsplash.com/400x400/?pisces',
+        'https://source.unsplash.com/400x400/?ocean'
+    ]
 };
 
 const usedImages = new Map();
@@ -68,17 +105,19 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
             advice: getRandomAdvice(),
             luckyNumber: Math.floor(Math.random() * 10) + 1
         };
-
-        // Enlace de Instagram para el signo
-        const instaLink = zodiacLinks[sign] || 'https://www.instagram.com/explore/tags/horoscopo/';
+        
+        const imageUrl = await getZodiacImage(sign);
 
         const message = `*${zodiacSigns[sign]}*\n📆 *Fecha:* ${horoscopeData.date}\n\n` +
                        `🔮 *Predicción:*\n${horoscopeData.prediction}\n\n` +
                        `💡 *Consejo:* ${horoscopeData.advice}\n\n` +
-                       `🍀 *Número de la suerte:* ${horoscopeData.luckyNumber}\n\n` +
-                       `📸 *Ver imágenes en Instagram:* [Haz clic aquí](${instaLink})`;
+                       `🍀 *Número de la suerte:* ${horoscopeData.luckyNumber}`;
 
-        await conn.sendMessage(m.chat, { text: message }, { quoted: m });
+        await conn.sendMessage(m.chat, {
+            image: { url: imageUrl },
+            caption: message,
+            mentions: [m.sender]
+        }, { quoted: m });
 
     } catch (error) {
         console.error('Error:', error);
@@ -88,6 +127,28 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
         );
     }
 };
+
+// Obtiene una imagen sin repetir hasta agotar las disponibles
+async function getZodiacImage(sign) {
+    const images = zodiacImages[sign];
+    if (!images || images.length === 0) {
+        throw new Error('No hay imágenes disponibles para este signo.');
+    }
+
+    if (!usedImages.has(sign)) {
+        usedImages.set(sign, []);
+    }
+
+    const used = usedImages.get(sign);
+    const available = images.filter(url => !used.includes(url));
+
+    const selected = available.length > 0 
+        ? available[Math.floor(Math.random() * available.length)] 
+        : images[Math.floor(Math.random() * images.length)];
+
+    used.push(selected);
+    return selected;
+}
 
 function getRandomAdvice() {
     const advices = [
