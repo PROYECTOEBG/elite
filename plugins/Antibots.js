@@ -1,155 +1,152 @@
-let commandHistory = new Map();
-const HISTORY_LIMIT = 100;
+// Versión 100% garantizada para manejo de comandos mal escritos
+const usedCommands = new Set();
 
 export async function before(m) {
-  // 1. Verificación ultra-estricta del mensaje
-  if (!m || !m.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe || m.key.remoteJid.includes('status')) {
+  // 1. Verificación EXTREMA del mensaje
+  if (!m?.text || typeof m.text !== 'string' || 
+      m.isBaileys || m.fromMe || m.key?.fromMe) {
     return;
   }
 
+  // 2. Sistema de bloqueo de duplicados INFALIBLE
+  const msgKey = `${m.chat}_${m.id}_${m.text}`;
+  if (usedCommands.has(msgKey)) return;
+  usedCommands.add(msgKey);
+  
+  // 3. Limpieza automática cada 50 mensajes
+  if (usedCommands.size > 50) {
+    const cmds = [...usedCommands];
+    usedCommands.clear();
+    cmds.slice(-25).forEach(cmd => usedCommands.add(cmd));
+  }
+
   try {
-    // 2. Sistema anti-duplicados mejorado
-    const messageId = `${m.chat}_${m.id}`;
-    if (commandHistory.has(messageId)) return;
-    
-    // 3. Limpieza automática del historial
-    if (commandHistory.size >= HISTORY_LIMIT) {
-      const entries = Array.from(commandHistory.entries());
-      commandHistory = new Map(entries.slice(entries.length - (HISTORY_LIMIT / 2)));
-    }
-    commandHistory.set(messageId, Date.now());
+    // 4. Configuración DELTA del prefijo (a prueba de fallos)
+    const prefix = global.prefix = global.prefix instanceof RegExp ? 
+                   global.prefix : 
+                   /^[\!\.\#\/]/i;
 
-    // 4. Configuración garantizada del prefijo
-    if (!global.prefix || !(global.prefix instanceof RegExp)) {
-      global.prefix = /^[\.\!\#\/]/i;
-    }
-
-    // 5. Extracción infalible del comando
-    const prefixMatch = m.text.match(global.prefix);
+    // 5. Extracción DELTA del comando
+    const prefixMatch = m.text.trim().match(prefix);
     if (!prefixMatch) return;
     
     const usedPrefix = prefixMatch[0];
-    const fullCmd = m.text.slice(usedPrefix.length).trim();
-    const [command] = fullCmd.split(/\s+/);
-    const cmd = command?.toLowerCase();
-    
+    const cmdBody = m.text.slice(usedPrefix.length).trim();
+    const cmd = cmdBody.split(/\s+/)[0]?.toLowerCase();
     if (!cmd) return;
 
-    // 6. Comandos especiales silenciosos
-    if (cmd === 'bot' || cmd === 'menu') return;
+    // 6. Comandos silenciados
+    if (['bot', 'menu', 'help'].includes(cmd)) return;
 
-    // 7. Verificación ABSOLUTA del comando
-    const commandExists = await absolutelyVerifyCommand(cmd);
+    // 7. Verificación DELTA de existencia
+    const exists = await verifyCommandExistence(cmd);
     
-    if (!commandExists) {
-      await handleInvalidCommandWithRetry(m, usedPrefix, cmd);
+    if (!exists) {
+      // 8. Respuesta GARANTIZADA para comandos mal escritos
+      await sendInvalidCommandResponse(m, usedPrefix, cmd);
       return;
     }
 
-    // ... (tu lógica para comandos válidos)
+    // ... (tu lógica normal para comandos válidos)
 
   } catch (error) {
-    console.error('⚠️ Error crítico en before:', error);
+    console.error('ERROR DELTA:', error);
+    try {
+      await m.reply('⚠️ Error interno. Intenta nuevamente.');
+    } catch (err) {
+      console.error('FALLO DELTA al notificar error:', err);
+    }
   }
 }
 
-// Función de verificación INDESTRUCTIBLE
-async function absolutelyVerifyCommand(cmd) {
-  try {
-    if (!global.plugins || typeof global.plugins !== 'object') return false;
-    
-    const plugins = Object.values(global.plugins);
-    for (const plugin of plugins) {
+// Verificador de comandos DELTA (a prueba de fallos)
+async function verifyCommandExistence(cmd) {
+  if (!global.plugins || typeof global.plugins !== 'object') {
+    console.error('PLUGINS NO DEFINIDOS');
+    return false;
+  }
+
+  for (const [name, plugin] of Object.entries(global.plugins)) {
+    try {
       if (!plugin || typeof plugin !== 'object') continue;
       
-      try {
-        if (plugin.command) {
-          const commands = Array.isArray(plugin.command) 
-            ? plugin.command.map(String)
-            : [String(plugin.command)];
-            
-          if (commands.some(c => c.toLowerCase() === cmd)) {
-            return true;
-          }
-        }
-      } catch (e) {
-        console.error('Error en plugin:', e);
+      const commands = plugin.command ?
+        (Array.isArray(plugin.command) ? 
+         plugin.command.map(String) : 
+         [String(plugin.command)]) :
+        [];
+      
+      if (commands.some(c => c.toLowerCase() === cmd)) {
+        return true;
       }
+    } catch (e) {
+      console.error(`Error en plugin ${name}:`, e);
     }
-    return false;
-  } catch (error) {
-    console.error('Error en absolutelyVerifyCommand:', error);
-    return false;
   }
+  return false;
 }
 
-// Función de manejo de errores a PRUEBA DE BALAS
-async function handleInvalidCommandWithRetry(m, prefix, invalidCmd) {
-  const MAX_RETRIES = 2;
-  let attempts = 0;
+// Sistema de respuesta GARANTIZADA
+async function sendInvalidCommandResponse(m, prefix, invalidCmd) {
+  const MAX_ATTEMPTS = 3;
+  let attempt = 0;
   
-  while (attempts < MAX_RETRIES) {
+  while (attempt < MAX_ATTEMPTS) {
     try {
-      const userTag = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-      const suggestions = await getSmartSuggestions(invalidCmd);
+      const user = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
+      const suggestions = await getCommandSuggestions(invalidCmd);
       
-      let replyText = `📛 *${userTag}, el comando "${prefix}${invalidCmd}" no existe.*\n`;
+      let response = `🚫 *${user}, comando no reconocido:* \`${prefix}${invalidCmd}\`\n`;
       
       if (suggestions.length > 0) {
-        replyText += `\n🔍 ¿Quizás quisiste decir?\n${suggestions.map(s => `• ${prefix}${s}`).join('\n')}\n`;
+        response += `\n💡 *Sugerencias:*\n${suggestions.map(s => `› \`${prefix}${s}\``).join('\n')}\n`;
       }
       
-      replyText += `\n📌 Usa *${prefix}help* para ver todos los comandos.`;
+      response += `\n📚 Usa *${prefix}help* para ver comandos disponibles.`;
       
-      // Intento principal de envío
-      await m.reply(replyText, { mentions: [m.sender] });
+      await m.reply(response, { mentions: [m.sender] });
       return;
       
     } catch (error) {
-      attempts++;
-      console.error(`Intento ${attempts} fallido. Error:`, error);
+      attempt++;
+      console.error(`Intento ${attempt} fallido. Error:`, error);
       
-      if (attempts >= MAX_RETRIES) {
-        // Último intento con método alternativo
+      if (attempt >= MAX_ATTEMPTS) {
         try {
-          await this.sendMessage(
-            m.chat, 
-            { text: `⚠️ Comando "${prefix}${invalidCmd}" no reconocido` },
-            { quoted: m }
-          );
+          await m.reply(`❌ Comando \`${prefix}${invalidCmd}\` no existe.`);
         } catch (finalError) {
-          console.error('Fallo catastrófico al responder:', finalError);
+          console.error('FALLO CRÍTICO:', finalError);
         }
       }
     }
   }
 }
 
-// Sistema de sugerencias INTELIGENTE
-async function getSmartSuggestions(wrongCmd, limit = 3) {
+// Generador de sugerencias MEJORADO
+async function getCommandSuggestions(wrongCmd, limit = 3) {
   if (!global.plugins) return [];
   
+  const commands = [];
+  
   try {
-    const commandSet = new Set();
-    
     for (const plugin of Object.values(global.plugins)) {
       if (!plugin?.command) continue;
       
-      const commands = Array.isArray(plugin.command)
-        ? plugin.command.map(String)
-        : [String(plugin.command)];
+      const cmds = Array.isArray(plugin.command) ?
+        plugin.command.map(String) :
+        [String(plugin.command)];
       
-      commands.forEach(cmd => commandSet.add(cmd.toLowerCase()));
+      cmds.forEach(c => commands.push(c.toLowerCase()));
     }
     
-    return Array.from(commandSet)
-      .filter(cmd => cmd !== wrongCmd)
+    return [...new Set(commands)]
+      .filter(c => c !== wrongCmd)
       .sort((a, b) => {
-        // Priorizar coincidencias al inicio
+        // Prioridad 1: Comandos que empiezan igual
         if (a.startsWith(wrongCmd)) return -1;
         if (b.startsWith(wrongCmd)) return 1;
         
-        // Luego coincidencias que contengan el texto
+        // Prioridad 2: Comandos que contienen el texto
         if (a.includes(wrongCmd)) return -1;
         if (b.includes(wrongCmd)) return 1;
         
@@ -158,4 +155,7 @@ async function getSmartSuggestions(wrongCmd, limit = 3) {
       .slice(0, limit);
       
   } catch (error) {
-    console.error('Erro
+    console.error('Error en generador de sugerencias:', error);
+    return [];
+  }
+}
