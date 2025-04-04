@@ -34,27 +34,47 @@ export async function all(m) {
     commandTracker.set(trackerId, true);
     setTimeout(() => commandTracker.delete(trackerId), TRACKER_TTL);
 
-    // Validación robusta del JID
-    let jid = m.sender || m.chat; // Fallback a m.chat si m.sender es undefined
-    if (typeof jid !== 'string') jid = String(jid);
-
-    // Asegurar formato correcto del JID (número@s.whatsapp.net)
-    if (!jid.endsWith('@s.whatsapp.net')) {
-      // Si no es un JID válido, usamos el chat como último recurso
-      jid = m.chat.endsWith('@g.us') ? m.chat : `${jid.split('@')[0]}@s.whatsapp.net`;
+    // SOLUCIÓN MEJORADA - Validación exhaustiva del JID
+    let jid = '';
+    
+    // 1. Primero intentamos obtener un JID válido
+    if (m?.sender && typeof m.sender === 'string' && m.sender.includes('@')) {
+      jid = m.sender;
+    } else if (m?.chat && typeof m.chat === 'string' && m.chat.includes('@')) {
+      jid = m.chat;
+    } else {
+      // Si todo falla, usamos un valor por defecto seguro
+      console.error('No se pudo obtener un JID válido:', { sender: m.sender, chat: m.chat });
+      jid = 'error@invalid.jid'; // Valor por defecto seguro
     }
 
-    // Crear mención segura
-    const mention = jid.startsWith('whatsapp://') ? jid.split('@')[0] : `@${jid.split('@')[0]}`;
+    // 2. Forzamos el formato correcto
+    if (!jid.endsWith('@s.whatsapp.net') && !jid.endsWith('@g.us')) {
+      jid = jid.split('@')[0] + '@s.whatsapp.net';
+    }
+
+    // 3. Creamos la mención de manera segura
+    const mentionId = jid.split('@')[0];
+    const mention = mentionId ? `@${mentionId}` : '@unknown';
+
+    // 4. Mensaje de respuesta
     const response = `✦ ¡Atención ${mention}! ✦\n\n`
       + `El comando *${usedPrefix}${cmd}* no está registrado.\n`
       + `▶ Verifica la ortografía\n`
       + `▶ Usa *${usedPrefix}help* para ayuda\n\n`
       + `🔹 EliteBot Global 🔹`;
 
-    // Enviar mensaje con menciones válidas
-    await m.reply(response, {
-      mentions: [jid],
-    });
+    try {
+      // 5. Envío seguro con verificación final
+      if (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@g.us')) {
+        await m.reply(response, {
+          mentions: [jid]
+        });
+      } else {
+        console.error('JID no válido para enviar mensaje:', jid);
+      }
+    } catch (error) {
+      console.error('Error al enviar mensaje de comando inválido:', error);
+    }
   }
 }
