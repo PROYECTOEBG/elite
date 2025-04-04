@@ -1,20 +1,21 @@
 const commandCache = new Map();
-const MESSAGE_COOLDOWN = new Set();
+const processedMessages = new Set();
+const CACHE_TTL = 300000; // 5 minutos de caché
 
 export async function before(m) {
   // 1. Filtrado estricto de mensajes
   if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe) return;
 
   // 2. Control de mensajes duplicados
-  const msgKey = `${m.chat}_${m.id}`;
-  if (MESSAGE_COOLDOWN.has(msgKey)) return;
-  MESSAGE_COOLDOWN.add(msgKey);
+  const msgKey = `${m.chat}_${m.id}_${m.text.slice(0, 15)}`;
+  if (processedMessages.has(msgKey)) return;
+  processedMessages.add(msgKey);
 
   // 3. Limpieza periódica
-  if (MESSAGE_COOLDOWN.size > 100) {
-    const arr = Array.from(MESSAGE_COOLDOWN).slice(-50);
-    MESSAGE_COOLDOWN.clear();
-    arr.forEach(id => MESSAGE_COOLDOWN.add(id));
+  if (processedMessages.size > 100) {
+    const recent = Array.from(processedMessages).slice(-50);
+    processedMessages.clear();
+    recent.forEach(id => processedMessages.add(id));
   }
 
   try {
@@ -42,7 +43,9 @@ export async function before(m) {
       return;
     }
 
-    // ... (tu lógica para comandos válidos)
+    // 8. IMPORTANTE: No responder a comandos válidos aquí
+    // Los comandos válidos deben ser manejados por sus handlers específicos
+    return;
 
   } catch (error) {
     console.error('Error en before handler:', error);
@@ -75,39 +78,31 @@ async function checkCommandExistence(cmd) {
   }
 
   commandCache.set(cmd, exists);
-  setTimeout(() => commandCache.delete(cmd), 300000); // 5 minutos de caché
+  setTimeout(() => commandCache.delete(cmd), CACHE_TTL);
   return exists;
 }
 
-// Función mejorada para responder a comandos no válidos
 async function sendInvalidCommandResponse(m, prefix, invalidCmd) {
   const MAX_ATTEMPTS = 3;
   let attempts = 0;
-  let success = false;
   
   const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-  const responseText = `✦ ¡Hey! *${userMention}*
+  const responseText = `✦ ¡Hey! *${userMention}*\n\n` +
+                      `Parece que escribiste mal el comando verifica si está bien escrito e intenta de nuevo.\n\n` +
+                      `©EliteBotGlobal 2023`;
 
-Parece que escribiste mal el comando verifica si está bien escrito e intenta de nuevo . 
-
-©EliteBotGlobal 2023`;
-
-  while (attempts < MAX_ATTEMPTS && !success) {
+  while (attempts < MAX_ATTEMPTS) {
     try {
       attempts++;
       
       if (attempts === 1) {
-        // Intento principal con mención
         await m.reply(responseText, { mentions: [m.sender] });
       } else if (attempts === 2) {
-        // Intento alternativo sin mención
         await m.reply(responseText);
       } else {
-        // Último intento con método básico
         await this.sendMessage(m.chat, { text: responseText }, { quoted: m });
       }
-      
-      success = true;
+      return; // Si tiene éxito, salir
       
     } catch (error) {
       console.error(`Intento ${attempts} fallido. Error:`, error);
