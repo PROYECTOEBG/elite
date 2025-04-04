@@ -18,7 +18,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Toma la iniciativa en ese proyecto que has estado posponiendo.",
         "Date tiempo para relajarte, incluso los guerreros necesitan descanso.",
         "Aprovecha tu magnetismo natural para conectar con personas influyentes."
-      ]
+      ],
+      fraseCosmica: '"El valor abre caminos donde otros solo ven obstáculos"'
     },
     tauro: {
       simbolo: '♉️',
@@ -37,7 +38,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Reorganiza tu espacio de trabajo para aumentar tu productividad.",
         "Sé honesto acerca de tus necesidades emocionales con tu pareja.",
         "Dedica tiempo a disfrutar de la naturaleza para recargar energías."
-      ]
+      ],
+      fraseCosmica: '"La paciencia construye catedrales donde la prisa solo hace chozas"'
     },
     geminis: {
       simbolo: '♊️',
@@ -56,7 +58,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "No comprometas tu verdad para agradar a los demás.",
         "Explora ese tema intelectual que ha captado tu curiosidad.",
         "Comparte tus conocimientos con alguien que los necesita."
-      ]
+      ],
+      fraseCosmica: '"Dos mentes ven más lejos que una, pero un corazón verdadero ve más profundo"'
     },
     cancer: {
       simbolo: '♋️',
@@ -75,7 +78,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Escucha tu intuición acerca de esa decisión financiera.",
         "Renueva algún espacio de tu casa para mejorar el flujo energético.",
         "Expresa tus sentimientos a esa persona especial sin miedo."
-      ]
+      ],
+      fraseCosmica: '"La luna conoce tus mareas internas mejor que el sol"'
     },
     leo: {
       simbolo: '♌️',
@@ -94,7 +98,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Invierte en tu apariencia, tu confianza se disparará.",
         "Escribe tus metas audaces donde puedas verlas diariamente.",
         "Dedica tiempo a actividades puramente divertidas."
-      ]
+      ],
+      fraseCosmica: '"Brilla con la fuerza de mil estrellas, pero calienta con la constancia de una"'
     },
     virgo: {
       simbolo: '♍️',
@@ -113,7 +118,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Organiza ese espacio desordenado que te molesta tanto.",
         "Comparte tus conocimientos prácticos con alguien necesitado.",
         "Date permiso para relajar tus altos estándares ocasionalmente."
-      ]
+      ],
+      fraseCosmica: '"En los detalles más pequeños habitan las verdades más grandes"'
     },
     libra: {
       simbolo: '♎️',
@@ -132,7 +138,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Rodéate de colores y objetos que te generen armonía.",
         "Expresa tu aprecio a alguien que ha sido justo contigo.",
         "Medita sobre el equilibrio entre dar y recibir en tu vida."
-      ]
+      ],
+      fraseCosmica: '"El equilibrio no es punto fijo, sino danza constante"'
     },
     escorpio: {
       simbolo: '♏️',
@@ -151,7 +158,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "No dejes que los celos nublen tu juicio hoy.",
         "Aprovecha tu magnetismo para causas positivas.",
         "Perdona un resentimiento antiguo para liberarte."
-      ]
+      ],
+      fraseCosmica: '"Las transformaciones más profundas ocurren en la oscuridad silenciosa"'
     },
     sagitario: {
       simbolo: '♐️',
@@ -170,7 +178,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Planifica ese viaje que has estado posponiendo por responsabilidades.",
         "Comparte tu sabiduría con alguien más joven que la necesita.",
         "Busca el significado más profundo en experiencias cotidianas."
-      ]
+      ],
+      fraseCosmica: '"Cada horizonte alcanzado revela nuevos horizontes por explorar"'
     },
     capricornio: {
       simbolo: '♑️',
@@ -189,7 +198,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Reconecta con un colega o mentor del pasado.",
         "Invierte en educación o herramientas que mejoren tus habilidades.",
         "Equilibra tu ambición con momentos de simple disfrute."
-      ]
+      ],
+      fraseCosmica: '"Las montañas se escalan paso a paso, pero la vista vale cada esfuerzo"'
     },
     acuario: {
       simbolo: '♒️',
@@ -208,7 +218,8 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Únete a una causa que refleje tus valores más profundos.",
         "Experimenta con nuevas formas de expresión creativa.",
         "Rodéate de personas que desafíen tu pensamiento."
-      ]
+      ],
+      fraseCosmica: '"El futuro pertenece a quienes sueñan con los ojos abiertos"'
     },
     piscis: {
       simbolo: '♓️',
@@ -227,24 +238,24 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
         "Pasa tiempo cerca del agua para recargar energías.",
         "Practica la meditación para clarificar tus sentimientos.",
         "Sé compasivo contigo mismo tanto como con los demás."
-      ]
+      ],
+      fraseCosmica: '"El océano del alma no tiene fronteras, solo conexiones infinitas"'
     }
   };
 
-  // Obtener signo del texto (ej: ".horoscopo cancer" -> "cancer")
+  // Obtener signo del texto (ej: ".horoscopo libra" -> "libra")
   const signo = text.toLowerCase().trim();
   
-  // Validación
   if (!horoscopos[signo]) {
     let listaSignos = '✨ *SIGNOS DISPONIBLES:*\n\n';
     for (const [s, data] of Object.entries(horoscopos)) {
       listaSignos += `▸ ${usedPrefix}horoscopo ${s} ${data.simbolo} (${data.elemento})\n`;
     }
-    return m.reply(`${listaSignos}\n📌 *Ejemplo:* ${usedPrefix}horoscopo cancer`);
+    return m.reply(`${listaSignos}\n📌 Ejemplo: ${usedPrefix}horoscopo libra`);
   }
 
   // Datos del signo
-  const { simbolo, elemento, color, predicciones, consejos } = horoscopos[signo];
+  const { simbolo, elemento, color, predicciones, consejos, fraseCosmica } = horoscopos[signo];
   
   // Selección aleatoria
   const prediccion = predicciones[Math.floor(Math.random() * predicciones.length)];
@@ -257,9 +268,9 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
     day: 'numeric' 
   });
 
-  // Mensaje formateado
+  // Mensaje formateado (sin enlace superior)
   const mensaje = `
-*${simbolo} ${signo.charAt(0).toUpperCase() + signo.slice(1)}* (${elemento})
+*${simbolo} ${signo.toUpperCase()}* (${elemento})
 
 📅 *Fecha:* ${fecha}
 
@@ -271,41 +282,14 @@ let handler = async (m, { conn, usedPrefix, command, text }) => {
 🎨 *Color favorable:* ${color}
 
 🌙 *Frase cósmica:*
-"${getFraseCosmica(signo)}"
+${fraseCosmica}
   `;
 
-  await conn.sendMessage(m.chat, { 
-    text: mensaje,
-    contextInfo: {
-      externalAdReply: {
-        title: `Horóscopo ${signo.toUpperCase()}`,
-        body: "Descubre lo que las estrellas tienen preparado para ti...",
-        thumbnailUrl: 'https://telegra.ph/file/c2f5d3d26b6c9f0e7a1e3.jpg' // Reemplaza con tu imagen
-      }
-    }
-  }, { quoted: m });
+  // Envío sin previsualización de enlace
+  await m.reply(mensaje);
 };
 
-// Frases cósmicas por signo
-function getFraseCosmica(signo) {
-  const frases = {
-    aries: "El valor abre caminos donde otros solo ven obstáculos",
-    tauro: "La paciencia construye catedrales donde la prisa solo hace chozas",
-    geminis: "Dos mentes ven más lejos que una, pero un corazón verdadero ve más profundo",
-    cancer: "La luna conoce tus mareas internas mejor que el sol",
-    leo: "Brilla con la fuerza de mil estrellas, pero calienta con la constancia de una",
-    virgo: "En los detalles más pequeños habitan las verdades más grandes",
-    libra: "El equilibrio no es punto fijo, sino danza constante",
-    escorpio: "Las transformaciones más profundas ocurren en la oscuridad silenciosa",
-    sagitario: "Cada horizonte alcanzado revela nuevos horizontes por explorar",
-    capricornio: "Las montañas se escalan paso a paso, pero la vista vale cada esfuerzo",
-    acuario: "El futuro pertenece a quienes sueñan con los ojos abiertos",
-    piscis: "El océano del alma no tiene fronteras, solo conexiones infinitas"
-  };
-  return frases[signo] || "Las estrellas hablan a quienes saben escuchar";
-}
-
 handler.help = ['horoscopo <signo>'];
-handler.tags = ['horoscope', 'fun'];
+handler.tags = ['horoscope'];
 handler.command = /^hor[óo]scopo$/i;
 export default handler;
