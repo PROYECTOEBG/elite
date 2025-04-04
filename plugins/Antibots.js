@@ -1,141 +1,119 @@
+// Variable para controlar respuestas duplicadas
+let commandCooldown = new Set();
+
 export async function before(m) {
   try {
-    // 1. DIAGNÓSTICO INICIAL (puedes quitarlo después de verificar)
-    console.log('[DIAGNÓSTICO] Mensaje recibido:', m.text);
+    // 1. Verificación básica del mensaje
+    if (!m?.text || typeof m.text !== 'string' || m.isBaileys) return;
     
-    // 2. CONFIGURACIÓN MÍNIMA ESENCIAL
-    if (!global.prefix) {
-      console.warn('[CONFIG] No hay global.prefix, usando por defecto');
-      global.prefix = /^[\.\!\#\/]/i; // Prefijo por defecto
-    }
+    // 2. Configuración mínima esencial
+    if (!global.prefix) global.prefix = /^[\.\!\#\/]/i;
+    if (!global.plugins) global.plugins = {};
     
-    if (!global.plugins) {
-      console.warn('[CONFIG] No hay global.plugins, inicializando objeto vacío');
-      global.plugins = {};
-    }
-
-    // 3. VERIFICACIÓN BÁSICA DEL MENSAJE
-    if (!m?.text || typeof m.text !== 'string') {
-      console.log('[IGNORADO] Mensaje sin texto válido');
-      return;
+    // 3. Prevenir respuestas duplicadas
+    const messageKey = `${m.chat}_${m.id}`;
+    if (commandCooldown.has(messageKey)) return;
+    commandCooldown.add(messageKey);
+    
+    // 4. Limpieza periódica del cooldown
+    if (commandCooldown.size > 100) {
+      commandCooldown = new Set([...commandCooldown].slice(50));
     }
 
-    // 4. DETECCIÓN DE PREFIJO MEJORADA (con diagnóstico)
-    const prefixStr = global.prefix.source || global.prefix.toString();
-    console.log('[PREFIJO] Usando patrón:', prefixStr);
-    
-    const prefixRegex = new RegExp(`^(${escapeRegex(prefixStr)})`, 'i');
+    // 5. Detección de prefijo
+    const prefixRegex = new RegExp(`^(${escapeRegex(global.prefix.source || global.prefix)})`, 'i');
     const prefixMatch = m.text.match(prefixRegex);
-    
-    if (!prefixMatch) {
-      console.log('[IGNORADO] No coincide con el prefijo');
-      return;
-    }
+    if (!prefixMatch) return;
     
     const usedPrefix = prefixMatch[0];
-    console.log('[PREFIJO] Prefijo detectado:', usedPrefix);
-
-    // 5. EXTRACCIÓN DEL COMANDO (con verificación)
     const fullCmd = m.text.slice(usedPrefix.length).trim();
-    if (!fullCmd) {
-      console.log('[IGNORADO] Comando vacío después del prefijo');
-      return;
-    }
+    const [command] = fullCmd.split(/\s+/);
+    const cmd = command?.toLowerCase();
     
-    const [command, ...args] = fullCmd.split(/\s+/);
-    const cmd = command.toLowerCase();
-    console.log('[COMANDO] Comando a procesar:', cmd);
+    if (!cmd) return;
 
-    // 6. VERIFICACIÓN DE COMANDO (CON DIAGNÓSTICO DETALLADO)
+    // 6. Manejo de comandos especiales
+    if (cmd === 'bot') return;
+
+    // 7. Verificación de comando existente
     const commandExists = checkCommandExists(cmd);
-    console.log('[VERIFICACIÓN] Comando existe:', commandExists);
     
     if (!commandExists) {
-      console.log('[COMANDO INVÁLIDO] Iniciando manejo...');
-      await handleInvalidCommand(m, usedPrefix, cmd);
-      return;
+      return await handleInvalidCommand(m, usedPrefix, cmd);
     }
 
-    // ... (aquí continúa tu lógica normal para comandos válidos)
+    // ... (tu lógica normal para comandos válidos aquí)
 
   } catch (error) {
-    console.error('[ERROR CRÍTICO] en before handler:', error);
-    try {
-      await m.reply('⚠️ Error interno al procesar tu comando');
-    } catch (err) {
-      console.error('[ERROR] No se pudo enviar mensaje de error:', err);
-    }
+    console.error('Error en before handler:', error);
   }
 }
 
-// FUNCIÓN MEJORADA PARA MANEJO DE COMANDOS INVÁLIDOS
+// Función mejorada para manejar comandos inválidos
 async function handleInvalidCommand(m, prefix, invalidCmd) {
   try {
-    console.log(`[MANEJO INVÁLIDO] Procesando comando no reconocido: ${invalidCmd}`);
-    
-    // 1. Preparar mención al usuario
     const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
-    
-    // 2. Obtener sugerencias (con diagnóstico)
     const suggestions = getCommandSuggestions(invalidCmd);
-    console.log('[SUGERENCIAS] Posibles comandos similares:', suggestions);
     
-    // 3. Construir respuesta
-    let replyMsg = `❌ *${userMention}, el comando no existe:* \`${prefix}${invalidCmd}\`\n`;
+    let replyMsg = `📛 *${userMention}, el comando no existe:* \`${prefix}${invalidCmd}\``;
     
     if (suggestions.length > 0) {
-      replyMsg += `\n🔍 ¿Quizás quisiste decir?\n${suggestions.map(s => `→ \`${prefix}${s}\``).join('\n')}\n`;
+      replyMsg += `\n\n💡 ¿Quizás quisiste decir?\n${suggestions.map(s => `› \`${prefix}${s}\``).join('\n')}`;
     }
     
-    replyMsg += `\n📝 Usa *${prefix}help* para ver todos los comandos.`;
+    replyMsg += `\n\n📌 Usa *${prefix}help* para ver la lista completa.`;
     
-    // 4. Enviar respuesta (con múltiples intentos)
-    console.log('[RESPUESTA] Mensaje a enviar:', replyMsg);
-    
-    try {
-      await m.reply(replyMsg, { mentions: [m.sender] });
-      console.log('[ÉXITO] Respuesta enviada correctamente');
-    } catch (error) {
-      console.error('[FALLO] No se pudo enviar reply, intentando método alternativo...');
-      await this.sendMessage(m.chat, { text: replyMsg }, { quoted: m });
-    }
+    await m.reply(replyMsg, { mentions: [m.sender] });
     
   } catch (error) {
-    console.error('[ERROR] En handleInvalidCommand:', error);
+    console.error('Error al manejar comando inválido:', error);
+    // Respuesta mínima si falla todo
+    await m.reply(`❌ El comando *${prefix}${invalidCmd}* no existe.`);
   }
 }
 
-// FUNCIÓN DIAGNÓSTICO PARA VERIFICAR COMANDOS
+// Función para verificar comandos
 function checkCommandExists(cmd) {
-  console.log('[CHECK] Verificando existencia de comando:', cmd);
+  if (!global.plugins || typeof global.plugins !== 'object') return false;
   
-  if (!global.plugins || typeof global.plugins !== 'object') {
-    console.error('[ERROR] global.plugins no es un objeto válido');
-    return false;
-  }
-  
-  const plugins = Object.values(global.plugins);
-  console.log('[CHECK] Total de plugins a verificar:', plugins.length);
-  
-  for (const plugin of plugins) {
-    if (!plugin || typeof plugin !== 'object') continue;
+  return Object.values(global.plugins).some(plugin => {
+    if (!plugin?.command) return false;
     
-    if (plugin.command) {
-      const commands = Array.isArray(plugin.command) 
+    const commands = Array.isArray(plugin.command) 
+      ? plugin.command 
+      : [plugin.command];
+      
+    return commands.some(c => c.toLowerCase() === cmd);
+  });
+}
+
+// Función para sugerencias de comandos
+function getCommandSuggestions(wrongCmd, limit = 3) {
+  if (!global.plugins) return [];
+  
+  const allCommands = [];
+  Object.values(global.plugins).forEach(plugin => {
+    if (plugin?.command) {
+      const cmds = Array.isArray(plugin.command) 
         ? plugin.command 
         : [plugin.command];
-      
-      console.log(`[CHECK] Comandos en plugin: ${commands.join(', ')}`);
-      
-      if (commands.some(c => c.toLowerCase() === cmd)) {
-        console.log('[CHECK] Comando encontrado en plugin');
-        return true;
-      }
+      allCommands.push(...cmds.filter(c => typeof c === 'string'));
     }
-  }
-  
-  console.log('[CHECK] Comando no encontrado en ningún plugin');
-  return false;
+  });
+
+  return [...new Set(allCommands)]
+    .filter(c => c.toLowerCase() !== wrongCmd)
+    .sort((a, b) => {
+      const aMatch = a.toLowerCase().startsWith(wrongCmd);
+      const bMatch = b.toLowerCase().startsWith(wrongCmd);
+      if (aMatch && !bMatch) return -1;
+      if (!aMatch && bMatch) return 1;
+      return 0;
+    })
+    .slice(0, limit);
 }
 
-// (Mantener las mismas funciones getCommandSuggestions y stringSimilarity de la solución anterior)
+// Función auxiliar para escapar regex
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
