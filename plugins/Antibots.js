@@ -1,88 +1,129 @@
 export async function before(m) {
-  // 1. Verificaciones básicas
-  if (!m.text) return;
-  if (!global.prefix) {
-    console.error('Error: No se ha definido global.prefix');
-    return;
+  try {
+    // 1. Configuración esencial
+    if (!global.prefix) global.prefix = /^[.!?#/]|^bot/i; // Prefijo por defecto
+    if (!global.plugins) global.plugins = {};
+    if (!global.db.data) global.db.data = { chats: {}, users: {} };
+
+    // 2. Validación básica del mensaje
+    if (!m.text || typeof m.text !== 'string') return;
+    
+    // 3. Detección del prefijo mejorado
+    const prefixMatch = m.text.match(global.prefix);
+    if (!prefixMatch) return;
+    const usedPrefix = prefixMatch[0];
+
+    // 4. Extracción del comando
+    const fullCmd = m.text.slice(usedPrefix.length).trim();
+    const [command, ...args] = fullCmd.split(/\s+/);
+    const cmd = command.toLowerCase();
+
+    // 5. Comandos especiales (como 'bot')
+    if (cmd === 'bot') return;
+
+    // 6. Sistema de comandos mejorado
+    const commandHandler = {
+      exists: checkCommandExists(cmd),
+      suggestions: getCommandSuggestions(cmd),
+      execute: async () => {
+        // Tu lógica para comandos válidos aquí
+        if (!global.db.data.chats[m.chat]) {
+          global.db.data.chats[m.chat] = {};
+        }
+        if (!global.db.data.users[m.sender]) {
+          global.db.data.users[m.sender] = { commands: 0 };
+        }
+
+        const chat = global.db.data.chats[m.chat];
+        const user = global.db.data.users[m.sender];
+
+        if (chat.isBanned) {
+          await m.reply(
+            `🚫 El bot está desactivado en este grupo.\n` +
+            `Un administrador puede activarlo con:\n` +
+            `» ${usedPrefix}bot on`
+          );
+          return;
+        }
+
+        user.commands = (user.commands || 0) + 1;
+      }
+    };
+
+    // 7. Manejo de comandos inválidos
+    if (!commandHandler.exists) {
+      let reply = `❌ *Comando no reconocido:* ${usedPrefix}${cmd}\n`;
+      
+      if (commandHandler.suggestions.length > 0) {
+        reply += `\n¿Quizás quisiste decir?\n` +
+          commandHandler.suggestions.map(s => `› ${usedPrefix}${s}`).join('\n');
+      }
+      
+      reply += `\nEscribe *${usedPrefix}help* para ver todos los comandos.`;
+      
+      await m.reply(reply);
+      return;
+    }
+
+    // 8. Ejecutar comando válido
+    await commandHandler.execute();
+
+  } catch (error) {
+    console.error('Error en before handler:', error);
+    // Opcional: Notificar al usuario del error
+    await m.reply('⚠️ Ocurrió un error al procesar tu comando. Por favor intenta nuevamente.');
   }
-
-  // 2. Detección del prefijo
-  const prefixRegex = new RegExp(`^(${escapeRegex(global.prefix)})`, 'i');
-  if (!prefixRegex.test(m.text)) return;
-
-  // 3. Extraer comando
-  const usedPrefix = m.text.match(prefixRegex)[0];
-  const [command, ...args] = m.text.slice(usedPrefix.length).trim().split(' ');
-  const cmd = command.toLowerCase();
-
-  // 4. Manejo de comandos incorrectos
-  if (!isValidCommand(cmd)) {
-    return await handleWrongCommand(m, usedPrefix, cmd);
-  }
-
-  // 5. Resto de tu lógica original...
-  // (Mantén aquí tu código para comandos válidos)
 }
 
-// Función auxiliar para escapar regex
-function escapeRegex(string) {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-// Función mejorada para validar comandos
-function isValidCommand(cmd) {
-  if (!global.plugins) return false;
-  
+// Funciones auxiliares mejoradas
+function checkCommandExists(cmd) {
   return Object.values(global.plugins).some(plugin => {
     if (!plugin.command) return false;
     const commands = Array.isArray(plugin.command) ? plugin.command : [plugin.command];
-    return commands.includes(cmd);
+    return commands.some(c => c.toLowerCase() === cmd);
   });
 }
 
-// Manejo mejorado de comandos erróneos
-async function handleWrongCommand(m, prefix, wrongCmd) {
-  const allCommands = getAllCommands();
-  const suggestions = getSuggestions(wrongCmd, allCommands, 3);
-  
-  let reply = `❌ Comando *"${prefix}${wrongCmd}"* no reconocido.`;
-  
-  if (suggestions.length > 0) {
-    reply += `\n\n¿Quisiste decir?\n${suggestions.map(cmd => `▸ *${prefix}${cmd}*`).join('\n')}`;
-  }
-  
-  reply += `\n\nUsa *${prefix}help* para ver todos los comandos.`;
-  
-  await m.reply(reply);
-}
-
-// Obtener todos los comandos disponibles
-function getAllCommands() {
-  if (!global.plugins) return [];
-  
-  const commands = [];
+function getCommandSuggestions(wrongCmd, limit = 3) {
+  const allCommands = [];
   Object.values(global.plugins).forEach(plugin => {
     if (plugin.command) {
-      if (Array.isArray(plugin.command)) {
-        commands.push(...plugin.command);
-      } else {
-        commands.push(plugin.command);
-      }
+      const cmds = Array.isArray(plugin.command) ? plugin.command : [plugin.command];
+      allCommands.push(...cmds);
     }
   });
-  
-  return [...new Set(commands)]; // Eliminar duplicados
+
+  // Algoritmo de sugerencia mejorado
+  return [...new Set(allCommands)]
+    .filter(c => c.toLowerCase() !== wrongCmd)
+    .sort((a, b) => {
+      // Priorizar comandos que comienzan igual
+      const aStart = a.toLowerCase().startsWith(wrongCmd);
+      const bStart = b.toLowerCase().startsWith(wrongCmd);
+      if (aStart && !bStart) return -1;
+      if (!aStart && bStart) return 1;
+      
+      // Luego por similitud de letras
+      const aSim = stringSimilarity(wrongCmd, a.toLowerCase());
+      const bSim = stringSimilarity(wrongCmd, b.toLowerCase());
+      return bSim - aSim;
+    })
+    .slice(0, limit);
 }
 
-// Sistema de sugerencias mejorado
-function getSuggestions(wrongCmd, allCommands, max = 3) {
-  return allCommands
-    .filter(cmd => {
-      // Coincidencia de inicio
-      if (cmd.startsWith(wrongCmd)) return true;
-      // Coincidencia de letras
-      const wrongChars = wrongCmd.split('');
-      return wrongChars.some(c => cmd.includes(c));
-    })
-    .slice(0, max);
-                                     }
+// Función de similitud de strings mejorada
+function stringSimilarity(a, b) {
+  const longer = a.length > b.length ? a : b;
+  const shorter = a.length > b.length ? b : a;
+  let score = 0;
+
+  // Coincidencia al inicio
+  if (longer.startsWith(shorter)) return 0.8;
+  
+  // Coincidencia de caracteres
+  for (let i = 0; i < shorter.length; i++) {
+    if (longer.includes(shorter[i])) score += 0.1;
+  }
+
+  return score;
+}
