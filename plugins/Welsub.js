@@ -1,37 +1,71 @@
 let handler = m => m
 handler.before = async function (m, { conn }) {
-  // Verifica si es un mensaje de grupo válido
   if (!m.isGroup || !m.messageStubType) return
 
   try {
-    // Obtiene datos del chat desde la base de datos global
     const chat = global.db.data.chats?.[m.chat] || {}
-    
-    // Verifica si el mensaje es de entrada (27) o salida (28)
-    if (![27, 28].includes(m.messageStubType)) return
-
-    // Obtiene el usuario afectado
+    const groupData = await conn.groupMetadata(m.chat)
     const userJid = m.messageStubParameters?.[0]
-    if (!userJid) return
+    
+    if (!userJid || ![27, 28].includes(m.messageStubType)) return
 
+    // Configuración de imagen (REEMPLAZA ESTA URL CON LA TUYA)
+    const FOTO_PREDETERMINADA = 'https://qu.ax/wDNjj.jpg' // ← Cambia este enlace
     const userName = userJid.split('@')[0]
+    const groupName = groupData.subject || "Este grupo"
+    const groupDesc = groupData.desc || "Sin descripción disponible"
 
-    // Mensaje de BIENVENIDA (type 27)
+    // Obtener imagen (usará la predeterminada si falla)
+    let ppUrl = await conn.profilePictureUrl(userJid, 'image').catch(() => FOTO_PREDETERMINADA)
+
+    // Mensaje de BIENVENIDA
     if (m.messageStubType === 27 && chat.welcome) {
+      const welcomeMsg = `╭━━━━━━━━━━━━━━╮
+│  🎉 BIENVENIDO/A 🎉  │
+│  @${userName}  │
+╰━━━━━━━━━━━━━━╯
+📌 *Grupo:* ${groupName}
+📝 *Descripción:* ${groupDesc}`
+
       await conn.sendMessage(m.chat, {
-        text: `╭━━━━━━━━━━━━╮\n│  🎉 BIENVENIDO/A 🎉  │\n│  @${userName}  │\n╰━━━━━━━━━━━━╯`,
-        mentions: [userJid]
+        text: welcomeMsg,
+        mentions: [userJid],
+        contextInfo: {
+          externalAdReply: {
+            title: groupName,
+            body: groupDesc,
+            thumbnailUrl: ppUrl, // Usa la imagen aquí
+            mediaType: 1,
+            sourceUrl: 'https://whatsapp.com',
+            showAdAttribution: true
+          }
+        }
       })
     }
-    // Mensaje de DESPEDIDA (type 28)
+    // Mensaje de DESPEDIDA
     else if (m.messageStubType === 28 && chat.welcome) {
-      await conn.sendMessage(m.chat, {
-        text: `╭━━━━━━━━━━━━╮\n│  👋 HASTA PRONTO 👋  │\n│  @${userName}  │\n╰━━━━━━━━━━━━╯`,
-        mentions: [userJid]
+      const goodbyeMsg = `╭━━━━━━━━━━━━━━╮
+│  👋 HASTA PRONTO 👋  │
+│  @${userName}  │
+╰━━━━━━━━━━━━━━╯
+😿 Lamentamos que te vayas de ${groupName}`
+
+      await conn.sendMessage(m.chat, { 
+        text: goodbyeMsg,
+        mentions: [userJid],
+        contextInfo: {
+          externalAdReply: {
+            title: groupName,
+            body: `Se fue @${userName}`,
+            thumbnailUrl: ppUrl, // Usa la imagen aquí
+            mediaType: 1,
+            showAdAttribution: true
+          }
+        }
       })
     }
   } catch (error) {
-    console.error('Error en el handler de bienvenidas:', error)
+    console.error('Error en el handler:', error)
   }
 }
 
