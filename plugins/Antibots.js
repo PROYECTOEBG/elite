@@ -1,118 +1,92 @@
 const commandCache = new Map();
-const MESSAGE_LIFETIME = 300000; // 5 minutos
 
 export async function before(m) {
-  // 1. Filtrado extremo de mensajes
-  if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe || m.key?.fromMe) {
-    return;
-  }
+  // 1. Filtrado de mensajes
+  if (!m?.text || typeof m.text !== 'string' || m.isBaileys || m.fromMe) return;
 
-  // 2. ID único compuesto
-  const msgId = `${m.chat}_${m.id}_${m.text.slice(0, 15)}`;
-  
   try {
-    // 3. Configuración a prueba de fallos
-    const prefix = global.prefix = global.prefix instanceof RegExp ? 
-                  global.prefix : 
-                  /^[\!\.\#\/]/i;
+    // 2. Configuración del prefijo
+    const prefix = global.prefix instanceof RegExp ? global.prefix : /^[\.\!\#\/]/i;
 
-    // 4. Extracción robusta del comando
-    const prefixMatch = m.text.trim().match(prefix);
+    // 3. Extracción del comando
+    const prefixMatch = m.text.match(prefix);
     if (!prefixMatch) return;
     
     const usedPrefix = prefixMatch[0];
     const cmd = m.text.slice(usedPrefix.length).trim().split(/\s+/)[0]?.toLowerCase();
     if (!cmd) return;
 
-    // 5. Comandos silenciados
-    if (['bot', 'menu', 'help'].includes(cmd)) return;
+    // 4. Comandos especiales silenciados
+    if (cmd === 'bot') return;
 
-    // 6. Verificación con doble caché
-    let exists = commandCache.get(cmd);
-    if (exists === undefined) {
-      exists = await verifyCommandExistence(cmd);
-      commandCache.set(cmd, exists);
-      setTimeout(() => commandCache.delete(cmd), MESSAGE_LIFETIME);
-    }
-
-    // 7. Manejo infalible de comandos inválidos
+    // 5. Verificación de existencia del comando
+    const exists = commandCache.has(cmd) ? 
+                  commandCache.get(cmd) : 
+                  await checkCommandExistence(cmd);
+    
     if (!exists) {
-      await handleInvalidCommandWithRetry(m, usedPrefix, cmd);
+      await sendCustomInvalidMessage(m, usedPrefix, cmd);
       return;
     }
 
-    // 8. Comandos válidos: NO responder aquí
+    // ... (tu lógica para comandos válidos)
 
   } catch (error) {
-    console.error('ERROR GLOBAL EN BEFORE:', error);
+    console.error('Error en before handler:', error);
   }
 }
 
-// Verificación con triple capa de seguridad
-async function verifyCommandExistence(cmd) {
-  if (!global.plugins || typeof global.plugins !== 'object') {
-    console.error('ERROR: Estructura de plugins no válida');
-    return false;
-  }
-
-  // Primera capa: Verificación directa
+async function checkCommandExistence(cmd) {
+  if (!global.plugins || typeof global.plugins !== 'object') return false;
+  
+  let exists = false;
+  
   for (const plugin of Object.values(global.plugins)) {
     try {
       if (!plugin?.command) continue;
       
-      const commands = Array.isArray(plugin.command) ? 
-                      plugin.command.map(String) : 
-                      [String(plugin.command)];
+      const commands = Array.isArray(plugin.command) ?
+        plugin.command.map(String) :
+        [String(plugin.command)];
       
       if (commands.some(c => c.toLowerCase() === cmd)) {
-        return true;
+        exists = true;
+        break;
       }
     } catch (e) {
-      console.error('Error en verificación de plugin:', e);
+      console.error('Error verificando plugin:', e);
     }
   }
 
-  // Segunda capa: Verificación profunda
-  if (global.db?.data?.commands) {
-    if (global.db.data.commands[cmd]) {
-      return true;
-    }
-  }
-
-  return false;
+  commandCache.set(cmd, exists);
+  return exists;
 }
 
-// Handler de comandos inválidos con triple intento
-async function handleInvalidCommandWithRetry(m, prefix, invalidCmd) {
-  const MAX_ATTEMPTS = 3;
-  let attempts = 0;
-  let success = false;
-  
-  const replyText = `❌ *El comando \`${prefix}${invalidCmd}\` no existe.*\n\n` +
-                   `📌 Usa *${prefix}help* para ver los comandos disponibles.`;
-
-  while (attempts < MAX_ATTEMPTS && !success) {
+// Función con mensaje personalizado y etiqueta de usuario
+async function sendCustomInvalidMessage(m, prefix, invalidCmd) {
+  try {
+    // Obtener mención del usuario
+    const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
+    
+    const responseMessage = `👋 *Hola ${userMention}*, el comando *${prefix}${invalidCmd}* no se encuentra en mi base de datos.\n\n` +
+                           `🔍 *Por favor verifica si está bien escrito e intenta de nuevo.*\n\n` +
+                           `💡 *Tip:* Usa *${prefix}help* para ver mis comandos disponibles.`;
+    
+    // Enviar mensaje mencionando al usuario
+    await m.reply(responseMessage, { mentions: [m.sender] });
+    
+  } catch (error) {
+    console.error('Error al enviar mensaje personalizado:', error);
     try {
-      attempts++;
-      
-      if (attempts === 1) {
-        // Intento principal con mención
-        await m.reply(replyText, m.sender ? { mentions: [m.sender] } : {});
-      } else if (attempts === 2) {
-        // Intento alternativo sin mención
-        await m.reply(replyText);
-      } else {
-        // Último intento con método básico
-        await this.sendMessage(m.chat, { text: replyText }, { quoted: m });
-      }
-      
-      success = true;
-      
-    } catch (error) {
-      console.error(`Intento ${attempts} fallido. Error:`, error);
-      if (attempts >= MAX_ATTEMPTS) {
-        console.error('FALLO CRÍTICO: No se pudo enviar respuesta');
-      }
+      // Respuesta alternativa si falla el primer intento
+      const userMention = m.sender ? `@${m.sender.split('@')[0]}` : 'Usuario';
+      await this.sendMessage(
+        m.chat,
+        { text: `⚠️ *${userMention}*, el comando *${prefix}${invalidCmd}* no existe. Verifica por favor.` },
+        { quoted: m, mentions: [m.sender] }
+      );
+    } catch (finalError) {
+      console.error('Error en respuesta alternativa:', finalError);
     }
   }
 }
