@@ -1,17 +1,20 @@
-let handler = m => m
+const { Client, Buttons } = require('whatsapp-web.js');
 
-handler.before = async function (m, { conn, groupMetadata }) {
-  if (!m.messageStubType || !m.isGroup) return
-  if (m.messageStubType !== 20) return // 20 = Creación de grupo
+const client = new Client();
 
-  let subject = groupMetadata.subject || "el grupo"
-  let welcomeBot = `✨ ¡Hola a todos! Soy su nuevo bot en *${subject}*! 🤖\n\n👮 Recuerden seguir las reglas del grupo.\n💡 Si necesitan ayuda, escriban *#menu* para ver mis comandos.`
+client.on('group_join', async (notification) => {
+    const chat = await notification.getChat();
 
-  await this.sendMessage(m.chat, { text: welcomeBot }, { quoted: m })
+    let mensaje = `✨ ¡Hola, bienvenido a *${chat.name}*! 🤖\n\n📚 Usa los botones para acceder a las guías.`;
+    
+    let botones = new Buttons(
+        mensaje,
+        [{ body: '📖 Guía' }, { body: '📘 Guía 2' }],
+        'Opciones disponibles',
+        'Selecciona una opción'
+    );
 
-  // Enviar opciones de guía como menú simulado
-  let menuBotones = `¿Qué deseas consultar?\n\n1️⃣ Ver Guía\n2️⃣ Ver Guía 2\n\nEscribe el número de la opción.`
-  await this.sendMessage(m.chat, { text: menuBotones }, { quoted: m })
-}
+    await client.sendMessage(notification.id.remote, botones);
+});
 
-export default handler
+client.initialize();
