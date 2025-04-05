@@ -18,8 +18,8 @@ let handler = async(m, { isOwner, isAdmin, conn, participants, args, command }) 
     }
 
     // Eliminar mensajes de miembros que no son administradores
-    conn.on('message-new', async (msg) => {
-        if (!msg.isGroup || adminIds.includes(msg.sender.id)) return; // Si es un mensaje de un admin, no lo eliminamos
+    conn.on('message_create', async (msg) => {
+        if (!msg.isGroup || adminIds.includes(msg.from)) return; // Si es un mensaje de un admin, no lo eliminamos
 
         // Eliminar el mensaje del usuario
         await conn.deleteMessage(m.chat, msg.key);
@@ -29,7 +29,7 @@ let handler = async(m, { isOwner, isAdmin, conn, participants, args, command }) 
     conn.sendMessage(m.chat, { text: info });
 }
 
-handler.command = /^(mutegrupo|silencio)$/i
+handler.command = /^(mute|silencio)$/i
 handler.admin = true
 handler.botAdmin = true
 handler.group = true
