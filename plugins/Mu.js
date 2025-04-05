@@ -1,5 +1,4 @@
 
-
 let mutedUsers = new Set();
 
 let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }) => {
