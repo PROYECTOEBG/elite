@@ -1,6 +1,9 @@
 let mutedUsers = new Set();
 
 let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
+    // Extraer el comando sin prefijo
+    let cmd = command.toLowerCase().replace(/^[\.\/]/, ''); // Elimina . o / del inicio
+
     // Asegurar que el bot sea admin
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
@@ -8,17 +11,17 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
     let user;
 
     // Si se menciona a un usuario
-    if (m.message.extendedTextMessage && m.message.extendedTextMessage.contextInfo.mentionedJid) {
+    if (m.message.extendedTextMessage?.contextInfo?.mentionedJid) {
         user = m.message.extendedTextMessage.contextInfo.mentionedJid[0];
     } else {
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
     // Dependiendo del comando, muteamos o desmuteamos
-    if (command === "mute") {
+    if (cmd === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (command === "unmute") {
+    } else if (cmd === "unmute") {
         mutedUsers.delete(user);
         conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
@@ -35,8 +38,8 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Aquí estamos quitando el uso de `usedPrefix` para aceptar comandos sin prefijo
-handler.command = /^(mute|unmute)$/i;  // Esto acepta `mute` o `unmute` sin importar el prefijo
+// Registrar tanto las versiones con prefijo como sin prefijo
+handler.command = /^(\.?mute|\.?unmute)$/i;  // Acepta .mute, mute, .unmute, unmute
 handler.exp = 0;
 handler.admin = true;
 handler.botAdmin = true;
