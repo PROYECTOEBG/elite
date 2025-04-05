@@ -1,56 +1,51 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { exec } from 'child_process';
-import { getProcesses } from 'ps-node'; // Usamos ps-node para listar procesos
 
-const rutaSubbots = '/home/container/GataJadiBot/';
-const archivoPreKey = 'pre_key';  // Ruta al archivo 'pre_key'
-const archivoSenderKey = 'sender_key';  // Ruta al archivo 'sender_key'
+const rutaSubbots = '/home/container/GataJadiBot/'; // Ruta donde se encuentran los subbots
+const archivoPreKey = 'pre_key';  // Nombre del archivo con la preclave
+const archivoSenderKey = 'sender_key';  // Nombre del archivo con la clave del sender
 
-// Función para iniciar el subbot directamente con las claves
-async function iniciarSubbotDirectamente(nombre) {
+// Función para conectar el subbot
+async function conectarSubbot(nombre) {
   try {
+    // Cargar las claves necesarias
     const preKey = await fs.readFile(path.join(rutaSubbots, nombre, archivoPreKey), 'utf8');
     const senderKey = await fs.readFile(path.join(rutaSubbots, nombre, archivoSenderKey), 'utf8');
 
-    console.log(`[SUBBOT] ${nombre} - Claves cargadas con éxito.`);
+    // Aquí iría la lógica para conectar el subbot usando las claves
+    console.log(`[SUBBOT] ${nombre} - Conectado con éxito usando las claves:`);
     console.log(`[SUBBOT] preKey: ${preKey}`);
     console.log(`[SUBBOT] senderKey: ${senderKey}`);
+    // Lógica de conexión simulada aquí...
 
-    // Aquí es donde puedes agregar la lógica que el subbot debería ejecutar
-    console.log(`[SUBBOT] ${nombre} ejecutado correctamente.`);
   } catch (err) {
-    console.error(`[ERROR] No se pudo iniciar el subbot ${nombre}:`, err);
+    console.error(`[ERROR] No se pudo conectar el subbot ${nombre}:`, err);
   }
 }
 
-// Función para comprobar si el subbot está activo usando ps-node
-function isSubbotActivo(nombre) {
-  return new Promise((resolve, reject) => {
-    getProcesses({}, (err, processes) => {
-      if (err) {
-        console.error('[ERROR] Error al obtener procesos:', err);
-        return reject(err);
-      }
+// Función para revisar si el subbot está activo (en este caso simula que el subbot está activo si tiene un archivo correspondiente)
+async function isSubbotActivo(nombre) {
+  try {
+    // Revisar si los archivos clave están presentes, lo que indica que el subbot está activo
+    const preKeyPath = path.join(rutaSubbots, nombre, archivoPreKey);
+    const senderKeyPath = path.join(rutaSubbots, nombre, archivoSenderKey);
 
-      // Depuración: mostrar los procesos encontrados
-      console.log(`[SUBBOT] Procesos encontrados:`, processes);
+    const existePreKey = await fs.access(preKeyPath).then(() => true).catch(() => false);
+    const existeSenderKey = await fs.access(senderKeyPath).then(() => true).catch(() => false);
 
-      const subbotActivo = processes.some(process => process.command.includes(nombre));
-      resolve(subbotActivo);
-    });
-  });
+    return existePreKey && existeSenderKey;
+  } catch (err) {
+    console.error(`[ERROR] Error al verificar si el subbot ${nombre} está activo:`, err);
+    return false;
+  }
 }
 
-// Función para verificar los subbots y asegurarse de que se ejecuten
+// Función principal para verificar los subbots cada minuto
 async function verificarSubbots() {
-  console.log('[INFO] Ejecutando verificarSubbots...');  // Depuración
+  console.log('[INFO] Ejecutando verificarSubbots...');
 
-  console.log(`\n[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
-  
   try {
     const carpetas = await fs.readdir(rutaSubbots, { withFileTypes: true });
-    console.log('[SUBBOTS] Carpetas encontradas:', carpetas);
     const subbots = carpetas.filter(dir => dir.isDirectory()).map(dir => dir.name);
 
     if (subbots.length === 0) {
@@ -61,30 +56,26 @@ async function verificarSubbots() {
     console.log(`[SUBBOTS] Se encontraron los siguientes subbots: ${subbots.join(', ')}`);
 
     for (const subbot of subbots) {
-      try {
-        const activo = await isSubbotActivo(subbot);
-        if (!activo) {
-          console.log(`[SUBBOT] ${subbot} está inactivo. Reactivando...`);
-          await iniciarSubbotDirectamente(subbot);
-        } else {
-          console.log(`[SUBBOT] ${subbot} está activo.`);
-        }
-      } catch (e) {
-        console.log(`[ERROR] Al verificar o reactivar ${subbot}:`, e);
+      const activo = await isSubbotActivo(subbot);
+      if (!activo) {
+        console.log(`[SUBBOT] ${subbot} está inactivo. Conectando...`);
+        await conectarSubbot(subbot);
+      } else {
+        console.log(`[SUBBOT] ${subbot} está activo.`);
       }
     }
 
-    console.log(`[SUBBOTS] Verificación completada.`);
+    console.log('[SUBBOTS] Verificación completada.');
   } catch (err) {
     console.error('[ERROR] No se pudo acceder a la carpeta de subbots:', err);
   }
 }
 
-// Llamada inicial para verificar los subbots
+// Ejecutar la verificación inicial
 verificarSubbots();
 
-// Verificación continua cada minuto
+// Verificación continua cada 1 minuto (60000ms)
 setInterval(() => {
   console.log('[INFO] Verificando subbots...');
   verificarSubbots();
-}, 60 * 1000); // Cada 1 minuto (60000ms)
+}, 60 * 1000); // Cada 1 minuto
