@@ -1,82 +1,55 @@
-const { exec } = require("child_process");
-const fs = require("fs");
+import fs from 'fs/promises';
+import path from 'path';
 
-// Ruta donde están los subbots
-const rutaSubbots = "/home/container/GataJadiBot";
+// Ruta donde están los subbots (ajústala si cambias la ubicación)
+const rutaSubbots = '/home/container/GataJadiBot/';
 
-// Objeto para rastrear el estado de los subbots
-let subbots = {};
+// Función principal
+async function verificarSubbots() {
+  console.log(`[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
 
-// Función para escanear y detectar subbots automáticamente
-function detectarSubbots() {
-    console.log("🔍 Escaneando la carpeta de subbots...");
+  try {
+    const carpetas = await fs.readdir(rutaSubbots, { withFileTypes: true });
+    const subbots = carpetas.filter(dir => dir.isDirectory()).map(dir => dir.name);
 
-    // Verifica si la carpeta existe antes de leerla
-    if (!fs.existsSync(rutaSubbots)) {
-        console.error("❌ Error: La carpeta de subbots no existe. Verifica la ruta.");
-        return;
+    if (subbots.length === 0) {
+      console.log('[SUBBOTS] No se encontraron subbots en la carpeta.');
+      return;
     }
 
-    fs.readdir(rutaSubbots, (err, archivos) => {
-        if (err) {
-            console.error("❌ Error al leer la carpeta de subbots:", err);
-            return;
+    for (const subbot of subbots) {
+      try {
+        const activo = await isSubbotActivo(subbot);
+        if (!activo) {
+          console.log(`[SUBBOT] ${subbot} está inactivo. Reactivando...`);
+          await activarSubbot(subbot);
+        } else {
+          console.log(`[SUBBOT] ${subbot} está activo.`);
         }
-
-        if (archivos.length === 0) {
-            console.log("⚠️ No se encontraron subbots en la carpeta.");
-            return;
-        }
-
-        archivos.forEach(archivo => {
-            // Solo agregar si no está registrado
-            if (!subbots[archivo]) {
-                subbots[archivo] = { activo: true, ruta: `${rutaSubbots}/${archivo}` };
-                console.log(`✅ Subbot detectado: ${archivo}`);
-            }
-        });
-    });
-}
-
-// Función para verificar si los subbots están activos
-function verificarSubbots() {
-    console.log("🔎 Verificando el estado de los subbots...");
-
-    let hayInactivos = false;
-
-    for (const nombre in subbots) {
-        if (!subbots[nombre].activo) {
-            console.log(`⚠️ ${nombre} está inactivo. Intentando reconectar...`);
-            reconectarSubbot(nombre);
-            hayInactivos = true;
-        }
+      } catch (e) {
+        console.log(`[ERROR] Al verificar o reactivar ${subbot}:`, e);
+      }
     }
 
-    if (!hayInactivos) {
-        console.log("✅ Todos los subbots están activos.");
-    }
+    console.log(`[SUBBOTS] Verificación completada.`);
+  } catch (err) {
+    console.error('[ERROR] No se pudo acceder a la carpeta de subbots:', err);
+  }
 }
 
-// Función para reconectar un subbot
-function reconectarSubbot(nombre) {
-    const ruta = subbots[nombre].ruta;
-    console.log(`♻️ Reiniciando ${nombre} en ${ruta}...`);
-
-    exec(`cd ${ruta} && pm2 restart bot.js`, (error, stdout, stderr) => {
-        if (error) {
-            console.error(`❌ Error al reiniciar ${nombre}:`, error);
-            return;
-        }
-        console.log(`✅ ${nombre} reiniciado exitosamente.`);
-        subbots[nombre].activo = true; // Lo marcamos como activo
-    });
+// Simulación de funciones — Adáptalas según tu bot
+async function isSubbotActivo(subbot) {
+  // Aquí debes verificar si el subbot está activo. 
+  // Puedes chequear si hay un proceso en ejecución o hacer un ping al bot.
+  return Math.random() > 0.2; // Simulación: 80% de probabilidad de que esté activo.
 }
 
-// Ejecutar una vez al inicio
-detectarSubbots();
+async function activarSubbot(subbot) {
+  // Aquí coloca tu lógica real para reiniciar el subbot.
+  console.log(`[SUBBOT] Activando ${subbot}...`);
+  await new Promise(res => setTimeout(res, 1000)); // Simulación de espera
+}
 
-// Escanear la carpeta cada 10 segundos para detectar nuevos subbots
-setInterval(detectarSubbots, 10000);
-
-// Verificar cada 5 segundos si algún subbot está inactivo
-setInterval(verificarSubbots, 5000);
+// Inicia el proceso y repite cada 2 minutos
+verificarSubbots();
+setInterval(verificarSubbots, 2 * 60 * 1000);
