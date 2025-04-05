@@ -1,125 +1,33 @@
-import fs from 'fs/promises';
-import { exec } from 'child_process';
-import path from 'path';
+const fs = require('fs'); const path = require('path'); const exec = require('child_process').exec;
 
-// Configuración - Ajusta estas rutas según tu entorno
-const rutaPrincipal = '/home/container/Gata.JadIBot';
-const LOG_FILE = path.join(rutaPrincipal, 'subbots_monitor.log');
-const INTERVALO_VERIFICACION = 60 * 1000; // 1 minuto en milisegundos
+// Ruta del directorio donde están los subbots const subbotsPath = '/home/container/GataJadiBot';
 
-// Sistema de logging mejorado
-async function log(message) {
-  const timestamp = new Date().toLocaleTimeString();
-  const logMessage = `[${timestamp}] ${message}\n`;
-  
-  try {
-    await fs.appendFile(LOG_FILE, logMessage);
-    console.log(logMessage.trim());
-  } catch (error) {
-    console.error('Error escribiendo en log:', error);
-  }
-}
+// Función para verificar y activar subbots function checkAndRestartSubbots() { fs.readdir(subbotsPath, (err, subbots) => { if (err) { console.error('Error al leer el directorio:', err); return; }
 
-// Detección inteligente de subbots
-async function detectarSubbots() {
-  try {
-    const items = await fs.readdir(rutaPrincipal, { withFileTypes: true });
-    const subbots = [];
-
-    for (const item of items) {
-      if (item.isDirectory()) {
-        // Verifica si es un subbot válido (tiene package.json)
-        try {
-          await fs.access(path.join(rutaPrincipal, item.name, 'package.json'));
-          subbots.push(item.name);
-          await log(`✓ Subbot detectado: ${item.name}`);
-        } catch {
-          // No es un subbot válido
-          continue;
-        }
-      }
-    }
-
-    return subbots;
-  } catch (err) {
-    await log(`Error detectando subbots: ${err.message}`);
-    return [];
-  }
-}
-
-// Verificación de estado
-async function isSubbotActivo(subbot) {
-  return new Promise((resolve) => {
-    exec(`pgrep -f "${subbot}"`, (error, stdout) => {
-      resolve(!error && stdout.trim().length > 0);
+subbots.forEach(subbot => {
+        const subbotPath = path.join(subbotsPath, subbot);
+        
+        // Verificar si el subbot está activo
+        exec(`pm2 list | grep ${subbot}`, (error, stdout) => {
+            if (!stdout.includes('online')) {
+                console.log(`El subbot ${subbot} está desactivado. Reiniciando...`);
+                exec(`pm2 start ${subbotPath}`, (startError) => {
+                    if (startError) {
+                        console.error(`Error al iniciar ${subbot}:`, startError);
+                    } else {
+                        console.log(`${subbot} ha sido activado correctamente.`);
+                    }
+                });
+            } else {
+                console.log(`${subbot} está activo.`);
+            }
+        });
     });
-  });
-}
-
-// Activación de subbots
-async function activarSubbot(subbot) {
-  const rutaSubbot = path.join(rutaPrincipal, subbot);
-  const logSubbot = path.join(rutaSubbot, 'console.log');
-  
-  return new Promise((resolve, reject) => {
-    const comando = `cd "${rutaSubbot}" && npm start >> "${logSubbot}" 2>&1 &`;
-    
-    exec(comando, (error, stdout, stderr) => {
-      if (error || stderr) {
-        reject(new Error(`Error iniciando ${subbot}: ${error?.message || stderr}`));
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-// Proceso principal de monitoreo
-async function monitorearSubbots() {
-  await log('\n🔃 Iniciando ciclo de monitoreo');
-  
-  try {
-    const subbots = await detectarSubbots();
-    
-    if (subbots.length === 0) {
-      await log('⚠️ No se encontraron subbots configurados');
-      return;
-    }
-
-    await log(`📋 Subbots a verificar: ${subbots.join(', ')}`);
-
-    // Procesamiento en paralelo
-    await Promise.all(subbots.map(async (subbot) => {
-      try {
-        if (!await isSubbotActivo(subbot)) {
-          await log(`⚡ Reactivando ${subbot}...`);
-          await activarSubbot(subbot);
-          await log(`✅ ${subbot} reactivado correctamente`);
-        } else {
-          await log(`👍 ${subbot} está activo`);
-        }
-      } catch (error) {
-        await log(`❌ Error con ${subbot}: ${error.message}`);
-      }
-    }));
-
-    await log('✅ Ciclo completado\n');
-  } catch (error) {
-    await log(`🔥 Error crítico: ${error.message}`);
-  }
-}
-
-// Manejo de cierre
-process.on('SIGINT', async () => {
-  await log('🛑 Deteniendo monitor...');
-  process.exit(0);
 });
 
-// Inicio del servicio
-(async () => {
-  await log('🚀 Iniciando monitor de subbots (1 minuto)');
-  
-  // Ejecución inmediata y luego cada minuto
-  await monitorearSubbots();
-  setInterval(monitorearSubbots, INTERVALO_VERIFICACION);
-})();
+}
+
+// Ejecutar la función cada minuto setInterval(checkAndRestartSubbots, 60000);
+
+console.log('Monitor de subbots iniciado. Verificando cada minuto...');
+
