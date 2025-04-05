@@ -1,61 +1,67 @@
-let handler = async (m, { isOwner, isAdmin, conn, participants }) => {
+let handler = async (m, { conn, participants, isAdmin, isOwner }) => {
   if (!(isAdmin || isOwner)) {
     global.dfail('admin', m, conn)
     throw false
   }
 
-  // Método ultra-confiable para detectar estado
-  const getStatus = (jid) => {
+  // Función mejorada para detectar estado
+  const getStatus = async (jid) => {
     try {
-      // 1. Verificar si el usuario está actualmente en el chat
+      // 1. Verificar actividad reciente en el chat (últimos 2 minutos)
       const chat = conn.chats.get(m.chat)
       if (chat?.messages) {
-        const userMessages = chat.messages.filter(
-          msg => msg.key.fromMe === false && msg.key.participant === jid
+        const userMsg = chat.messages.reverse().find(msg => 
+          msg.key.participant === jid && 
+          (Date.now()/1000 - msg.messageTimestamp) < 120
         )
-        const lastActive = userMessages[0]?.messageTimestamp
-        if (lastActive && (Date.now()/1000 - lastActive) < 600) {
-          return '🟢 Online'
-        }
+        if (userMsg) return '🟢 Online'
       }
 
-      // 2. Verificar última conexión general
-      const user = conn.contacts[jid] || {}
-      if (user.lastSeen) {
-        return (Date.now() - user.lastSeen) < 300000 ? '🟢 Online' : '🔴 Offline'
+      // 2. Verificar presencia en el grupo (requiere configuración previa)
+      if (conn.presence?.[m.chat]?.[jid]?.lastKnownPresence === 'available') {
+        return '🟢 Online'
       }
 
-      // 3. Método alternativo para grupos
-      const groupMetadata = await conn.groupMetadata(m.chat)
-      const participantData = groupMetadata.participants.find(p => p.id === jid)
-      if (participantData?.lastSeen) {
-        return '🟡 Reciente'
+      // 3. Método alternativo para bots
+      if (jid.includes('bot') || jid.includes('status')) {
+        return '🤖 Bot'
       }
 
-      return '⚪ Sin datos'
+      // 4. Último recurso: verificar conexión general
+      try {
+        const status = await conn.fetchStatus(jid)
+        return status.status === 'online' ? '🟢 Online' : '🔴 Offline'
+      } catch {
+        return '🔵 Reciente'
+      }
     } catch (e) {
-      console.error('Error al verificar estado:', e)
-      return '🔵 Verificar manual'
+      console.error('Error checking status:', e)
+      return '⚪ Sin datos'
     }
   }
 
-  let teks = `*╭━* 𝙀𝙎𝙏𝘼𝘿𝙊𝙎 𝙍𝙀𝘼𝙇𝙀𝙎\n\n`
-  teks += `👥 𝙈𝙄𝙀𝙈𝘽𝙍𝙊𝙎: *${participants.length}*\n\n`
+  // Generar tabla
+  let teks = `*╭━━━┳ ESTADOS REALES ━━━┓*\n\n`
+  teks += `👥 *MIEMBROS:* ${participants.length}\n\n`
   teks += '┌─────────────┬──────────────┐\n'
-  teks += '│  𝙀𝙎𝙐𝘼𝙍𝙄𝙊   │   𝙀𝙎𝙏𝘼𝘿𝙊    │\n'
+  teks += '│  USUARIO    │    ESTADO    │\n'
   teks += '├─────────────┼──────────────┤\n'
 
-  for (let mem of participants) {
-    const status = getStatus(mem.id)
-    teks += `│ @${mem.id.split('@')[0].padEnd(11)} │ ${status.padEnd(12)} │\n`
-  }
+  // Verificar estados en paralelo
+  const statuses = await Promise.all(
+    participants.map(async mem => {
+      const status = await getStatus(mem.id)
+      return `│ @${mem.id.split('@')[0].padEnd(11)} │ ${status.padEnd(12)} │`
+    })
+  )
 
+  teks += statuses.join('\n') + '\n'
   teks += '└─────────────┴──────────────┘\n'
-  teks += `*╰━* 𝙀𝙇𝙄𝙏𝙀𝘽𝙊𝙏-𝙈𝘿`
+  teks += `*╰━━━┫ ELITEBOT-MD ┣━━━╯*`
 
   await conn.sendMessage(
-    m.chat, 
-    { 
+    m.chat,
+    {
       text: teks,
       mentions: participants.map(a => a.id)
     },
@@ -63,16 +69,27 @@ let handler = async (m, { isOwner, isAdmin, conn, participants }) => {
   )
 }
 
-// Configuración esencial
+// Configuración ESENCIAL previa
 export function before(conn) {
-  // Almacenar últimos mensajes
+  // Almacenar presencia
+  conn.ev.on('presence.update', ({ id, presences }) => {
+    if (!conn.presence) conn.presence = {}
+    if (!conn.presence[id]) conn.presence[id] = {}
+    conn.presence[id] = presences
+  })
+
+  // Almacenar mensajes recientes
   conn.ev.on('messages.upsert', ({ messages }) => {
     messages.forEach(msg => {
-      if (msg.key.remoteJid) {
-        if (!conn.chats[msg.key.remoteJid]) {
-          conn.chats[msg.key.remoteJid] = { messages: [] }
+      const jid = msg.key.remoteJid
+      if (jid) {
+        if (!conn.chats) conn.chats = {}
+        if (!conn.chats[jid]) conn.chats[jid] = { messages: [] }
+        // Mantener sólo los últimos 50 mensajes
+        if (conn.chats[jid].messages.length > 50) {
+          conn.chats[jid].messages.shift()
         }
-        conn.chats[msg.key.remoteJid].messages.push(msg)
+        conn.chats[jid].messages.push(msg)
       }
     })
   })
