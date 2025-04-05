@@ -51,7 +51,7 @@ let handler = async (m, { isOwner, isAdmin, conn, participants, args, command })
     }
 };
 
-// Para eliminar mensajes de los miembros no administradores cuando el grupo está en silencio
+// Event listener para eliminar mensajes de miembros no administradores cuando el grupo está silenciado
 client.on('message_create', async (msg) => {
     // Verificar si el mensaje es de un grupo y si el grupo está silenciado
     if (!msg.isGroup || !isMuted) return;  // Si no es grupo o no está silenciado, no hacer nada
