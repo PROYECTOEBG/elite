@@ -1,54 +1,35 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { exec } from 'child_process';
 
 const rutaSubbots = '/home/container/GataJadiBot/';
-const archivoPreKey = 'pre_key';  // Nombre del archivo con la preclave
-const archivoSenderKey = 'sender_key';  // Nombre del archivo con la clave del sender
 
-// Función para conectar el subbot
+// Función para verificar si el subbot está en ejecución
+function isSubbotActivo(nombre) {
+  return new Promise((resolve, reject) => {
+    // Verificar si el subbot tiene un proceso en ejecución
+    exec(`ps aux | grep "${nombre}" | grep -v grep`, (err, stdout, stderr) => {
+      if (err) return reject(err);
+
+      // Si la salida contiene el nombre del subbot, significa que está en ejecución
+      if (stdout.includes(nombre)) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  });
+}
+
+// Función para conectar el subbot (sin necesidad de verificar pre_key y sender_key)
 async function conectarSubbot(nombre) {
   try {
-    // Verificar si los archivos existen
-    const preKeyPath = path.join(rutaSubbots, nombre, archivoPreKey);
-    const senderKeyPath = path.join(rutaSubbots, nombre, archivoSenderKey);
-
-    // Si los archivos no existen, mostramos un mensaje y retornamos
-    try {
-      await fs.access(preKeyPath);
-      await fs.access(senderKeyPath);
-    } catch (err) {
-      console.error(`[ERROR] Los archivos necesarios para el subbot ${nombre} no se encontraron.`);
-      return;
-    }
-
-    // Si los archivos existen, cargarlos
-    const preKey = await fs.readFile(preKeyPath, 'utf8');
-    const senderKey = await fs.readFile(senderKeyPath, 'utf8');
-
-    // Aquí iría la lógica para conectar el subbot usando las claves
-    console.log(`[SUBBOT] ${nombre} - Conectado con éxito usando las claves:`);
-    console.log(`[SUBBOT] preKey: ${preKey}`);
-    console.log(`[SUBBOT] senderKey: ${senderKey}`);
-    // Lógica de conexión simulada aquí...
+    // Intentamos conectar el subbot sin verificar los archivos pre_key y sender_key
+    console.log(`[SUBBOT] ${nombre} - Conectando...`);
+    // Aquí va tu lógica de conexión real para el subbot
 
   } catch (err) {
     console.error(`[ERROR] No se pudo conectar el subbot ${nombre}:`, err);
-  }
-}
-
-// Función para revisar si el subbot está activo
-async function isSubbotActivo(nombre) {
-  try {
-    const preKeyPath = path.join(rutaSubbots, nombre, archivoPreKey);
-    const senderKeyPath = path.join(rutaSubbots, nombre, archivoSenderKey);
-
-    const existePreKey = await fs.access(preKeyPath).then(() => true).catch(() => false);
-    const existeSenderKey = await fs.access(senderKeyPath).then(() => true).catch(() => false);
-
-    return existePreKey && existeSenderKey;
-  } catch (err) {
-    console.error(`[ERROR] Error al verificar si el subbot ${nombre} está activo:`, err);
-    return false;
   }
 }
 
