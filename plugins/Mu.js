@@ -1,4 +1,20 @@
+const fs = require('fs');
+const path = require('path');
+
 let mutedUsers = new Set();
+
+// Ruta del archivo JSON para guardar la lista de usuarios muteados
+const mutedUsersFile = path.join(__dirname, 'mutedUsers.json');
+
+// Cargar usuarios muteados desde el archivo al iniciar el bot
+if (fs.existsSync(mutedUsersFile)) {
+    mutedUsers = new Set(JSON.parse(fs.readFileSync(mutedUsersFile, 'utf-8')));
+}
+
+// Guardar la lista de muteados en el archivo cada vez que se actualice
+const saveMutedUsers = () => {
+    fs.writeFileSync(mutedUsersFile, JSON.stringify([...mutedUsers]));
+};
 
 let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
     // Aseguramos que el bot sea administrador
@@ -16,10 +32,18 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
 
     // Si el comando es mute
     if (command === "mute") {
+        if (mutedUsers.has(user)) {
+            return conn.reply(m.chat, `⭐ El usuario ya está muteado.`, m);
+        }
         mutedUsers.add(user);
+        saveMutedUsers(); // Guardamos la lista actualizada
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     } else if (command === "unmute") {
+        if (!mutedUsers.has(user)) {
+            return conn.reply(m.chat, `⭐ El usuario no está muteado.`, m);
+        }
         mutedUsers.delete(user);
+        saveMutedUsers(); // Guardamos la lista actualizada
         conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
 };
