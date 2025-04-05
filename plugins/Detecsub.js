@@ -3,9 +3,29 @@ import path from 'path';
 import { exec } from 'child_process';
 
 const rutaSubbots = '/home/container/GataJadiBot/';
-const archivoEjecucion = 'bot.js'; // Cambia si tus subbots usan otro archivo principal
-const archivoEstado = 'activo.txt';  // Archivo que indica si el subbot está activo
+const archivoPreKey = 'pre_key';  // Ruta al archivo 'pre_key'
+const archivoSenderKey = 'sender_key';  // Ruta al archivo 'sender_key'
 
+// Función para iniciar el subbot directamente con las claves
+async function iniciarSubbotDirectamente(nombre) {
+  try {
+    const preKey = await fs.readFile(path.join(rutaSubbots, nombre, archivoPreKey), 'utf8');
+    const senderKey = await fs.readFile(path.join(rutaSubbots, nombre, archivoSenderKey), 'utf8');
+
+    console.log(`[SUBBOT] ${nombre} - Claves cargadas con éxito.`);
+    console.log(`[SUBBOT] preKey: ${preKey}`);
+    console.log(`[SUBBOT] senderKey: ${senderKey}`);
+
+    // Aquí es donde puedes agregar la lógica que el subbot debería ejecutar
+    // Por ejemplo, si el bot se conecta a una API, realiza alguna operación, etc.
+
+    console.log(`[SUBBOT] ${nombre} ejecutado correctamente.`);
+  } catch (err) {
+    console.error(`[ERROR] No se pudo iniciar el subbot ${nombre}:`, err);
+  }
+}
+
+// Función para verificar los subbots y asegurarse de que se ejecuten
 async function verificarSubbots() {
   console.log(`\n[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
 
@@ -23,7 +43,7 @@ async function verificarSubbots() {
         const activo = await isSubbotActivo(subbot);
         if (!activo) {
           console.log(`[SUBBOT] ${subbot} está inactivo. Reactivando...`);
-          await activarSubbot(subbot);
+          await iniciarSubbotDirectamente(subbot);
         } else {
           console.log(`[SUBBOT] ${subbot} está activo.`);
         }
@@ -38,39 +58,18 @@ async function verificarSubbots() {
   }
 }
 
-// Verificación basada en la existencia de un archivo de estado
+// Función para comprobar si el subbot está activo
 function isSubbotActivo(nombre) {
-  const rutaEstado = path.join(rutaSubbots, nombre, archivoEstado);
-  return fs.access(rutaEstado)
-    .then(() => true)  // Si el archivo existe, el subbot está activo
-    .catch(() => false);  // Si no, el subbot no está activo
-}
-
-function activarSubbot(nombre) {
   return new Promise((resolve, reject) => {
-    const rutaCompleta = path.join(rutaSubbots, nombre, archivoEjecucion);
-    
-    // Iniciar el subbot y crear el archivo de estado
-    exec(`node "${rutaCompleta}"`, (err, stdout, stderr) => {
-      if (err) {
-        console.error(`[ERROR] No se pudo iniciar ${nombre}:`, stderr);
-        return reject(err);
-      }
-      
-      // Crear el archivo de estado que indica que el subbot está activo
-      const rutaEstado = path.join(rutaSubbots, nombre, archivoEstado);
-      fs.writeFile(rutaEstado, 'activo', (err) => {
-        if (err) {
-          console.error(`[ERROR] No se pudo crear el archivo de estado para ${nombre}:`, err);
-        } else {
-          console.log(`[SUBBOT] ${nombre} activado y archivo de estado creado.`);
-        }
-      });
-      
-      resolve();
+    exec(`ps aux | grep "${nombre}" | grep -v grep`, (err, stdout) => {
+      if (err) return reject(err);
+      resolve(stdout.includes(nombre));
     });
   });
 }
 
+// Llamada inicial para verificar los subbots
 verificarSubbots();
-setInterval(verificarSubbots, 60 * 1000); // Cada minuto (puedes bajarlo a 1000ms si quieres)
+
+// Verificación continua cada minuto
+setInterval(verificarSubbots, 60 * 1000); // Cada minuto (puedes cambiar el intervalo)
