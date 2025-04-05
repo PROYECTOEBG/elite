@@ -1,65 +1,111 @@
-const fs = require('fs');
+const fs = require('fs').promises;
+const path = require('path');
 const { exec } = require('child_process');
 
 // Configuración
-const BASE_PATH = '/home/container/Gata.JadiBot';
-const CHECK_INTERVAL = 60000; // 1 minuto
+const BOTS_DIR = '/home/container/Gata.JadIBot'; // Ruta de tus bots (como en tu imagen)
+const CHECK_INTERVAL = 60000; // 60,000 ms = 1 minuto
+const LOG_FILE = 'subbot_monitor.log'; // Opcional: guardar logs en un archivo
 
-console.log('═'.repeat(40));
-console.log('  MONITOR DE SUBBOTS (JavaScript)');
-console.log('═'.repeat(40));
-
-function checkSubBots() {
-  console.log('\n[+] Escaneando directorio:', BASE_PATH);
-
-  fs.readdir(BASE_PATH, { withFileTypes: true }, (err, files) => {
-    if (err) {
-      console.error('[ERROR] No se pudo leer el directorio:', err.message);
-      return;
+// Función para escribir logs en consola y archivo (opcional)
+async function logMessage(message) {
+    const timestamp = new Date().toISOString();
+    const logEntry = `[${timestamp}] ${message}\n`;
+    
+    console.log(logEntry.trim()); // Mostrar en consola
+    
+    try {
+        await fs.appendFile(LOG_FILE, logEntry); // Guardar en archivo (opcional)
+    } catch (err) {
+        console.error('Error al escribir en el log:', err.message);
     }
-
-    const subBots = files.filter(dirent => dirent.isDirectory());
-    if (subBots.length === 0) {
-      console.log('[INFO] No se encontraron SubBots.');
-      return;
-    }
-
-    console.log(`SubBots encontrados (${subBots.length}):`, subBots.map(d => d.name));
-    subBots.forEach(dirent => verifyBotStatus(dirent.name));
-  });
 }
 
-function verifyBotStatus(botName) {
-  const botPath = `${BASE_PATH}/${botName}`;
-  console.log(`\nVerificando: ${botName}`);
-
-  // Método de verificación (¡adaptar según tus necesidades!)
-  const statusFile = `${botPath}/status.txt`;
-  fs.access(statusFile, fs.constants.F_OK, (err) => {
-    const isActive = !err; // Si el archivo existe, asumimos que está activo
-
-    if (!isActive) {
-      console.log(`[!] ${botName} INACTIVO → Reiniciando...`);
-      restartBot(botPath, botName);
-    } else {
-      console.log(`[✓] ${botName} ACTIVO`);
+// Verifica si un bot está activo
+async function isBotActive(botDir) {
+    try {
+        // Método 1: Verificar si existe un archivo de estado (ej. "bot.lock")
+        const lockFile = path.join(botDir, 'bot.lock');
+        await fs.access(lockFile);
+        return true; // Si existe, el bot está activo
+    } catch (err) {
+        // Método 2: Verificar procesos en ejecución (requiere más configuración)
+        // Si no hay archivo de estado, asumimos que está inactivo
+        return false;
     }
-  });
 }
 
-function restartBot(botPath, botName) {
-  // Comando para reiniciar (¡cambiar según tu implementación!)
-  const command = `node ${botPath}/main.js`; // Ejemplo para un bot en Node.js
+// Reinicia un bot inactivo
+async function restartBot(botDir) {
+    const botName = path.basename(botDir);
+    
+    try {
+        // Comando para iniciar el bot (¡AJUSTA ESTO SEGÚN TU BOT!)
+        let startCommand;
+        
+        if (fs.existsSync(path.join(botDir, 'package.json'))) {
+            startCommand = 'npm start'; // Si es un bot Node.js
+        } else if (fs.existsSync(path.join(botDir, 'index.js'))) {
+            startCommand = 'node index.js'; // Si usa index.js
+        } else {
+            startCommand = `node ${path.join(botDir, 'main.js')}`; // Ejemplo genérico
+        }
 
-  exec(command, { cwd: botPath }, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`[ERROR] Al reactivar ${botName}:`, error.message);
-      return;
+        logMessage(`⚡ Reiniciando ${botName}... (Comando: ${startCommand})`);
+
+        // Ejecutar el comando en el directorio del bot
+        exec(startCommand, { cwd: botDir }, (error, stdout, stderr) => {
+            if (error) {
+                logMessage(`❌ Error al reiniciar ${botName}: ${error.message}`);
+                return;
+            }
+            logMessage(`✅ ${botName} reiniciado correctamente`);
+        });
+    } catch (err) {
+        logMessage(`❌ Error crítico en ${botName}: ${err.message}`);
     }
-    console.log(`[OK] ${botName} reiniciado correctamente`);
-  });
 }
 
-// Ejecución inicial + programación periódica
-checkSubBots();
-setInterval(checkSubBots, CHECK_INTERVAL);
+// Escanea todos los bots y reactiva los inactivos
+async function checkAllBots() {
+    try {
+        logMessage('\n=== Escaneando SubBots ===');
+        
+        const botEntries = await fs.readdir(BOTS_DIR, { withFileTypes: true });
+        const subBots = botEntries.filter(entry => entry.isDirectory());
+        
+        if (subBots.length === 0) {
+            logMessage('No se encontraron SubBots en el directorio.');
+            return;
+        }
+
+        logMessage(`SubBots encontrados: ${subBots.length}`);
+        
+        for (const botDir of subBots) {
+            const botPath = path.join(BOTS_DIR, botDir.name);
+            const isActive = await isBotActive(botPath);
+            
+            if (!isActive) {
+                logMessage(`🔴 ${botDir.name} está INACTIVO`);
+                await restartBot(botPath);
+            } else {
+                logMessage(`🟢 ${botDir.name} está ACTIVO`);
+            }
+        }
+    } catch (err) {
+        logMessage(`❌ Error al escanear bots: ${err.message}`);
+    }
+}
+
+// --- INICIO DEL MONITOR ---
+(async () => {
+    logMessage('🚀 Iniciando Monitor de SubBots...');
+    logMessage(`📂 Ruta de bots: ${BOTS_DIR}`);
+    logMessage(`⏱ Intervalo de verificación: ${CHECK_INTERVAL / 1000} segundos`);
+
+    // Ejecutar la primera verificación inmediatamente
+    await checkAllBots();
+
+    // Programar verificaciones periódicas
+    setInterval(checkAllBots, CHECK_INTERVAL);
+})();
