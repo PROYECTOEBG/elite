@@ -1,36 +1,44 @@
 let mutedUsers = new Set();
 
-let handler = async (m, { conn, isAdmin, isBotAdmin, participants }) => {
-    // Verificar si es un comando mute/unmute (con o sin punto)
-    const isMuteCmd = /^(\.?mute|mute)$/i.test(m.text) && !m.text.includes('unmute');
-    const isUnmuteCmd = /^(\.?unmute|unmute)$/i.test(m.text);
+let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+    // Verificar si el mensaje comienza con mute/unmute (con o sin punto)
+    const isMute = /^[\.]?mute$/i.test(m.text.split(' ')[0]);
+    const isUnmute = /^[\.]?unmute$/i.test(m.text.split(' ')[0]);
     
-    // Solo procesar si es un comando válido
-    if (!isMuteCmd && !isUnmuteCmd) return;
+    if (!isMute && !isUnmute) return; // No es un comando válido
 
     // Verificar permisos
-    if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
-    if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
+    if (!isBotAdmin) {
+        return conn.sendMessage(m.chat, { text: '⚠️ El bot necesita ser administrador para esta acción' }, { quoted: m });
+    }
+    if (!isAdmin) {
+        return conn.sendMessage(m.chat, { text: '⚠️ Solo administradores pueden usar este comando' }, { quoted: m });
+    }
 
     // Obtener usuario mencionado
-    let user;
-    if (m.mentionedJid && m.mentionedJid.length > 0) {
-        user = m.mentionedJid[0];
-    } else {
-        return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
+    const mentioned = m.mentionedJid?.[0];
+    if (!mentioned) {
+        return conn.sendMessage(m.chat, { text: '🔍 Etiqueta al usuario que deseas mutear/desmutear' }, { quoted: m });
     }
 
     // Procesar comando
-    if (isMuteCmd) {
-        mutedUsers.add(user);
-        conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (isUnmuteCmd) {
-        mutedUsers.delete(user);
-        conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
+    if (isMute) {
+        mutedUsers.add(mentioned);
+        conn.sendMessage(m.chat, { 
+            text: `🔇 Usuario muteado: @${mentioned.split('@')[0]}`,
+            mentions: [mentioned]
+        }, { quoted: m });
+    } 
+    else if (isUnmute) {
+        mutedUsers.delete(mentioned);
+        conn.sendMessage(m.chat, { 
+            text: `🔊 Usuario desmuteado: @${mentioned.split('@')[0]}`,
+            mentions: [mentioned]
+        }, { quoted: m });
     }
 };
 
-// Eliminar mensajes de usuarios muteados
+// Interceptar mensajes de usuarios muteados
 handler.before = async (m, { conn }) => {
     if (mutedUsers.has(m.sender)) {
         try {
@@ -41,7 +49,9 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Configuración del handler
+// Configuración
+handler.tags = ['group'];
+handler.command = /^(\.?mute|\.?unmute)$/i;
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
