@@ -7,5 +7,5 @@ let handler = async (m, { conn }) => {
     m.reply('Tu bot **NO tiene acceso** a presenceSubscribe.')
   }
 }
-handler.command = /^pruebaestado$/i
+handler.command = /^prueba2$/i
 export default handler
