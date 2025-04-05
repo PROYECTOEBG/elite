@@ -10,7 +10,7 @@ conn.reply(m.chat, `Este pana fue desbloqueado en mi base de datos ☑️.`, m)
 }
 handler.help = ['unbanuser']
 handler.tags = ['owner']
-handler.command = /^desbloquear|desbloquear$/i
+handler.command = /^desbloquear|unbanuser$/i
 handler.group = true
 handler.admin = true 
 handler.owner = true
