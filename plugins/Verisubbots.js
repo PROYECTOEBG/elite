@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import { exec } from 'child_process';
 import path from 'path';
 
-const rutaSubbots = '/home/container/GataJadiBot/'; // Ruta donde están los subbots
+const rutaSubbots = './GataJadiBot/'; // Ruta donde están los subbots
 
 // Función principal
 async function verificarYReactivarSubbots() {
