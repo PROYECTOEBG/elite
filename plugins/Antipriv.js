@@ -1,70 +1,40 @@
-const { makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
-const fs = require('fs');
+const { Client } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
 
-// CONFIGURACIÓN (¡OBLIGATORIO AJUSTAR!)
-const config = {
-  ownerNumber: '593993370003', // TU NÚMERO con código de país (sin +)
-  botName: 'MiBotAntiPrivado', // Nombre que aparecerá en los logs
-  blockMessage: '⚠️ *ACCESO DENEGADO*\n\nEste bot es de uso exclusivo para su dueño.\nHas sido *bloqueado* automáticamente.',
-  sessionFile: './session.json'
-};
+// ID del bot principal
+const mainBotNumber = '593986304370'; // Reemplaza con el número de teléfono de tu bot principal (en formato internacional sin +)
 
-// Inicialización mejorada
-const { state, saveState } = useSingleFileAuthState(config.sessionFile);
-const sock = makeWASocket({
-  auth: state,
-  printQRInTerminal: true,
-  logger: { level: 'warn' } // Solo muestra advertencias y errores
+const client = new Client();
+
+client.on('qr', (qr) => {
+    // Genera el código QR para la autenticación en consola
+    qrcode.generate(qr, { small: true });
 });
 
-// Manejo de conexión
-sock.ev.on('connection.update', ({ connection }) => {
-  if (connection === 'open') {
-    console.log(`\n✅ ${config.botName} CONECTADO`);
-    console.log(`🔒 MODO ANTIPRIVADO ACTIVO\n🔐 Número autorizado: ${config.ownerNumber}\n`);
-  }
+client.on('ready', () => {
+    console.log('Bot principal listo!');
 });
 
-// Guardar sesión automáticamente
-sock.ev.on('creds.update', saveState);
-
-// Manejo de mensajes MEJORADO
-sock.ev.on('messages.upsert', async ({ messages }) => {
-  try {
-    const msg = messages[0];
-    if (!msg.message || msg.key.fromMe) return;
-
-    const sender = msg.key.remoteJid;
-    const isGroup = sender.includes('@g.us');
-    const userNumber = sender.replace(/@s\.whatsapp\.net/, '');
-
-    // Verificación MEJORADA
-    if (!isGroup && userNumber !== config.ownerNumber) {
-      console.log(`\n🚨 Intento de acceso de: ${userNumber}`);
-
-      // 1. Enviar advertencia
-      await sock.sendMessage(sender, { text: config.blockMessage });
-
-      // 2. Bloqueo MEJORADO (método garantizado)
-      await sock.updateBlockStatus(sender, 'block');
-      console.log(`🔒 Número bloqueado: ${userNumber}`);
-
-      // 3. Eliminar chat (opcional pero recomendado)
-      await sock.sendMessage(sender, { text: '🔴 Eliminando chat...' });
-      await sock.chatModify({ delete: true }, sender);
-      
-      // 4. Notificar al dueño (opcional)
-      await sock.sendMessage(
-        `${config.ownerNumber}@s.whatsapp.net`, 
-        { text: `🚨 Bloqueado: ${userNumber}` }
-      );
+client.on('message', (message) => {
+    // Si el mensaje es privado (no proviene de un grupo)
+    if (message.isGroupMsg === false) {
+        // Verifica si el mensaje es del bot principal
+        if (message.from === mainBotNumber + '@c.us') {
+            // Si es del bot principal, bloqueamos su mensaje y respondemos con el mensaje
+            message.delete().then(() => {
+                message.reply('Mi creador no permite mensajes a mi privado, tendré que bloquearte.');
+            });
+        } else {
+            // Si es un mensaje de un usuario, bloqueamos a esa persona
+            message.reply('Mi creador no permite mensajes a mi privado, tendré que bloquearte.')
+                .then(() => {
+                    client.getContactById(message.from).then(contact => {
+                        contact.block();  // Bloquea al usuario que escribió
+                    });
+                });
+        }
     }
-  } catch (error) {
-    console.error('⚠️ Error en antiprivado:', error);
-  }
 });
 
-// Manejo de errores global
-process.on('uncaughtException', (err) => {
-  console.error('Error crítico:', err);
-});
+// Inicia el cliente
+client.initialize();
