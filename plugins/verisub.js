@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import { exec } from 'child_process';
 import path from 'path';
 
-const rutaSubbots = '/home/container/Gata.JadiBot'; // NUEVA ruta confirmada
+const rutaSubbots = '/home/container/GataJadiBot'; // NUEVA ruta confirmada
 
 async function verificarYReactivarSubbots() {
   console.log(`[SUBBOTS] ⏳ Verificando subbots en ${rutaSubbots} - ${new Date().toLocaleTimeString()}`);
