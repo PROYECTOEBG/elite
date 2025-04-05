@@ -1,31 +1,40 @@
-const { Client } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const { makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
 
-// Número de teléfono del bot principal
-const mainBotNumber = '593986304370'; // Número de tu bot principal (en formato internacional, sin '+')
+// CONFIGURACIÓN
+const config = {
+  ownerNumber: '593993370003', // TU NÚMERO (con código de país, sin +)
+  allowedGroups: ['120363043123456789@g.us'], // IDs de grupos permitidos (opcional)
+  ignoreMessage: '⚠️ Los comandos solo funcionan en grupos oficiales',
+  sessionFile: './session.json'
+};
 
-// Crear cliente de WhatsApp
-const client = new Client();
-
-// Generar el código QR para la autenticación en consola
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
+// INICIALIZACIÓN
+const { state, saveState } = useSingleFileAuthState(config.sessionFile);
+const sock = makeWASocket({
+  auth: state,
+  printQRInTerminal: true,
+  logger: { level: 'warn' }
 });
 
-// Cuando esté listo
-client.on('ready', () => {
-    console.log('Bot principal listo!');
+// MANEJO DE CONEXIÓN
+sock.ev.on('connection.update', ({ connection }) => {
+  if (connection === 'open') {
+    console.log(`\n✅ Bot conectado | Dueño: ${config.ownerNumber}`);
+    console.log(`🔇 Ignorando comandos en privado (sin bloquear usuarios)\n`);
+  }
 });
 
-// Escuchar mensajes
-client.on('message', (message) => {
-    // Si el mensaje es privado (no de un grupo)
-    if (!message.isGroupMsg) {
-        // Ignorar el mensaje completamente sin responder
-        console.log(`Mensaje de ${message.from} ignorado: ${message.body}`);
-        return;  // No hace nada, ignora cualquier mensaje privado
-    }
-});
+// GUARDAR SESIÓN
+sock.ev.on('creds.update', saveState);
 
-// Iniciar cliente
-client.initialize();
+// MANEJO DE MENSAJES
+sock.ev.on('messages.upsert', async ({ messages }) => {
+  try {
+    const msg = messages[0];
+    if (!msg.message || msg.key.fromMe) return;
+
+    const sender = msg.key.remoteJid;
+    const isGroup = sender.includes('@g.us');
+    const userNumber = sender.replace(/@s\.whatsapp\.net/, '');
+    const isOwner = userNumber === config.ownerNumber;
+    const isAllowedGroup = config.allowedGroups.includes(sende
