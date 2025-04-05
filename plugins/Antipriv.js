@@ -21,24 +21,9 @@ client.on('ready', () => {
 client.on('message', (message) => {
     // Verificar si el mensaje no proviene de un grupo (es privado)
     if (!message.isGroupMsg) {
-        // Verificar si el mensaje proviene de un usuario (y no del bot)
-        if (message.from !== mainBotNumber + '@c.us') {
-            // Enviar mensaje de advertencia
-            message.reply('Mi creador no permite mensajes a mi privado, tendré que bloquearte.');
-
-            // Bloquear al usuario
-            client.getContactById(message.from).then(contact => {
-                contact.block()  // Bloquea al usuario
-                    .then(() => {
-                        console.log(`Usuario bloqueado: ${message.from}`);
-                    })
-                    .catch((err) => {
-                        console.log('Error al bloquear al usuario:', err);
-                    });
-            }).catch(err => {
-                console.log('Error al obtener el contacto:', err);
-            });
-        }
+        // Si el mensaje es privado (de un usuario), no respondemos a nada
+        console.log(`Mensaje ignorado de ${message.from}: ${message.body}`);
+        return;  // No hacer nada, ignorar el mensaje
     }
 });
 
