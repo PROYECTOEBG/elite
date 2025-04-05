@@ -44,11 +44,11 @@ const handler = async (_0x5b04ea, { conn: _0x24d45b, command: _0x38ad25, text: _
         let _0xc6ae1d = global['db'][_0x267b7e(0x15b)][_0x267b7e(0x15d)][_0x329969];
         if (_0xc6ae1d[_0x267b7e(0x13a)] === true) throw _0x267b7e(0x14d);
 
-        // Enviar notificación y actualizar base de datos
-        _0x24d45b['reply'](_0x5b04ea[_0x267b7e(0x152)], '*Tus mensajes serán eliminados*', { mentions: [_0x329969] });
+        // Mute y eliminar mensajes
         global['db'][_0x267b7e(0x15b)][_0x267b7e(0x15d)][_0x329969][_0x267b7e(0x13a)] = true;
+        _0x24d45b['reply'](_0x5b04ea[_0x267b7e(0x152)], '*Tus mensajes serán eliminados*', { mentions: [_0x329969] });
 
-        // Eliminar mensajes del usuario muteado
+        // Eliminar los mensajes del usuario muteado
         await _0x24d45b.removeMessages(_0x5b04ea.chat, _0x5b04ea.messages);
     } else if (_0x38ad25 === _0x267b7e(0x147)) {
         if (!_0x9e35ac) throw _0x5b04ea[_0x267b7e(0x141)](_0x267b7e(0x155));
@@ -58,7 +58,7 @@ const handler = async (_0x5b04ea, { conn: _0x24d45b, command: _0x38ad25, text: _
         if (_0x12128f === _0x5b04ea[_0x267b7e(0x142)]) throw _0x267b7e(0x157);
         if (_0x498844[_0x267b7e(0x13a)] === false) throw _0x267b7e(0x149);
 
-        // Desmutear y enviar mensaje de confirmación
+        // Desmutear y notificar
         global['db'][_0x267b7e(0x15b)][_0x267b7e(0x15d)][_0x12128f][_0x267b7e(0x13a)] = false;
         _0x24d45b['reply'](_0x5b04ea[_0x267b7e(0x152)], '*Tus mensajes no serán eliminados*', { mentions: [_0x12128f] });
     }
