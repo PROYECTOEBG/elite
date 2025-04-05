@@ -39,18 +39,25 @@ let handler = async (m, { conn, command, args, text, usedPrefix }) => {
         await m.react('💯');
         const q = '128kbps';
         const v = yt_play[0].url;
-        const yt = await ytdl.getInfo(v);
         
-        // Selección del formato de audio adecuado
-        const audioFormat = yt.formats.find(format => format.hasAudio && format.mimeType === 'audio/webm; codecs="opus"');
+        // Intentar obtener el formato de audio
+        const audioFormats = ytdl.getInfo(v).then(info => {
+          // Filtramos para obtener un formato de audio
+          const audioFormat = ytdl.chooseFormat(info.formats, { filter: 'audioonly' });
+          if (audioFormat && audioFormat.url) {
+            return audioFormat.url;
+          } else {
+            throw new Error("No se pudo obtener un formato de audio válido.");
+          }
+        });
         
-        if (!audioFormat) throw new Error('No se encontró un formato de audio válido.');
+        const dl_url = await audioFormats;
         
-        const dl_url = audioFormat.url;
+        // Mandamos el audio como archivo
         await conn.sendMessage(m.chat, { audio: { url: dl_url }, mimetype: 'audio/mpeg' }, { quoted: m });
       } catch (err) {
         console.error('Error al enviar el audio de Spotify:', err);
-        // Si ocurre un error con ytdl-core, puedes intentar otras APIs o manejar el fallo
+        // Puedes intentar otras APIs o manejar el fallo
       }
     }
 
@@ -60,20 +67,26 @@ let handler = async (m, { conn, command, args, text, usedPrefix }) => {
         const qu = '480';
         const q = qu + 'p';
         const v = yt_play[0].url;
-        const yt = await ytdl(v);
-
-        // Obtener el formato de video adecuado
-        const videoFormat = yt.formats.find(format => format.hasVideo && format.hasAudio && format.container === 'mp4');
         
-        if (!videoFormat) throw new Error('No se encontró un formato de video válido.');
+        // Intentar obtener el formato de video
+        const videoFormats = ytdl.getInfo(v).then(info => {
+          const videoFormat = ytdl.chooseFormat(info.formats, { filter: 'videoandaudio' });
+          if (videoFormat && videoFormat.url) {
+            return videoFormat.url;
+          } else {
+            throw new Error("No se pudo obtener un formato de video válido.");
+          }
+        });
         
-        const dl_url = videoFormat.url;
+        const dl_url = await videoFormats;
+        
+        // Mandamos el video
         await conn.sendMessage(m.chat, {
           video: { url: dl_url },
-          fileName: `${yt.title}.mp4`,
+          fileName: `${yt_play[0].title}.mp4`,
           mimetype: 'video/mp4',
           caption: '𝙑𝙄𝘿𝙀𝙊 𝘿𝙀𝙎𝘾𝘼𝙍𝘼𝙂𝘼𝘿𝙊 [✅]',
-          thumbnail: yt.thumbnail
+          thumbnail: yt_play[0].thumbnail
         }, { quoted: m });
       } catch (err) {
         console.error('Error al enviar el video de play8:', err);
