@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
-import { getProcesses } from 'ps-node'; // Usaremos ps-node como alternativa
+import { getProcesses } from 'ps-node'; // Usamos ps-node para listar procesos
 
 const rutaSubbots = '/home/container/GataJadiBot/';
 const archivoPreKey = 'pre_key';  // Ruta al archivo 'pre_key'
@@ -28,9 +28,14 @@ async function iniciarSubbotDirectamente(nombre) {
 function isSubbotActivo(nombre) {
   return new Promise((resolve, reject) => {
     getProcesses({}, (err, processes) => {
-      if (err) return reject(err);
-      
-      // Filtramos los procesos buscando el nombre del subbot
+      if (err) {
+        console.error('[ERROR] Error al obtener procesos:', err);
+        return reject(err);
+      }
+
+      // Depuración: mostrar los procesos encontrados
+      console.log(`[SUBBOT] Procesos encontrados:`, processes);
+
       const subbotActivo = processes.some(process => process.command.includes(nombre));
       resolve(subbotActivo);
     });
@@ -43,12 +48,15 @@ async function verificarSubbots() {
 
   try {
     const carpetas = await fs.readdir(rutaSubbots, { withFileTypes: true });
+    console.log('[SUBBOTS] Carpetas encontradas:', carpetas); // Depuración
     const subbots = carpetas.filter(dir => dir.isDirectory()).map(dir => dir.name);
 
     if (subbots.length === 0) {
       console.log('[SUBBOTS] No se encontraron subbots en la carpeta.');
       return;
     }
+
+    console.log(`[SUBBOTS] Se encontraron los siguientes subbots: ${subbots.join(', ')}`);
 
     for (const subbot of subbots) {
       try {
@@ -74,4 +82,7 @@ async function verificarSubbots() {
 verificarSubbots();
 
 // Verificación continua cada minuto
-setInterval(verificarSubbots, 60 * 1000); // Cada minuto (puedes cambiar el intervalo)
+setInterval(() => {
+  console.log('[INFO] Verificando subbots...');
+  verificarSubbots();
+}, 60 * 1000); // Cada minuto (puedes cambiar el intervalo)
