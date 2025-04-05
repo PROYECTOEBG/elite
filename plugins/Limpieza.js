@@ -1,80 +1,26 @@
-/*import { promises as fs, existsSync } from 'fs';
-import path from 'path';
+import { promises as fs, existsSync } from 'fs'; import path from 'path';
 
-// Carpeta de sesión que se limpia (excepto creds.json)
-const sessionPath = './GataBotSession/';
+// Carpeta de sesión que se limpia (excepto creds.json) const sessionPath = './GataBotSession/';
 
-// Carpetas comunes para archivos temporales o medios
-const carpetasTemporales = ['./media', './temp', './downloads', './tmp'];
+// Limpieza de sesión async function limpiarSession() { try { if (!existsSync(sessionPath)) { console.log('[LIMPIEZA] Carpeta de sesión no existe.'); return; }
 
-// Limpieza de sesión
-async function limpiarSession() {
-  try {
-    if (!existsSync(sessionPath)) {
-      console.log('[LIMPIEZA] Carpeta de sesión no existe.');
-      return;
-    }
+const files = await fs.readdir(sessionPath);
+let eliminados = 0;
 
-    const files = await fs.readdir(sessionPath);
-    let eliminados = 0;
-
-    for (const file of files) {
-      if (file !== 'creds.json') {
-        await fs.unlink(path.join(sessionPath, file));
-        eliminados++;
-      }
-    }
-
-    console.log(`[LIMPIEZA] Archivos de sesión eliminados: ${eliminados}`);
-  } catch (err) {
-    console.error('[ERROR] Al limpiar sesión:', err);
+for (const file of files) {
+  if (file !== 'creds.json') {
+    await fs.unlink(path.join(sessionPath, file));
+    eliminados++;
   }
 }
 
-// Limpieza de carpetas temporales
-async function limpiarCarpetaTemporal(carpeta) {
-  try {
-    if (!existsSync(carpeta)) return;
+console.log(`[LIMPIEZA] Archivos de sesión eliminados: ${eliminados}`);
 
-    const files = await fs.readdir(carpeta);
-    let eliminados = 0;
+} catch (err) { console.error('[ERROR] Al limpiar sesión:', err); } }
 
-    for (const file of files) {
-      const fullPath = path.join(carpeta, file);
-      const stat = await fs.lstat(fullPath);
-      if (stat.isFile()) {
-        await fs.unlink(fullPath);
-        eliminados++;
-      }
-    }
+// Función principal async function mantenimiento() { await limpiarSession(); }
 
-    console.log(`[LIMPIEZA] ${carpeta}: ${eliminados} archivos eliminados.`);
-  } catch (err) {
-    console.error(`[ERROR] No se pudo limpiar ${carpeta}:`, err);
-  }
-}
+// Ejecutar al inicio mantenimiento();
 
-// Monitoreo de memoria
-function monitorearMemoria() {
-  const memoria = process.memoryUsage().heapUsed / 1024 / 1024;
-  console.log(`[MEMORIA] Uso actual: ${Math.round(memoria * 100) / 100} MB`);
-}
+// Repetir cada minuto setInterval(() => { mantenimiento(); }, 60 * 1000);
 
-// Función principal
-async function mantenimiento() {
-  await limpiarSession();
-  for (const carpeta of carpetasTemporales) {
-    await limpiarCarpetaTemporal(carpeta);
-  }
-  monitorearMemoria();
-}
-
-// Ejecutar al inicio
-mantenimiento();
-
-// Repetir cada minuto
-setInterval(() => {
-  mantenimiento();
-}, 60 * 1000);
-
-*/
