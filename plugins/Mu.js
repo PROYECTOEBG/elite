@@ -1,6 +1,7 @@
 let mutedUsers = new Set();
 
 let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
+    // Asegurar que el bot sea admin
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
 
@@ -13,7 +14,7 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
-    // Si el comando es mute
+    // Dependiendo del comando, muteamos o desmuteamos
     if (command === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
@@ -34,8 +35,8 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Detecta los comandos con o sin el punto (.)
-handler.command = /^(mute|unmute)$/i;  // Detecta `mute` o `unmute` sin importar el prefijo
+// Aquí estamos quitando el uso de `usedPrefix` para aceptar comandos sin prefijo
+handler.command = /^(mute|unmute)$/i;  // Esto acepta `mute` o `unmute` sin importar el prefijo
 handler.exp = 0;
 handler.admin = true;
 handler.botAdmin = true;
