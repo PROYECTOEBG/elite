@@ -1,7 +1,7 @@
-
 let mutedUsers = new Set();
 
-let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }) => {
+let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
+    // Verificamos que el bot sea administrador
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
 
@@ -14,6 +14,7 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
+    // Si el comando es mute
     if (command === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
@@ -34,10 +35,9 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-handler.help = ['mute', 'unmute'];
-handler.tags = ['group'];
-handler.command = /^(mute|unmute)$/i;
-handler.group = true;
+// Comando solo responde si el prefijo es un punto
+handler.command = /^\.mute$|^\.unmute$/i;  // Solo acepta .mute o .unmute (con punto)
+handler.exp = 0;
 handler.admin = true;
 handler.botAdmin = true;
 
