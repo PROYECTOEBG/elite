@@ -4,6 +4,9 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
 
+    // Normalizar el comando eliminando el punto si existe
+    const normalizedCmd = command.replace(/^\./, '').toLowerCase();
+
     let user;
 
     // Si se menciona a un usuario
@@ -13,10 +16,10 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
-    if (command === "mute") {
+    if (normalizedCmd === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (command === "unmute") {
+    } else if (normalizedCmd === "unmute") {
         mutedUsers.delete(user);
         conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
@@ -35,7 +38,8 @@ handler.before = async (m, { conn }) => {
 
 handler.help = ['mute', 'unmute'];
 handler.tags = ['group'];
-handler.command = /^(mute|unmute)$/i;
+// Expresión regular modificada para aceptar con o sin punto
+handler.command = /^[.]?(mute|unmute)$/i;
 handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
