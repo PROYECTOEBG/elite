@@ -1,5 +1,3 @@
-
-
 let mutedUsers = new Set();
 
 let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }) => {
@@ -12,15 +10,12 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }
     if (m.message.extendedTextMessage && m.message.extendedTextMessage.contextInfo.mentionedJid) {
         user = m.message.extendedTextMessage.contextInfo.mentionedJid[0];
     } else {
-        return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
+        return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear.', m);
     }
 
     if (command === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (command === "unmute") {
-        mutedUsers.delete(user);
-        conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
 };
 
