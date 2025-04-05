@@ -2,7 +2,7 @@ const { Client } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
 // Número del bot principal
-const mainBotNumber = '593986304370'; // Reemplaza con el número de tu bot principal (en formato internacional, sin '+')
+const mainBotNumber = '593986304370'; // Número de tu bot principal (en formato internacional, sin '+')
 
 // Crear cliente de WhatsApp
 const client = new Client();
@@ -26,12 +26,17 @@ client.on('message', (message) => {
             // Enviar mensaje de advertencia
             message.reply('Mi creador no permite mensajes a mi privado, tendré que bloquearte.');
 
-            // Obtener el contacto y bloquearlo
+            // Bloquear al usuario
             client.getContactById(message.from).then(contact => {
-                contact.block();  // Bloquea al usuario
-                console.log(`Usuario bloqueado: ${message.from}`);
+                contact.block()  // Bloquea al usuario
+                    .then(() => {
+                        console.log(`Usuario bloqueado: ${message.from}`);
+                    })
+                    .catch((err) => {
+                        console.log('Error al bloquear al usuario:', err);
+                    });
             }).catch(err => {
-                console.log('Error al bloquear al usuario:', err);
+                console.log('Error al obtener el contacto:', err);
             });
         }
     }
