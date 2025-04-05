@@ -1,25 +1,11 @@
-const fs = require('fs');
-const path = require('path');
-
 let mutedUsers = new Set();
 
-// Ruta del archivo JSON para guardar la lista de usuarios muteados
-const mutedUsersFile = path.join(__dirname, 'mutedUsers.json');
-
-// Cargar usuarios muteados desde el archivo al iniciar el bot
-if (fs.existsSync(mutedUsersFile)) {
-    mutedUsers = new Set(JSON.parse(fs.readFileSync(mutedUsersFile, 'utf-8')));
-}
-
-// Guardar la lista de muteados en el archivo cada vez que se actualice
-const saveMutedUsers = () => {
-    fs.writeFileSync(mutedUsersFile, JSON.stringify([...mutedUsers]));
-};
-
-let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
-    // Aseguramos que el bot sea administrador
+let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }) => {
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
+
+    // Normalizar el comando eliminando el punto si existe
+    const normalizedCmd = command.replace(/^\./, '').toLowerCase();
 
     let user;
 
@@ -30,20 +16,11 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
-    // Si el comando es mute
-    if (command === "mute") {
-        if (mutedUsers.has(user)) {
-            return conn.reply(m.chat, `⭐ El usuario ya está muteado.`, m);
-        }
+    if (normalizedCmd === "mute") {
         mutedUsers.add(user);
-        saveMutedUsers(); // Guardamos la lista actualizada
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (command === "unmute") {
-        if (!mutedUsers.has(user)) {
-            return conn.reply(m.chat, `⭐ El usuario no está muteado.`, m);
-        }
+    } else if (normalizedCmd === "unmute") {
         mutedUsers.delete(user);
-        saveMutedUsers(); // Guardamos la lista actualizada
         conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
 };
@@ -59,11 +36,11 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Aquí aseguramos que solo se acepte el comando con el punto como prefijo
-handler.command = /^\.mute$|^\.unmute$/i;  // Solo acepta `.mute` o `.unmute` (con punto)
-
-// Configuración del bot
-handler.exp = 0;
+handler.help = ['mute', 'unmute'];
+handler.tags = ['group'];
+// Expresión regular modificada para aceptar con o sin punto
+handler.command = /^[.]?(mute|unmute)$/i;
+handler.group = true;
 handler.admin = true;
 handler.botAdmin = true;
 
