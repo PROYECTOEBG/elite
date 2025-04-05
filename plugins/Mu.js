@@ -1,6 +1,6 @@
 let mutedUsers = new Set();
 
-let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
+let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
 
@@ -13,10 +13,10 @@ let handler = async (m, { conn, isAdmin, isBotAdmin }) => {
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
-    if (m.command === "mute") {
+    if (command === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
-    } else if (m.command === "unmute") {
+    } else if (command === "unmute") {
         mutedUsers.delete(user);
         conn.reply(m.chat, `✅ *Usuario desmuteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
     }
@@ -33,10 +33,11 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Modificar para aceptar con o sin el punto (.)
-handler.command = /^(mute|unmute)$/i;  // Acepta `mute` o `unmute` con o sin punto
-handler.exp = 0
-handler.admin = true
-handler.botAdmin = true
+// Permitir usar el comando con o sin el punto
+handler.customPrefix = /^(mute|unmute)$/i;  // Esto permite `mute` o `unmute` sin el punto
+handler.command = /^(mute|unmute)$/i;  // Esto maneja la ejecución del comando
+handler.exp = 0;
+handler.admin = true;
+handler.botAdmin = true;
 
 export default handler;
