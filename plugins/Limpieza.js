@@ -1,4 +1,4 @@
-/*import { promises as fs, existsSync } from 'fs';
+import { promises as fs, existsSync } from 'fs';
 import path from 'path';
 
 // Carpeta de sesión que se limpia (excepto creds.json)
@@ -42,8 +42,7 @@ async function mantenimiento() {
 // Ejecutar al inicio
 mantenimiento();
 
-// Repetir cada minuto
+// Repetir cada 30 minutos (30 minutos = 30 * 60 * 1000 ms)
 setInterval(() => {
   mantenimiento();
-}, 60 * 1000); // 60 segundos = 1 minuto
-*/
+}, 30 * 60 * 1000); // 30 minutos
