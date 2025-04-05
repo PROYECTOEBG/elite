@@ -34,8 +34,8 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Aseguramos que el bot reconozca el comando tanto con como sin el punto
-handler.command = /^(mute|unmute)$/i;  // Detecta 'mute' o 'unmute' sin importar el punto o no
+// Detecta los comandos con o sin el punto (.)
+handler.command = /^(mute|unmute)$/i;  // Detecta `mute` o `unmute` sin importar el prefijo
 handler.exp = 0;
 handler.admin = true;
 handler.botAdmin = true;
