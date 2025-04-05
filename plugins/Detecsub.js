@@ -44,11 +44,13 @@ function isSubbotActivo(nombre) {
 
 // Función para verificar los subbots y asegurarse de que se ejecuten
 async function verificarSubbots() {
-  console.log(`\n[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
+  console.log('[INFO] Ejecutando verificarSubbots...');  // Depuración
 
+  console.log(`\n[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
+  
   try {
     const carpetas = await fs.readdir(rutaSubbots, { withFileTypes: true });
-    console.log('[SUBBOTS] Carpetas encontradas:', carpetas); // Depuración
+    console.log('[SUBBOTS] Carpetas encontradas:', carpetas);
     const subbots = carpetas.filter(dir => dir.isDirectory()).map(dir => dir.name);
 
     if (subbots.length === 0) {
@@ -85,4 +87,4 @@ verificarSubbots();
 setInterval(() => {
   console.log('[INFO] Verificando subbots...');
   verificarSubbots();
-}, 60 * 1000); // Cada minuto (puedes cambiar el intervalo)
+}, 60 * 1000); // Cada 1 minuto (60000ms)
