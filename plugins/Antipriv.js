@@ -1,78 +1,70 @@
-const { makeWASocket, useSingleFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const pino = require('pino');
+const { makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+const fs = require('fs');
 
-// Configuración - ¡AJUSTA ESTOS VALORES!
+// CONFIGURACIÓN (¡OBLIGATORIO AJUSTAR!)
 const config = {
-  authorizedNumber: '593993370003', // TU NÚMERO (con código de país, sin +)
-  blockMessage: '🚫 *Este bot es privado*\\n\\nSolo el dueño puede usarlo.\\nHas sido bloqueado automáticamente.',
+  ownerNumber: '593993370003', // TU NÚMERO con código de país (sin +)
+  botName: 'MiBotAntiPrivado', // Nombre que aparecerá en los logs
+  blockMessage: '⚠️ *ACCESO DENEGADO*\n\nEste bot es de uso exclusivo para su dueño.\nHas sido *bloqueado* automáticamente.',
   sessionFile: './session.json'
 };
 
-// Inicialización
+// Inicialización mejorada
 const { state, saveState } = useSingleFileAuthState(config.sessionFile);
-const logger = pino({ level: 'silent' }); // Elimina esta línea si quieres ver logs detallados
+const sock = makeWASocket({
+  auth: state,
+  printQRInTerminal: true,
+  logger: { level: 'warn' } // Solo muestra advertencias y errores
+});
 
-async function startBot() {
-  const sock = makeWASocket({
-    auth: state,
-    logger: logger,
-    printQRInTerminal: true
-  });
+// Manejo de conexión
+sock.ev.on('connection.update', ({ connection }) => {
+  if (connection === 'open') {
+    console.log(`\n✅ ${config.botName} CONECTADO`);
+    console.log(`🔒 MODO ANTIPRIVADO ACTIVO\n🔐 Número autorizado: ${config.ownerNumber}\n`);
+  }
+});
 
-  // Manejar actualizaciones de conexión
-  sock.ev.on('connection.update', (update) => {
-    const { connection, lastDisconnect } = update;
-    if (connection === 'close') {
-      const shouldReconnect = lastDisconnect.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      if (shouldReconnect) {
-        startBot();
-      }
-    } else if (connection === 'open') {
-      console.log(`\n✅ *Bot conectado como:* ${sock.user.id.replace(/:.*@/, '@')}`);
-      console.log(`🔒 *Modo antiprivado activado:* Solo el número ${config.authorizedNumber} puede interactuar\n`);
-    }
-  });
+// Guardar sesión automáticamente
+sock.ev.on('creds.update', saveState);
 
-  // Guardar estado de la sesión
-  sock.ev.on('creds.update', saveState);
-
-  // Manejar mensajes
-  sock.ev.on('messages.upsert', async ({ messages }) => {
+// Manejo de mensajes MEJORADO
+sock.ev.on('messages.upsert', async ({ messages }) => {
+  try {
     const msg = messages[0];
     if (!msg.message || msg.key.fromMe) return;
 
     const sender = msg.key.remoteJid;
-    const isGroup = msg.key.remoteJid.includes('@g.us');
-    const number = sender.replace(/@s\.whatsapp\.net/, '');
+    const isGroup = sender.includes('@g.us');
+    const userNumber = sender.replace(/@s\.whatsapp\.net/, '');
 
-    // Verificar si es mensaje privado y no es el dueño
-    if (!isGroup && number !== config.authorizedNumber) {
-      try {
-        // 1. Enviar mensaje de bloqueo
-        await sock.sendMessage(sender, { 
-          text: config.blockMessage 
-        });
+    // Verificación MEJORADA
+    if (!isGroup && userNumber !== config.ownerNumber) {
+      console.log(`\n🚨 Intento de acceso de: ${userNumber}`);
 
-        // 2. Bloquear usuario
-        await sock.updateBlockStatus(sender, 'block');
+      // 1. Enviar advertencia
+      await sock.sendMessage(sender, { text: config.blockMessage });
 
-        // 3. Eliminar chat (opcional)
-        await sock.chatModify({ 
-          delete: true, 
-          lastMessages: [{ key: msg.key, messageTimestamp: msg.messageTimestamp }] 
-        }, sender);
+      // 2. Bloqueo MEJORADO (método garantizado)
+      await sock.updateBlockStatus(sender, 'block');
+      console.log(`🔒 Número bloqueado: ${userNumber}`);
 
-        console.log(`🚫 *Número bloqueado:* ${number}`);
-
-      } catch (error) {
-        console.error('Error al bloquear:', error);
-      }
+      // 3. Eliminar chat (opcional pero recomendado)
+      await sock.sendMessage(sender, { text: '🔴 Eliminando chat...' });
+      await sock.chatModify({ delete: true }, sender);
+      
+      // 4. Notificar al dueño (opcional)
+      await sock.sendMessage(
+        `${config.ownerNumber}@s.whatsapp.net`, 
+        { text: `🚨 Bloqueado: ${userNumber}` }
+      );
     }
-  });
-}
+  } catch (error) {
+    console.error('⚠️ Error en antiprivado:', error);
+  }
+});
 
-// Iniciar el bot
-startBot().catch(err => {
-  console.error('Error al iniciar:', err);
-  process.exit(1);
+// Manejo de errores global
+process.on('uncaughtException', (err) => {
+  console.error('Error crítico:', err);
 });
