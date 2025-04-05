@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { exec } from 'child_process';
+import { getProcesses } from 'ps-node'; // Usaremos ps-node como alternativa
 
 const rutaSubbots = '/home/container/GataJadiBot/';
 const archivoPreKey = 'pre_key';  // Ruta al archivo 'pre_key'
@@ -17,12 +18,23 @@ async function iniciarSubbotDirectamente(nombre) {
     console.log(`[SUBBOT] senderKey: ${senderKey}`);
 
     // Aquí es donde puedes agregar la lógica que el subbot debería ejecutar
-    // Por ejemplo, si el bot se conecta a una API, realiza alguna operación, etc.
-
     console.log(`[SUBBOT] ${nombre} ejecutado correctamente.`);
   } catch (err) {
     console.error(`[ERROR] No se pudo iniciar el subbot ${nombre}:`, err);
   }
+}
+
+// Función para comprobar si el subbot está activo usando ps-node
+function isSubbotActivo(nombre) {
+  return new Promise((resolve, reject) => {
+    getProcesses({}, (err, processes) => {
+      if (err) return reject(err);
+      
+      // Filtramos los procesos buscando el nombre del subbot
+      const subbotActivo = processes.some(process => process.command.includes(nombre));
+      resolve(subbotActivo);
+    });
+  });
 }
 
 // Función para verificar los subbots y asegurarse de que se ejecuten
@@ -56,16 +68,6 @@ async function verificarSubbots() {
   } catch (err) {
     console.error('[ERROR] No se pudo acceder a la carpeta de subbots:', err);
   }
-}
-
-// Función para comprobar si el subbot está activo
-function isSubbotActivo(nombre) {
-  return new Promise((resolve, reject) => {
-    exec(`ps aux | grep "${nombre}" | grep -v grep`, (err, stdout) => {
-      if (err) return reject(err);
-      resolve(stdout.includes(nombre));
-    });
-  });
 }
 
 // Llamada inicial para verificar los subbots
