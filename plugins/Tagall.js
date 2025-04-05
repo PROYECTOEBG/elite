@@ -42,7 +42,7 @@ let handler = async (m, { isOwner, isAdmin, conn, text, participants, args }) =>
   conn.sendMessage(m.chat, { text: teks.trim(), mentions }, )
 }
 
-handler.command = /^(tagall|invocar|invocacion|todos|invocación)$/i
+handler.command = /^(kevin|invocar|invocacion|todos|invocación)$/i
 handler.admin = true
 handler.botAdmin = true
 handler.group = true
