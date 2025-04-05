@@ -1,6 +1,7 @@
 let mutedUsers = new Set();
 
-let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args }) => {
+let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin, args, isSubbot }) => {
+    if (!isSubbot) return;  // Solo permitir que el comando funcione en subbots.
     if (!isBotAdmin) return conn.reply(m.chat, '⭐ El bot necesita ser administrador.', m);
     if (!isAdmin) return conn.reply(m.chat, '⭐ Solo los administradores pueden usar este comando.', m);
 
