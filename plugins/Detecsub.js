@@ -37,10 +37,10 @@ async function verificarSubbots() {
   }
 }
 
-// Cambié esta parte para usar pgrep en lugar de ps
+// Nueva forma de verificar si un subbot está activo
 function isSubbotActivo(nombre) {
   return new Promise((resolve, reject) => {
-    exec(`pgrep -f "${nombre}"`, (err, stdout) => {
+    exec(`ps aux | grep "node ${nombre}/${archivoEjecucion}" | grep -v grep`, (err, stdout) => {
       if (err) return reject(err);
       resolve(stdout.trim().length > 0);  // Si el resultado tiene longitud, el subbot está activo
     });
