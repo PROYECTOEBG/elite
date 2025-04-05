@@ -40,11 +40,17 @@ let handler = async (m, { conn, command, args, text, usedPrefix }) => {
         const q = '128kbps';
         const v = yt_play[0].url;
         const yt = await ytdl.getInfo(v);
-        const dl_url = yt.formats.filter(format => format.mimeType === 'audio/webm; codecs="opus"')[0].url;
+        
+        // Selección del formato de audio adecuado
+        const audioFormat = yt.formats.find(format => format.hasAudio && format.mimeType === 'audio/webm; codecs="opus"');
+        
+        if (!audioFormat) throw new Error('No se encontró un formato de audio válido.');
+        
+        const dl_url = audioFormat.url;
         await conn.sendMessage(m.chat, { audio: { url: dl_url }, mimetype: 'audio/mpeg' }, { quoted: m });
       } catch (err) {
-        console.error('Error en spotify', err);
-        // Manejo de fallos con otras APIs
+        console.error('Error al enviar el audio de Spotify:', err);
+        // Si ocurre un error con ytdl-core, puedes intentar otras APIs o manejar el fallo
       }
     }
 
@@ -55,7 +61,13 @@ let handler = async (m, { conn, command, args, text, usedPrefix }) => {
         const q = qu + 'p';
         const v = yt_play[0].url;
         const yt = await ytdl(v);
-        const dl_url = yt.formats.filter(format => format.hasVideo && format.hasAudio && format.container === 'mp4')[0].url;
+
+        // Obtener el formato de video adecuado
+        const videoFormat = yt.formats.find(format => format.hasVideo && format.hasAudio && format.container === 'mp4');
+        
+        if (!videoFormat) throw new Error('No se encontró un formato de video válido.');
+        
+        const dl_url = videoFormat.url;
         await conn.sendMessage(m.chat, {
           video: { url: dl_url },
           fileName: `${yt.title}.mp4`,
@@ -64,12 +76,12 @@ let handler = async (m, { conn, command, args, text, usedPrefix }) => {
           thumbnail: yt.thumbnail
         }, { quoted: m });
       } catch (err) {
-        console.error('Error en play8', err);
+        console.error('Error al enviar el video de play8:', err);
       }
     }
 
   } catch (err) {
-    console.error('Error general', err);
+    console.error('Error general en el manejo de comando', err);
   }
 };
 
