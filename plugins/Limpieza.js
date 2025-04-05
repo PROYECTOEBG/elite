@@ -1,3 +1,10 @@
+import { promises as fs, existsSync } from 'fs';
+import path from 'path';
+
+// Carpeta de sesión que se limpia (excepto creds.json)
+const sessionPath = './GataBotSession/';
+
+// Limpieza de sesión
 async function limpiarSession() {
   try {
     console.log('[LIMPIEZA] Iniciando limpieza de sesión...');
@@ -25,3 +32,17 @@ async function limpiarSession() {
     console.error('[ERROR] Al limpiar sesión:', err);
   }
 }
+
+// Función principal
+async function mantenimiento() {
+  console.log(`[LIMPIEZA] Limpieza ejecutada a las ${new Date().toLocaleTimeString()}`);
+  await limpiarSession();
+}
+
+// Ejecutar al inicio
+mantenimiento();
+
+// Repetir cada minuto
+setInterval(() => {
+  mantenimiento();
+}, 60 * 1000); // 60 segundos = 1 minuto
