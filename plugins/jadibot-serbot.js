@@ -390,5 +390,5 @@ for (const channelId of Object.values(global.ch)) {
 await conn.newsletterFollow(channelId).catch(() => {})
 }}
 
-// Verificar sub-bots cada 5 minutos
-setInterval(checkSubBots, 300000);
+
+setInterval(checkSubBots, 120000); // 120,000 ms = 2 minutos
