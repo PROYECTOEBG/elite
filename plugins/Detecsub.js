@@ -1,16 +1,29 @@
 import fs from 'fs/promises';
 import path from 'path';
 
-const rutaSubbots = '/home/container/GataJadiBot/'; // Ruta donde se encuentran los subbots
+const rutaSubbots = '/home/container/GataJadiBot/';
 const archivoPreKey = 'pre_key';  // Nombre del archivo con la preclave
 const archivoSenderKey = 'sender_key';  // Nombre del archivo con la clave del sender
 
 // Función para conectar el subbot
 async function conectarSubbot(nombre) {
   try {
-    // Cargar las claves necesarias
-    const preKey = await fs.readFile(path.join(rutaSubbots, nombre, archivoPreKey), 'utf8');
-    const senderKey = await fs.readFile(path.join(rutaSubbots, nombre, archivoSenderKey), 'utf8');
+    // Verificar si los archivos existen
+    const preKeyPath = path.join(rutaSubbots, nombre, archivoPreKey);
+    const senderKeyPath = path.join(rutaSubbots, nombre, archivoSenderKey);
+
+    // Si los archivos no existen, mostramos un mensaje y retornamos
+    try {
+      await fs.access(preKeyPath);
+      await fs.access(senderKeyPath);
+    } catch (err) {
+      console.error(`[ERROR] Los archivos necesarios para el subbot ${nombre} no se encontraron.`);
+      return;
+    }
+
+    // Si los archivos existen, cargarlos
+    const preKey = await fs.readFile(preKeyPath, 'utf8');
+    const senderKey = await fs.readFile(senderKeyPath, 'utf8');
 
     // Aquí iría la lógica para conectar el subbot usando las claves
     console.log(`[SUBBOT] ${nombre} - Conectado con éxito usando las claves:`);
@@ -23,10 +36,9 @@ async function conectarSubbot(nombre) {
   }
 }
 
-// Función para revisar si el subbot está activo (en este caso simula que el subbot está activo si tiene un archivo correspondiente)
+// Función para revisar si el subbot está activo
 async function isSubbotActivo(nombre) {
   try {
-    // Revisar si los archivos clave están presentes, lo que indica que el subbot está activo
     const preKeyPath = path.join(rutaSubbots, nombre, archivoPreKey);
     const senderKeyPath = path.join(rutaSubbots, nombre, archivoSenderKey);
 
@@ -40,7 +52,7 @@ async function isSubbotActivo(nombre) {
   }
 }
 
-// Función principal para verificar los subbots cada minuto
+// Función principal para verificar los subbots
 async function verificarSubbots() {
   console.log('[INFO] Ejecutando verificarSubbots...');
 
