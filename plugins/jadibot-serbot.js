@@ -391,4 +391,4 @@ await conn.newsletterFollow(channelId).catch(() => {})
 }}
 
 
-setInterval(checkSubBots, 120000); // 120,000 ms = 2 minutos
+setInterval(checkSubBots, 300000); // 120,000 ms = 2 minutos
