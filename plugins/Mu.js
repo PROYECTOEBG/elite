@@ -13,6 +13,7 @@ let handler = async (m, { conn, usedPrefix, command, isAdmin, isBotAdmin }) => {
         return conn.reply(m.chat, '⭐ Etiqueta a la persona que quieres mutear o desmutear.', m);
     }
 
+    // Si el comando es mute
     if (command === "mute") {
         mutedUsers.add(user);
         conn.reply(m.chat, `✅ *Usuario muteado:* @${user.split('@')[0]}`, m, { mentions: [user] });
@@ -33,9 +34,8 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Permitir usar el comando con o sin el punto
-handler.customPrefix = /^(mute|unmute)$/i;  // Esto permite `mute` o `unmute` sin el punto
-handler.command = /^(mute|unmute)$/i;  // Esto maneja la ejecución del comando
+// Aseguramos que el bot reconozca el comando tanto con como sin el punto
+handler.command = /^(mute|unmute)$/i;  // Detecta 'mute' o 'unmute' sin importar el punto o no
 handler.exp = 0;
 handler.admin = true;
 handler.botAdmin = true;
