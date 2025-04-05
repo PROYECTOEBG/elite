@@ -1,4 +1,4 @@
-let isMuted = false; // Variable global para almacenar el estado de mute en el grupo
+let isMuted = false; // Estado de si el grupo está silenciado o no
 
 // Comando para silenciar el grupo
 let handler = async (m, { isOwner, isAdmin, conn, participants, args, command }) => {
@@ -12,7 +12,6 @@ let handler = async (m, { isOwner, isAdmin, conn, participants, args, command })
         isMuted = true;
 
         // Filtrar administradores
-        let adminIds = participants.filter(p => p.isAdmin).map(p => p.id);
         let muteMessage = "🔇 **El grupo está en modo silencio, solo los administradores pueden hablar.** 🔇";
 
         // Enviar mensaje a todos los miembros excepto administradores
@@ -41,7 +40,7 @@ let handler = async (m, { isOwner, isAdmin, conn, participants, args, command })
         let info = `✅ **¡El grupo ya no está silenciado!**\nAhora todos los miembros pueden hablar nuevamente.`;
         conn.sendMessage(m.chat, { text: info });
 
-        // También podemos enviar un mensaje a los administradores si es necesario
+        // Notificar a los miembros que el mute ha sido levantado
         let unmuteMessage = "🔊 **El modo silencio ha sido levantado, ahora todos pueden hablar.** 🔊";
         for (let mem of participants) {
             if (!mem.isAdmin) {
