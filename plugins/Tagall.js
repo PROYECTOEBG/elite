@@ -51,6 +51,27 @@ let handler = async (m, { isOwner, isAdmin, conn, participants, args, command })
     }
 };
 
+// Para eliminar mensajes de los miembros no administradores cuando el grupo está en silencio
+client.on('message_create', async (msg) => {
+    // Verificar si el mensaje es de un grupo y si el grupo está silenciado
+    if (!msg.isGroup || !isMuted) return;  // Si no es grupo o no está silenciado, no hacer nada
+
+    let groupId = msg.chat.id;
+    let groupAdmins = await client.getGroupAdmins(groupId); // Obtener administradores del grupo
+
+    // Si el mensaje no es de un administrador, lo eliminamos
+    if (!groupAdmins.includes(msg.from)) {
+        // Eliminar el mensaje de un miembro no administrador
+        await client.deleteMessage(groupId, msg.key);
+
+        // Enviar mensaje notificando al miembro que está silenciado
+        await client.sendMessage(groupId, {
+            text: `🔇 @${msg.from.split('@')[0]}, **estás silenciado. Solo los administradores pueden hablar.**`,
+            mentions: [msg.from]
+        });
+    }
+});
+
 handler.command = /^(silencio|unsilencio)$/i;
 handler.admin = true;
 handler.botAdmin = true;
