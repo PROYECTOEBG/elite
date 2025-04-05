@@ -1,12 +1,12 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { exec } from 'child_process';
 
-// Ruta donde están los subbots (ajústala si cambias la ubicación)
 const rutaSubbots = '/home/container/GataJadiBot/';
+const archivoEjecucion = 'bot.js'; // Cambia si tus subbots usan otro archivo principal
 
-// Función principal
 async function verificarSubbots() {
-  console.log(`[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
+  console.log(`\n[SUBBOTS] Verificación iniciada - ${new Date().toLocaleTimeString()}`);
 
   try {
     const carpetas = await fs.readdir(rutaSubbots, { withFileTypes: true });
@@ -37,19 +37,28 @@ async function verificarSubbots() {
   }
 }
 
-// Simulación de funciones — Adáptalas según tu bot
-async function isSubbotActivo(subbot) {
-  // Aquí debes verificar si el subbot está activo. 
-  // Puedes chequear si hay un proceso en ejecución o hacer un ping al bot.
-  return Math.random() > 0.2; // Simulación: 80% de probabilidad de que esté activo.
+function isSubbotActivo(nombre) {
+  return new Promise((resolve, reject) => {
+    exec(`ps aux | grep "${nombre}" | grep -v grep`, (err, stdout) => {
+      if (err) return reject(err);
+      resolve(stdout.includes(nombre));
+    });
+  });
 }
 
-async function activarSubbot(subbot) {
-  // Aquí coloca tu lógica real para reiniciar el subbot.
-  console.log(`[SUBBOT] Activando ${subbot}...`);
-  await new Promise(res => setTimeout(res, 1000)); // Simulación de espera
+function activarSubbot(nombre) {
+  return new Promise((resolve, reject) => {
+    const rutaCompleta = path.join(rutaSubbots, nombre, archivoEjecucion);
+    exec(`node "${rutaCompleta}"`, (err, stdout, stderr) => {
+      if (err) {
+        console.error(`[ERROR] No se pudo iniciar ${nombre}:`, stderr);
+        return reject(err);
+      }
+      console.log(`[SUBBOT] ${nombre} activado.`);
+      resolve();
+    });
+  });
 }
 
-// Inicia el proceso y repite cada 2 minutos
 verificarSubbots();
-setInterval(verificarSubbots, 2 * 60 * 1000);
+setInterval(verificarSubbots, 60 * 1000); // Cada minuto (puedes bajarlo a 1000ms si quieres)
