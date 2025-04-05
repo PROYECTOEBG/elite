@@ -33,9 +33,8 @@ handler.before = async (m, { conn }) => {
     }
 };
 
-// Usar customPrefix para aceptar `mute` y `unmute` sin el punto
-handler.customPrefix = /^(mute|unmute)$/i;  // Esto acepta `mute` y `unmute` con o sin el punto
-handler.command = new RegExp
+// Modificar para aceptar con o sin el punto (.)
+handler.command = /^(mute|unmute)$/i;  // Acepta `mute` o `unmute` con o sin punto
 handler.exp = 0
 handler.admin = true
 handler.botAdmin = true
