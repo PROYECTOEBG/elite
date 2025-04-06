@@ -1,6 +1,6 @@
 const { makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
 
-// CONFIGURACIÓN
+// CONFIGUuuRACIÓN
 const config = {
   ownerNumber: '593993370003', // TU NÚMERO (con código de país, sin +)
   allowedGroups: ['120363043123456789@g.us'], // IDs de grupos permitidos (opcional)
