@@ -1,40 +1,27 @@
-const { makeWASocket, useSingleFileAuthState } = require('@whiskeysockets/baileys');
+let handler = async (m, { conn, isOwner }) => {
+    // Si es un grupo o es owner, ignorar
+    if (m.chat.endsWith('@g.us') || isOwner) return
+    
+    // Si no hay texto o no es un comando, ignorar
+    if (!m.text || !['.', '#', '/'].some(prefix => m.text.startsWith(prefix))) return
+    
+    // Mensaje antiprivado
+    let texto = `╭══════⊱ ⚠️ ⊱══════╮\n`
+    texto += `*NO DISPONIBLE EN PRIVADO*\n`
+    texto += `╰══════⊱ ❌ ⊱══════╯\n\n`
+    texto += `👉 Únete al grupo oficial para usar el bot:\n`
+    texto += `https://chat.whatsapp.com/...\n\n`
+    texto += `O contacta a mi creador:\n`
+    texto += `wa.me/...\n`
+    
+    // Enviar mensaje
+    m.reply(texto)
+    
+    // Bloquear después de enviar (opcional)
+    // await conn.updateBlockStatus(m.sender, 'block')
+    
+    return !0
+}
 
-// CONFIGUuuRACIÓN
-const config = {
-  ownerNumber: '593993370003', // TU NÚMERO (con código de país, sin +)
-  allowedGroups: ['120363043123456789@g.us'], // IDs de grupos permitidos (opcional)
-  ignoreMessage: '⚠️ Los comandos solo funcionan en grupos oficiales',
-  sessionFile: './session.json'
-};
-
-// INICIALIZACIÓN
-const { state, saveState } = useSingleFileAuthState(config.sessionFile);
-const sock = makeWASocket({
-  auth: state,
-  printQRInTerminal: true,
-  logger: { level: 'warn' }
-});
-
-// MANEJO DE CONEXIÓN
-sock.ev.on('connection.update', ({ connection }) => {
-  if (connection === 'open') {
-    console.log(`\n✅ Bot conectado | Dueño: ${config.ownerNumber}`);
-    console.log(`🔇 Ignorando comandos en privado (sin bloquear usuarios)\n`);
-  }
-});
-
-// GUARDAR SESIÓN
-sock.ev.on('creds.update', saveState);
-
-// MANEJO DE MENSAJES
-sock.ev.on('messages.upsert', async ({ messages }) => {
-  try {
-    const msg = messages[0];
-    if (!msg.message || msg.key.fromMe) return;
-
-    const sender = msg.key.remoteJid;
-    const isGroup = sender.includes('@g.us');
-    const userNumber = sender.replace(/@s\.whatsapp\.net/, '');
-    const isOwner = userNumber === config.ownerNumber;
-    const isAllowedGroup = config.allowedGroups.includes(sende
+handler.private = true
+export default handler
