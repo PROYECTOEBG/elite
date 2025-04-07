@@ -1,4 +1,4 @@
-// By: @DanixlJs
+// By: @kevv
 
 // Asegurar que el prefijo esté definido y sea una expresión regular válida
 if (!global.prefix) global.prefix = /^#|\./i;
@@ -34,10 +34,14 @@ export async function before(m) {
     await conn.sendPresenceUpdate('composing', m.chat);
   } else {
     const comando = m.text.trim().split(' ')[0];
-    await conn.sendMessage(m.chat, {
-      text: `✦ ¡Hey! @${m.sender.split('@')[0]}\nParece que escribiste mal el comando, verifica si está bien escrito e intenta de nuevo.\n\n©EliteBotGlobal 2023`,
-      mentions: [m.sender]
-    }, { quoted: m });
+    await m.reply(`︎✦ ¡Hey! 
+El comando ${comando} no es válido, verifica si está bien escrito e intenta de nuevo.
+
+©EliteBotGlobal 2023
+    
+    
+    
+    🍁 El comando "${comando}" no es válido.\nUsa "#menu" para ver los comandos disponibles.`);
 
     /*
     let txt = `👤 User: ${m.pushName || 'Anónimo'}\n🌍 Pais: ${global.userNationality}\n🐢 Bot: ${packname}\n🌻 Comando: ${comando}`.trim();
