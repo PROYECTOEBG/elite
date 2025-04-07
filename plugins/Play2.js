@@ -59,7 +59,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const videoData = await fetchWithRetries(videoUrl);
 
     await conn.sendMessage(m.chat, {
-      video: { url: videoData.download.url },
+      video: { url: videoData.download.url }, // Usamos la URL del video 480p
       mimetype: 'video/mp4',
       fileName: `${video.title}.mp4`,
       caption: '🎥 Video 480p Descargado',
