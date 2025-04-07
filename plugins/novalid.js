@@ -1,5 +1,8 @@
 // By: @DanixlJs
 
+// Asegurar que el prefijo esté definido y sea una expresión regular válida
+if (!global.prefix) global.prefix = /^#|\./i;
+
 export async function before(m) {
   if (!m.text || !global.prefix.test(m.text)) {
     return;
@@ -10,7 +13,10 @@ export async function before(m) {
 
   const validCommand = (command, plugins) => {
     for (let plugin of Object.values(plugins)) {
-      if (plugin.command && (Array.isArray(plugin.command) ? plugin.command : [plugin.command]).includes(command)) {
+      if (
+        plugin.command &&
+        (Array.isArray(plugin.command) ? plugin.command : [plugin.command]).includes(command)
+      ) {
         return true;
       }
     }
@@ -27,20 +33,26 @@ export async function before(m) {
     user.commands += 1;
     await conn.sendPresenceUpdate('composing', m.chat);
   } else {
-   const comando = m.text.trim().split(' ')[0];
- await m.reply(`︎🍁 El comando "${comando}" no es válido.\nUsa "#menu" para ver los comandos disponibles.`);
+    const comando = m.text.trim().split(' ')[0];
+    await m.reply(`︎🍁 El comando "${comando}" no es válido.\nUsa "#menu" para ver los comandos disponibles.`);
 
-/*let txt = `👤 User: ${m.pushName || 'Anónimo'}\n🌍 Pais: ${global.userNationality}\n🐢 Bot: ${packname}\n🌻 Comando: ${comando}`.trim()
+    /*
+    let txt = `👤 User: ${m.pushName || 'Anónimo'}\n🌍 Pais: ${global.userNationality}\n🐢 Bot: ${packname}\n🌻 Comando: ${comando}`.trim();
 
-    await conn.sendMessage(global.channelid, { text: txt, contextInfo: {
-    externalAdReply: {
-    title: "🔔 Notificación General 🔔 ",
-    body: '🐢 Un usuario ha usado el comando ' + comando,
-    thumbnailUrl: fotoperfil,
-    sourceUrl: redes,
-    mediaType: 1,
-    showAdAttribution: false,
-    renderLargerThumbnail: false
-    }}}, { quoted: null })*/
+    await conn.sendMessage(global.channelid, {
+      text: txt,
+      contextInfo: {
+        externalAdReply: {
+          title: "🔔 Notificación General 🔔",
+          body: '🐢 Un usuario ha usado el comando ' + comando,
+          thumbnailUrl: fotoperfil,
+          sourceUrl: redes,
+          mediaType: 1,
+          showAdAttribution: false,
+          renderLargerThumbnail: false
+        }
+      }
+    }, { quoted: null });
+    */
   }
 }
