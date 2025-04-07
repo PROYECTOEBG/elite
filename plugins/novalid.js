@@ -36,7 +36,7 @@ export async function before(m) {
     const comando = m.text.trim().split(' ')[0];
     await m.reply(`︎︎✦ *¡Hey pana!*︎ ✦
     
-El comando ${comando} no es válido, verifica si está bien escrito e intenta de nuevo.
+El comando *${comando}* no es válido, verifica si está bien escrito e intenta de nuevo.
 
 ©EliteBotGlobal 2023`);
 
