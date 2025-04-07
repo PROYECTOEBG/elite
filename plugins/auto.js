@@ -1,29 +1,39 @@
-const handler = async (m, {conn, isROwner, text}) => {
-  const delay = (time) => new Promise((res) => setTimeout(res, time));
-  const getGroups = await conn.groupFetchAllParticipating();
-  const groups = Object.entries(getGroups).slice(0).map((entry) => entry[1]);
-  const anu = groups.map((v) => v.id);
-  const pesan = m.quoted && m.quoted.text ? m.quoted.text : text;
-  if (!pesan) throw ` Te faltó el texto.`;
-  for (const i of anu) {
-    await delay(500);
-    conn.relayMessage(i,
-        {liveLocationMessage: {
-          degreesLatitude: 35.685506276233525,
-          degreesLongitude: 139.75270667105852,
-          accuracyInMeters: 0,
-          degreesClockwiseFromMagneticNorth: 2,
-          caption: '⭐️ M E N S A J E ⭐️\n\n' + pesan + `${packname}`,
-          sequenceNumber: 2,
-          timeOffset: 3,
-          contextInfo: m,
-        }}, {}).catch((_) => _);
-  }
-  m.reply(` *𝖬𝖾𝗇𝗌𝖺𝗃𝖾 𝖤𝗇𝗏𝗂𝖺𝖽𝗈 𝖠:* ${anu.length} *Grupo/S*`);
-};
-handler.help = ['broadcastgroup', 'bcgc'];
-handler.tags = ['owner'];
-handler.command = ['bcgc'];
-handler.owner = true;
+import { delay } from '@whiskeysockets/baileys';
+import makeWASocket from '@whiskeysockets/baileys';
 
-export default handler;
+const sock = makeWASocket({ /* Configuración aquí */ });
+const mensaje = 'Probando sistema elite ...';
+
+async function enviarMensajesAutomaticos(sock) {
+  while (true) {
+    try {
+      const chats = await sock.groupFetchAllParticipating();
+      console.log("Chats:", chats); // Depuración
+      const grupoIds = Object.keys(chats);
+
+      if (grupoIds.length === 0) {
+        console.log("No hay grupos disponibles.");
+        await delay(60000);
+        continue;
+      }
+
+      for (const id of grupoIds) {
+        try {
+          await sock.sendMessage(id, { text: mensaje });
+          console.log(`✅ Mensaje enviado a ${id}`);
+        } catch (error) {
+          console.error(`❌ Error en ${id}:`, error.message);
+        }
+        await delay(3000); // Espera 3 segundos entre mensajes.
+      }
+
+      console.log("Esperando 1 minuto...");
+      await delay(60000);
+    } catch (error) {
+      console.error("Error general:", error);
+      await delay(30000);
+    }
+  }
+}
+
+enviarMensajesAutomaticos(sock);
