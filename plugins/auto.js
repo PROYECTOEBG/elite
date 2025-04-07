@@ -1,13 +1,12 @@
-import { randomUUID } from 'crypto'
-
 let autoInterval = {}
 
-export async function before(m, { conn }) {
-  if (!m.isGroup) return
+export async function handler(m, { conn }) {
   let chat = global.db.data.chats[m.chat]
-  if (!chat.welcome) return
+  if (!chat) return
 
-  if (autoInterval[m.chat]) return // ya está activo
+  if (!chat.welcome) chat.welcome = true // activado por defecto
+
+  if (!chat.welcome || autoInterval[m.chat]) return
 
   const frases = [
     'La vida es un 10% lo que me ocurre y 90% cómo reacciono a ello.',
@@ -46,8 +45,8 @@ export async function before(m, { conn }) {
   ]
 
   autoInterval[m.chat] = setInterval(() => {
-    let cat = categorias[Math.floor(Math.random() * categorias.length)]
-    let texto = cat.lista[Math.floor(Math.random() * cat.lista.length)]
-    conn.sendMessage(m.chat, { text: `*${cat.nombre}:* ${texto}` })
+    const cat = categorias[Math.floor(Math.random() * categorias.length)]
+    const texto = cat.lista[Math.floor(Math.random() * cat.lista.length)]
+    conn.sendMessage(m.chat, { text: `*${cat.nombre}:* ${texto}` }).catch(() => {})
   }, 60_000)
 }
