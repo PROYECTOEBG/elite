@@ -11,7 +11,7 @@ const handler = async (m, { args, conn, usedPrefix, command }) => {
     return m.reply('Número no válido o sin prefijo internacional.')
   }
 
-  const folderPath = `./subbots/${phone}`
+  const folderPath = `./GataJadiBot/${phone}`
   if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath, { recursive: true })
 
   const { state, saveCreds } = await useMultiFileAuthState(folderPath)
