@@ -1,4 +1,4 @@
-const { delay } = require('@whiskeysockets/baileys'); // Asegúrate de tener delay
+import { delay } from '@whiskeysockets/baileys'; // Usa import en lugar de require
 
 // Mensaje que quieres enviar
 const mensaje = 'Probando sistema elite ...';
