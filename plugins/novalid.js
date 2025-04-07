@@ -34,7 +34,7 @@ export async function before(m) {
     await conn.sendPresenceUpdate('composing', m.chat);
   } else {
     const comando = m.text.trim().split(' ')[0];
-    await m.reply(`︎*✦ ¡Hey pana!*
+    await m.reply(`︎︎✦ *¡Hey pana!*︎ ✦
     
 El comando ${comando} no es válido, verifica si está bien escrito e intenta de nuevo.
 
