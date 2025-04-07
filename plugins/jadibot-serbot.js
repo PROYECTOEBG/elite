@@ -266,9 +266,8 @@ m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
 > Si te llega un mensaje de *"sesión reemplazada"* realiza la indicación anterior.\n
 > Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
 
-*Política de uso:*
-github.com/GataNina-Li/GataBot-MD/blob/master/terms.md
-`}, { quoted: m }) : ''
+
+`} quoted: m }) : ''
 }}
 setInterval(async () => {
 if (!sock.user) {
