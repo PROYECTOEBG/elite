@@ -37,7 +37,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const apiData = await fetchWithRetries(apiUrl);
 
     await conn.sendMessage(m.chat, {
-      text: `*⌈📀 SPOTIFY PREMIUM 📀⌋*\n01:27 ━━━━━⬤──── 05:48\n*⇄ㅤ   ◁   ❚❚   ▷   ↻*\n${video.title}`,
+      text: `01:27 ━━━━━━━⬤────── 05:48\n*⇄ㅤ   ◁     ❚❚     ▷     ↻*\n®EliteBotGlobal`,
       contextInfo: {
         externalAdReply: {
           title: video.title,
