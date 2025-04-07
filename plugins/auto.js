@@ -1,37 +1,31 @@
+import { makeWASocket } from '@whiskeysockets/baileys/lib/Socket.js';
 import { delay } from '@whiskeysockets/baileys';
-import makeWASocket from '@whiskeysockets/baileys';
 
-const sock = makeWASocket({ /* Configuración aquí */ });
+const sock = makeWASocket({
+  // Configuración básica (opcional)
+  printQRInTerminal: true, // Muestra el QR en la terminal
+});
+
 const mensaje = 'Probando sistema elite ...';
 
 async function enviarMensajesAutomaticos(sock) {
   while (true) {
     try {
       const chats = await sock.groupFetchAllParticipating();
-      console.log("Chats:", chats); // Depuración
+      console.log("Chats obtenidos:", chats); // Depuración
       const grupoIds = Object.keys(chats);
 
-      if (grupoIds.length === 0) {
-        console.log("No hay grupos disponibles.");
-        await delay(60000);
-        continue;
-      }
-
       for (const id of grupoIds) {
-        try {
-          await sock.sendMessage(id, { text: mensaje });
-          console.log(`✅ Mensaje enviado a ${id}`);
-        } catch (error) {
-          console.error(`❌ Error en ${id}:`, error.message);
-        }
-        await delay(3000); // Espera 3 segundos entre mensajes.
+        await sock.sendMessage(id, { text: mensaje });
+        console.log(`Mensaje enviado a ${id}`);
+        await delay(3000); // Espera 3 segundos
       }
 
       console.log("Esperando 1 minuto...");
       await delay(60000);
     } catch (error) {
-      console.error("Error general:", error);
-      await delay(30000);
+      console.error("Error:", error);
+      await delay(30000); // Espera 30 segundos si hay error
     }
   }
 }
