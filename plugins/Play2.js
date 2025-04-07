@@ -1,77 +1,82 @@
-import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
-import yts from 'yt-search'
+import fetch from "node-fetch";
+import yts from "yt-search";
 
-let handler = async (m, { conn, command, args, text, usedPrefix }) => {
-  let q, v, yt, dl_url, ttl, size, lolhuman, lolh, n, n2, n3, n4, cap, qu, currentQuality
-  if (command == 'play8') {   
-    try {   
-      await m.react('✅')   
-      let qu = '480'   
-      let q = qu + 'p'   
-      let v = yt_play[0].url   
-      const yt = await youtubedl(v).catch(async _ => await youtubedlv2(v))   
-      const dl_url = await yt.video[q].download()   
-      const ttl = await yt.title   
-      const size = await yt.video[q].fileSizeH   
-      await conn.sendMessage(m.chat, { 
-        video: { url: dl_url }, 
-        fileName: `${ttl}.mp4`, 
-        mimetype: 'video/mp4', 
-        caption: '𝙑𝙄𝘿𝙀𝙊 𝘿𝙀𝙎𝘾𝘼𝙍𝘼𝙂𝘼𝘿𝙊 [✅]', 
-        thumbnail: await fetch(yt.thumbnail) 
-      }, { quoted: m })   
-    } catch {      
-      try {     
-        let mediaa = await ytMp4(yt_play[0].url)   
-        await conn.sendMessage(m.chat, { 
-          video: { url: mediaa.result }, 
-          fileName: 'error.mp4', 
-          caption: '𝙑𝙄𝘿𝙀𝙊 𝘿𝙀𝙎𝘾𝘼𝙍𝘼𝙂𝘼𝘿𝙊 [✅]', 
-          thumbnail: mediaa.thumb, 
-          mimetype: 'video/mp4' 
-        }, { quoted: m })        
-      } catch {     
-        try {   
-          let lolhuman = await fetch(`https://api.lolhuman.xyz/api/ytvideo2?apikey=${lolkeysapi}&url=${yt_play[0].url}`)       
-          let lolh = await lolhuman.json()   
-          let n = lolh.result.title || 'error'   
-          let n2 = lolh.result.link   
-          let n3 = lolh.result.size   
-          let n4 = lolh.result.thumbnail   
-          await conn.sendMessage(m.chat, { 
-            video: { url: n2 }, 
-            fileName: `${n}.mp4`, 
-            mimetype: 'video/mp4', 
-            caption: '𝙑𝙄𝘿𝙀𝙊 𝘿𝙀𝙎𝘾𝘼𝙍𝘼𝙂𝘼𝘿𝙊 [✅]', 
-            thumbnail: await fetch(n4) 
-          }, { quoted: m })
-        } catch {}
+// API en formato Base64
+const encodedApi = "aHR0cHM6Ly9hcGkudnJlZGVuLndlYi5pZC9hcGkveXRtcDM=";
+const getApiUrl = () => Buffer.from(encodedApi, "base64").toString("utf-8");
+
+const fetchWithRetries = async (url, maxRetries = 2) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      if (data?.status === 200 && data.result?.download?.url) {
+        return data.result;
       }
+    } catch (error) {
+      console.error(`Intento ${attempt + 1} fallido:`, error.message);
     }
   }
-}
-handler.command = ['play8']
-handler.exp = 0
-export default handler
+  throw new Error("No se pudo obtener el video después de varios intentos.");
+};
 
-async function ytMp4(url) {
-  return new Promise(async(resolve, reject) => {
-    ytdl.getInfo(url).then(async(getUrl) => {
-      let result = [];
-      for (let i = 0; i < getUrl.formats.length; i++) {
-        let item = getUrl.formats[i];
-        if (item.container == 'mp4' && item.hasVideo == true && item.hasAudio == true) {
-          let { qualityLabel, contentLength } = item;
-          let bytes = await bytesToSize(contentLength);
-          result[i] = { video: item.url, quality: qualityLabel, size: bytes }
+// Handler principal .play8 (para video 480p)
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+  if (!text || !text.trim()) {
+    throw `⭐ 𝘐𝘯𝘨𝘳𝘦𝘴𝘢 𝘦𝘭 𝘵𝘪́𝘵𝘶𝘭𝘰 𝘥𝘦 𝘭𝘢 𝘤𝘢𝘯𝘤𝘪𝘰́𝘯 𝘲𝘶𝘦 𝘥𝘦𝘴𝘦𝘢𝘴 𝘥𝘦𝘴𝘤𝘢𝘳𝘨𝘢𝘳.\n\n» 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Cypher - Rich Vagos`;
+  }
+
+  try {
+    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
+
+    const searchResults = await yts(text.trim());
+    const video = searchResults.videos[0];
+    if (!video) throw new Error("No se encontraron resultados.");
+
+    const apiUrl = `${getApiUrl()}?url=${encodeURIComponent(video.url)}`;
+    const apiData = await fetchWithRetries(apiUrl);
+
+    // Enviar detalles del video y el mensaje inicial
+    await conn.sendMessage(m.chat, {
+      text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n╴𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹`,
+      contextInfo: {
+        externalAdReply: {
+          title: video.title,
+          body: "",
+          thumbnailUrl: video.thumbnail,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
+          sourceUrl: video.url
         }
       }
-      let resultFix = result.filter(x => x.video != undefined && x.size != undefined && x.quality != undefined)
-      let tiny = await axios.get(`https://tinyurl.com/api-create.php?url=${resultFix[0].video}`);
-      let tinyUrl = tiny.data;
-      let title = getUrl.videoDetails.title;
-      let thumb = getUrl.player_response.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url;
-      resolve({ title, result: tinyUrl, rersult2: resultFix[0].video, thumb })
-    }).catch(reject)
-  })
+    }, { quoted: m });
+
+    // Ahora buscamos y enviamos el video en 480p
+    const videoUrl = `${getApiUrl()}?url=${encodeURIComponent(video.url)}&quality=480p`; // Solicitamos la calidad 480p
+
+    // Aquí obtienes la URL del video en 480p
+    const videoData = await fetchWithRetries(videoUrl);
+
+    await conn.sendMessage(m.chat, {
+      video: { url: videoData.download.url },
+      mimetype: 'video/mp4',
+      fileName: `${video.title}.mp4`,
+      caption: '🎥 Video 480p Descargado',
+      thumbnail: await fetch(video.thumbnail) // Se agrega la miniatura
+    }, { quoted: m });
+
+    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
+
+  } catch (error) {
+    console.error("Error:", error);
+    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
+    await conn.sendMessage(m.chat, {
+      text: `❌ *Error al procesar tu solicitud:*\n${error.message || "Error desconocido"}`
+    });
+  }
 };
+
+handler.command = ['play8'];
+handler.exp = 0;
+export default handler;
