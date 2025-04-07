@@ -4,7 +4,7 @@ import qs from 'qs';
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) {
-    return m.reply(`✦ ¡Hey! Parece que olvidaste ingresar un enlace de YouTube.\n💫 Ejemplo:\n\n> .play feid inocente `);
+    return m.reply(`✦ ¡Hey! Parece que olvidaste ingresar un enlace de YouTube.\n💫 Ejemplo:\n\n> .spotify feid inocente `);
   }
 
   const appleMusic = {
@@ -168,8 +168,8 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
 };
 
-handler.help = ['play'];
+handler.help = ['spotify'];
 handler.tags = ['downloader'];
-handler.command = 'play',/^(applemusicplay|play|song)$/i;
+handler.command = 'spotify',/^(applemusicplay|spotify|song)$/i;
 
 export default handler;
