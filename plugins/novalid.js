@@ -1,7 +1,7 @@
 // By: @kevv
 
 // Asegurar que el prefijo esté definido y sea una expresión regular válida
-if (!global.prefix) global.prefix = /^#|\./i;
+/*if (!global.prefix) global.prefix = /^#|\./i;
 
 export async function before(m) {
   if (!m.text || !global.prefix.test(m.text)) {
@@ -60,3 +60,4 @@ El comando *${comando}* no es válido, verifica si está bien escrito e intenta 
     */
   }
 }
+*/
