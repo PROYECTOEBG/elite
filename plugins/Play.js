@@ -1,7 +1,6 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
 
-// API en formato Base64
 const encodedApi = "aHR0cHM6Ly9hcGkudnJlZGVuLndlYi5pZC9hcGkveXRtcDM=";
 const getApiUrl = () => Buffer.from(encodedApi, "base64").toString("utf-8");
 
@@ -20,10 +19,9 @@ const fetchWithRetries = async (url, maxRetries = 2) => {
   throw new Error("No se pudo obtener la música después de varios intentos.");
 };
 
-// Handler principal .spotify
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text || !text.trim()) {
-    throw `⭐ 𝘐𝘯𝘨𝘳𝘦𝘴𝘢 𝘦𝘭 𝘵𝘪́𝘵𝘶𝘭𝘰 𝘥𝘦 𝘭𝘢 𝘤𝘢𝘯𝘤𝘪𝘰́𝘯 𝘲𝘶𝘦 𝘥𝘦𝘴𝘦𝘢𝘴 𝘥𝘦𝘴𝘤𝘢𝘳𝘨𝘢𝘳.\n\n» 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Cypher - Rich Vagos`;
+    throw `⭐ 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Belanova - Rosa Pastel`;
   }
 
   try {
@@ -36,7 +34,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const apiUrl = `${getApiUrl()}?url=${encodeURIComponent(video.url)}`;
     const apiData = await fetchWithRetries(apiUrl);
 
-    // Formatear la hora actual (ej: "7:12 p. m.")
+    // Formatear hora (ej: "7:43 p. m.")
     const now = new Date();
     const timeString = now.toLocaleTimeString('es-MX', { 
       hour: 'numeric', 
@@ -44,45 +42,27 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       hour12: true 
     }).toLowerCase();
 
-    // Mensaje con formato idéntico al de la imagen
-    const messageText = 
-`*${video.title.toUpperCase()}*  
-Elite Bot Global  
-${video.url}  
-
-*SPOTIFY PREMIUM*  
-01:27 ━━━━━━━────── 05:48  
-⇄ㅤ◁ㅤ❚❚ㅤ▷ㅤ↻  
-✔ ✅ ✅ ✅  
-${video.title}  
-
-${timeString}`;
-
-    // Enviar mensaje con botón "VER CANAL"
+    // Mensaje principal (parte superior)
     await conn.sendMessage(m.chat, {
-      text: messageText,
-      footer: ' ', // Espacio para separar el botón
-      buttons: [
-        { 
-          buttonId: `${usedPrefix}vercanal`, 
-          buttonText: { displayText: 'VER CANAL' }, 
-          type: 1 
-        }
-      ],
+      text: `*${video.title.toUpperCase()}*  
+Elite Bot Global 🌡  
+☐ ☐ ☐ ☐`,
       contextInfo: {
+        mentionedJid: [m.sender],
+        forwardingScore: 0, // Elimina el "reenviado muchas veces"
+        isForwarded: false,
         externalAdReply: {
           title: video.title,
           body: "Elite Bot Global",
           thumbnailUrl: video.thumbnail,
           mediaType: 1,
           renderLargerThumbnail: true,
-          showAdAttribution: true,
           sourceUrl: video.url
         }
       }
     }, { quoted: m });
 
-    // Enviar el audio con metadatos
+    // Audio con metadatos (parte inferior)
     await conn.sendMessage(m.chat, {
       audio: { 
         url: apiData.download.url,
@@ -92,17 +72,21 @@ ${timeString}`;
       ptt: false,
       contextInfo: {
         mentionedJid: [m.sender],
-        forwardingScore: 999,
-        isForwarded: true,
-        externalAdReply: {
-          title: video.title,
-          body: "⇄ㅤ   ◁ㅤ   ❚❚ㅤ   ▷ㅤ  ↻",
-          thumbnailUrl: video.thumbnail,
-          mediaType: 1,
-          renderLargerThumbnail: true
-        }
+        forwardingScore: 0, // Clave para evitar el "reenviado"
+        isForwarded: false
       }
     }, { quoted: m });
+
+    // Botón "VER CANAL"
+    await conn.sendMessage(m.chat, {
+      text: `*${video.title}*\n${timeString}`,
+      footer: ' ', 
+      buttons: [{ 
+        buttonId: `${usedPrefix}vercanal`, 
+        buttonText: { displayText: 'VER CANAL' }, 
+        type: 1 
+      }]
+    });
 
     await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 
@@ -110,14 +94,12 @@ ${timeString}`;
     console.error("Error:", error);
     await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
     await conn.sendMessage(m.chat, {
-      text: `❌ *Error al procesar tu solicitud:*\n${error.message || "Error desconocido"}`
+      text: `❌ *Error:*\n${error.message || "Intenta de nuevo más tarde."}`
     });
   }
 };
 
-// Comandos y configuración
 handler.help = ['spotify <búsqueda>'];
-handler.tags = ['downloader', 'music'];
+handler.tags = ['music'];
 handler.command = /^(spotify|music|vercanal)$/i;
-handler.exp = 0;
 export default handler;
