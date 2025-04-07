@@ -399,21 +399,21 @@ else return emotttt[results[0][0]];
 
 // IDs de canales
 global.ch = {
-ch1: '120363336642332098@newsletter',
-ch2: '120363160031023229@newsletter',
-ch3: '120363169294281316@newsletter',
-ch4: '120363203805910750@newsletter',
-ch5: '120363302472386010@newsletter',
-ch6: '120363301598733462@newsletter',
-ch7: '120363190430436554@newsletter',
-ch8: '120363374372683775@newsletter', 
-ch9: '120363167110224268@newsletter',
-ch10: '120363323882134704@newsletter',
-ch11: '120363370415738881@newsletter',
-ch12: '120363385983031660@newsletter',
-ch13: '120363343811229130@newsletter',
-ch14: '120363305941657414@newsletter',
-ch15: '120363263466636910@newsletter',
+ch1: '120363357113516650@newsletter',
+ch2: '120363357113516650@newsletter',
+ch3: '120363357113516650@newsletter',
+ch4: '120363357113516650@newsletter',
+ch5: '120363357113516650@newsletter',
+ch6: '120363357113516650@newsletter',
+ch7: '120363357113516650@newsletter',
+ch8: '120363357113516650@newsletter', 
+ch9: '120363357113516650@newsletter',
+ch10: '120363357113516650@newsletter',
+ch11: '120363357113516650@newsletter',
+ch12: '120363357113516650@newsletter',
+ch13: '120363357113516650@newsletter',
+ch14: '120363357113516650@newsletter',
+ch15: '120363357113516650@newsletter',
 }
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
 
@@ -433,10 +433,10 @@ global.ths = 'https://www.threads.net/@gata_dios'
 global.paypal = 'https://paypal.me/OficialGD'
 global.asistencia = 'https://wa.me/message/MEKOUFBEOG5ED1'
 global.all = 'https://www.atom.bio/GataBot'
-global.canal1 = 'https://whatsapp.com/channel/0029Va4QjH7DeON0ePwzjS1A'
-global.canal2 = 'https://whatsapp.com/channel/0029Va6yY0iLY6d6XDmqA03g'
-global.canal3 = 'https://whatsapp.com/channel/0029VaKn22pDJ6GwY61Ftn15'
-global.canal4 = 'https://t.me/globalgb'
+global.canal1 = 'https://whatsapp.com/channel/0029Vatsbep84OmF6dDXpm1s'
+global.canal2 = 'https://whatsapp.com/channel/0029Vatsbep84OmF6dDXpm1s'
+global.canal3 = 'https://whatsapp.com/channel/0029Vatsbep84OmF6dDXpm1s'
+global.canal4 = 'https://whatsapp.com/channel/0029Vatsbep84OmF6dDXpm1s'
 
 global.soporteGB = "https://chat.whatsapp.com/GQ82mPnSYnm0XL2hLPk7FV"
 global.grupo1 = "https://chat.whatsapp.com/JRG6rVJJV40IxlI1wjQ0E9"
