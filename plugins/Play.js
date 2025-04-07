@@ -1,6 +1,7 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
 
+// API en formato Base64
 const encodedApi = "aHR0cHM6Ly9hcGkudnJlZGVuLndlYi5pZC9hcGkveXRtcDM=";
 const getApiUrl = () => Buffer.from(encodedApi, "base64").toString("utf-8");
 
@@ -19,9 +20,10 @@ const fetchWithRetries = async (url, maxRetries = 2) => {
   throw new Error("No se pudo obtener la música después de varios intentos.");
 };
 
+// Handler principal .spotify
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text || !text.trim()) {
-    throw `⭐ 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Belanova - Rosa Pastel`;
+    throw `⭐ 𝘐𝘯𝘨𝘳𝘦𝘴𝘢 𝘦𝘭 𝘵𝘪́𝘵𝘶𝘭𝘰 𝘥𝘦 𝘭𝘢 𝘤𝘢𝘯𝘤𝘪𝘰́𝘯 𝘲𝘶𝘦 𝘥𝘦𝘴𝘦𝘢𝘴 𝘥𝘦𝘴𝘤𝘢𝘳𝘨𝘢𝘳.\n\n» 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Cypher - Rich Vagos`;
   }
 
   try {
@@ -34,36 +36,25 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const apiUrl = `${getApiUrl()}?url=${encodeURIComponent(video.url)}`;
     const apiData = await fetchWithRetries(apiUrl);
 
-    // Formatear hora (ej: "7:43 p. m.")
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('es-MX', { 
-      hour: 'numeric', 
-      minute: '2-digit', 
-      hour12: true 
-    }).toLowerCase();
-
-    // Mensaje unificado con audio
     await conn.sendMessage(m.chat, {
-      text: `*${video.title.toUpperCase()}*\nElite Bot Global 🌡\n☐ ☐ ☐ ☐\n\n${timeString}`,
-      audio: { 
-        url: apiData.download.url,
-      },
-      mimetype: "audio/mpeg",
-      fileName: `${video.title}.mp3`,
-      ptt: false,
+      text: `*⌈📀 SPOTIFY PREMIUM 📀⌋*\n01:27 ━━━━━⬤──── 05:48\n*⇄ㅤ   ◁   ❚❚   ▷   ↻*\n${video.title}`,
       contextInfo: {
-        mentionedJid: [m.sender],
-        forwardingScore: 0,
-        isForwarded: false,
         externalAdReply: {
           title: video.title,
           body: "Elite Bot Global",
           thumbnailUrl: video.thumbnail,
           mediaType: 1,
           renderLargerThumbnail: true,
+          showAdAttribution: true,
           sourceUrl: video.url
         }
       }
+    }, { quoted: m });
+
+    await conn.sendMessage(m.chat, {
+      audio: { url: apiData.download.url },
+      mimetype: "audio/mpeg",
+      fileName: `${video.title}.mp3`
     }, { quoted: m });
 
     await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
@@ -72,12 +63,11 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     console.error("Error:", error);
     await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
     await conn.sendMessage(m.chat, {
-      text: `❌ *Error:*\n${error.message || "Intenta de nuevo más tarde."}`
+      text: `❌ *Error al procesar tu solicitud:*\n${error.message || "Error desconocido"}`
     });
   }
 };
 
-handler.help = ['spotify <búsqueda>'];
-handler.tags = ['music'];
-handler.command = /^(spotify|music)$/i;
+handler.command = ['spotify'];
+handler.exp = 0;
 export default handler;
