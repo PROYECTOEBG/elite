@@ -267,7 +267,7 @@ m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
 > Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
 
 
-`} quoted: m }) : ''
+`}, quoted: m }) : ''
 }}
 setInterval(async () => {
 if (!sock.user) {
