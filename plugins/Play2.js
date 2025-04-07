@@ -117,6 +117,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.command = ['play', 'ytv', 'mp4']; 
+handler.command = ['play', 'ytv2', 'mp4']; 
 handler.exp = 0;
 export default handler;
