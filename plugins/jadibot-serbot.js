@@ -143,7 +143,7 @@ printQRInTerminal: false,
 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
 msgRetry,
 msgRetryCache,
-browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['GataBot-MD (Sub Bot)', 'Chrome','2.0.0'],
+browser: mcode ? ['𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡', '𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡', '𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡'] : ['𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡', '𝙀𝙡𝙞𝙩𝙚 𝘽𝙤𝙩 𝙂𝙡𝙤𝙗𝙖𝙡'],
 version: version,
 generateHighQualityLinkPreview: true
 };
@@ -233,15 +233,7 @@ let chtxt = `
 👤 *Usuario:* ${userName}
 ${user?.registered ? `🗃️ *Registrado:* ${user?.registered ? 'Si' : 'No'}` : ''}
 ${user?.registered ? `✅ *Verificación:* ${user?.registered ? user.name : 'No'}` : ''}
-🔑 *Método de conexión:* ${mcode ? 'Código de 8 dígitos' : 'Código QR'}
-💻 *Browser:* ${mcode ? 'Ubuntu' : 'Chrome'}
-📱 *WhatsApp:* ${m?.isWABusiness ? 'Business' : 'Messenger'}
-🐈 *Bot:* ${gt}
-⭐ *Versión del bot:* \`${vs}\`
-💫 *Versión sub bot:* \`${vsJB}\`\n
-> *¡Conviértete en sub-bot ahora!*
-wa.me/${path.basename(pathGataJadiBot)}?text=${usedPrefix + command}+code
-`.trim()
+🔑 *Método de conexión:* ${mcode ? 'Código de 8 dígitos' : 'Código QR'`.trim()
 let ppch = await sock.profilePictureUrl(userJid, 'image').catch(_ => gataMenu)
 await sleep(3000)
 await global.conn.sendMessage(ch.ch1, { text: chtxt, contextInfo: {
