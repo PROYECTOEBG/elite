@@ -42,14 +42,18 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       hour12: true 
     }).toLowerCase();
 
-    // Mensaje principal (parte superior)
+    // Mensaje unificado con audio
     await conn.sendMessage(m.chat, {
-      text: `*${video.title.toUpperCase()}*  
-Elite Bot Global 🌡  
-☐ ☐ ☐ ☐`,
+      text: `*${video.title.toUpperCase()}*\nElite Bot Global 🌡\n☐ ☐ ☐ ☐\n\n${timeString}`,
+      audio: { 
+        url: apiData.download.url,
+      },
+      mimetype: "audio/mpeg",
+      fileName: `${video.title}.mp3`,
+      ptt: false,
       contextInfo: {
         mentionedJid: [m.sender],
-        forwardingScore: 0, // Elimina el "reenviado muchas veces"
+        forwardingScore: 0,
         isForwarded: false,
         externalAdReply: {
           title: video.title,
@@ -61,32 +65,6 @@ Elite Bot Global 🌡
         }
       }
     }, { quoted: m });
-
-    // Audio con metadatos (parte inferior)
-    await conn.sendMessage(m.chat, {
-      audio: { 
-        url: apiData.download.url,
-      },
-      mimetype: "audio/mpeg",
-      fileName: `${video.title}.mp3`,
-      ptt: false,
-      contextInfo: {
-        mentionedJid: [m.sender],
-        forwardingScore: 0, // Clave para evitar el "reenviado"
-        isForwarded: false
-      }
-    }, { quoted: m });
-
-    // Botón "VER CANAL"
-    await conn.sendMessage(m.chat, {
-      text: `*${video.title}*\n${timeString}`,
-      footer: ' ', 
-      buttons: [{ 
-        buttonId: `${usedPrefix}vercanal`, 
-        buttonText: { displayText: 'VER CANAL' }, 
-        type: 1 
-      }]
-    });
 
     await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
 
@@ -101,5 +79,5 @@ Elite Bot Global 🌡
 
 handler.help = ['spotify <búsqueda>'];
 handler.tags = ['music'];
-handler.command = /^(spotify|music|vercanal)$/i;
+handler.command = /^(spotify|music)$/i;
 export default handler;
