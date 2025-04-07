@@ -1,7 +1,13 @@
+import { randomUUID } from 'crypto'
+
 let autoInterval = {}
 
-function startAutoMessages(conn, chatId) {
-  if (autoInterval[chatId]) return // evitar duplicados
+export async function before(m, { conn }) {
+  if (!m.isGroup) return
+  let chat = global.db.data.chats[m.chat]
+  if (!chat.welcome) return
+
+  if (autoInterval[m.chat]) return // ya está activo
 
   const frases = [
     'La vida es un 10% lo que me ocurre y 90% cómo reacciono a ello.',
@@ -32,52 +38,16 @@ function startAutoMessages(conn, chatId) {
     'Noticia: Robot cirujano realiza primera operación sin supervisión humana.'
   ]
 
-  const categories = [
-    { name: 'Frase', list: frases },
-    { name: 'Ánimo', list: animos },
-    { name: 'Chiste', list: chistes },
-    { name: 'Noticia', list: noticias }
+  const categorias = [
+    { nombre: 'Frase', lista: frases },
+    { nombre: 'Ánimo', lista: animos },
+    { nombre: 'Chiste', lista: chistes },
+    { nombre: 'Noticia', lista: noticias }
   ]
 
-  autoInterval[chatId] = setInterval(() => {
-    const cat = categories[Math.floor(Math.random() * categories.length)]
-    const text = cat.list[Math.floor(Math.random() * cat.list.length)]
-    conn.sendMessage(chatId, { text: `*${cat.name}:* ${text}` })
+  autoInterval[m.chat] = setInterval(() => {
+    let cat = categorias[Math.floor(Math.random() * categorias.length)]
+    let texto = cat.lista[Math.floor(Math.random() * cat.lista.length)]
+    conn.sendMessage(m.chat, { text: `*${cat.nombre}:* ${texto}` })
   }, 60_000)
-}
-
-// Comando opcional para detenerlo manualmente
-let handler = async (m, { conn, args, command }) => {
-  const chatId = m.chat
-
-  if (args[0] === 'off') {
-    if (autoInterval[chatId]) {
-      clearInterval(autoInterval[chatId])
-      delete autoInterval[chatId]
-      return m.reply('🛑 Mensajes automáticos detenidos.')
-    } else {
-      return m.reply('No hay mensajes automáticos activos en este chat.')
-    }
-  } else {
-    return m.reply('Este autoenvío ya está activado por defecto.')
-  }
-}
-
-handler.command = ['autoenvios']
-handler.help = ['autoenvios off']
-handler.tags = ['tools']
-handler.group = false
-handler.admin = false
-handler.rowner = false
-
-export default handler
-
-// Arranque automático al iniciar
-global.plugins ??= {}
-global.plugins['autoenvios-start'] = {
-  async all(m, { conn }) {
-    // puedes ajustar esto para que solo funcione en ciertos chats
-    const chatId = m.chat
-    startAutoMessages(conn, chatId)
-  }
 }
