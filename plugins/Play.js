@@ -37,7 +37,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const apiData = await fetchWithRetries(apiUrl);
 
     await conn.sendMessage(m.chat, {
-      text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹`,
+      text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n- 𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹 *2023*`,
       contextInfo: {
         externalAdReply: {
           title: video.title,
@@ -68,6 +68,6 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.command = ['spotify'];
+handler.command = ['play'];
 handler.exp = 0;
 export default handler;
