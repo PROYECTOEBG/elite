@@ -96,7 +96,7 @@ ${timeString}`;
         isForwarded: true,
         externalAdReply: {
           title: video.title,
-          body: "01:27 ━━━━━⬤──── 05:48\n*⇄  ㅤ   ◁       ❚❚        ▷        ↻*\n® EliteBotGlobal",
+          body: "01:27 ━━━━━━━⬤────── 05:48",
           thumbnailUrl: video.thumbnail,
           mediaType: 1,
           renderLargerThumbnail: true
