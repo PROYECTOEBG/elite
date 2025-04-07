@@ -42,7 +42,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         externalAdReply: {
           title: video.title,
           body: "𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹 ",
-          thumbnailUrl: hola,
+          thumbnailUrl: video.thumbnail,
           mediaType: 1,
           renderLargerThumbnail: true,
           showAdAttribution: true,
