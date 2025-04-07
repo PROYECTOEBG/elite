@@ -40,47 +40,54 @@ const categories = [
     { name: 'Noticia', list: noticias }
 ]
 
-// Guarda el último tiempo de envío por chat
-let lastSent = {}
+// Función para enviar mensajes automáticos
+const sendAutoMessage = (conn, chatId) => {
+    const cat = categories[Math.floor(Math.random() * categories.length)]
+    const text = cat.list[Math.floor(Math.random() * cat.list.length)]
+    
+    // Obtener todas las conexiones (bot principal + subbots)
+    const connections = [conn, ...(global.conns?.map(c => c) || [])]
+    
+    // Enviar a través de todas las conexiones
+    connections.forEach(bot => {
+        if (bot?.user?.jid) {
+            bot.sendMessage(chatId, { 
+                text: `*${cat.name}:* ${text}`,
+                contextInfo: {
+                    forwardingScore: 9999999,
+                    isForwarded: true,
+                    externalAdReply: {
+                        showAdAttribution: true,
+                        renderLargerThumbnail: true,
+                        title: '𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃',
+                        containsAutoReply: true,
+                        mediaType: 1,
+                        sourceUrl: 'https://whatsapp.com'
+                    }
+                }
+            }).catch(err => console.error(`Error al enviar mensaje con bot ${bot.user.jid}:`, err))
+        }
+    })
+}
 
+// Iniciar autoenvío en todos los grupos al cargar el plugin
 handler.before = async function (m, { conn, participants, groupMetadata, isBotAdmin }) {
-    // Verifica si es un grupo y si está activado el welcome
     if (!m.isGroup || !global.db.data.chats[m.chat].welcome) return
     
     const chatId = m.chat
-    const now = Date.now()
+    const botId = conn.user?.jid
+    const key = `${botId}|${chatId}`
     
-    // Si no hay registro o han pasado más de 60 segundos
-    if (!lastSent[chatId] || (now - lastSent[chatId]) > 60000) {
-        const cat = categories[Math.floor(Math.random() * categories.length)]
-        const text = cat.list[Math.floor(Math.random() * cat.list.length)]
+    // Si no hay intervalo para este chat, crearlo
+    if (!global.autoInterval) global.autoInterval = {}
+    if (!global.autoInterval[key]) {
+        // Enviar mensaje inmediatamente
+        sendAutoMessage(conn, chatId)
         
-        // Obtener todas las conexiones (bot principal + subbots)
-        const connections = [conn, ...(global.conns?.map(c => c) || [])]
-        
-        // Enviar a través de todas las conexiones
-        connections.forEach(bot => {
-            if (bot?.user?.jid) {
-                bot.sendMessage(chatId, { 
-                    text: `*${cat.name}:* ${text}`,
-                    contextInfo: {
-                        forwardingScore: 9999999,
-                        isForwarded: true,
-                        externalAdReply: {
-                            showAdAttribution: true,
-                            renderLargerThumbnail: true,
-                            title: '𝔼𝕃𝕀𝕋𝔼 𝔹𝕆𝕋 𝔾𝕃𝕆𝔹𝔸𝕃',
-                            containsAutoReply: true,
-                            mediaType: 1,
-                            sourceUrl: 'https://whatsapp.com'
-                        }
-                    }
-                }).catch(err => console.error(`Error al enviar mensaje con bot ${bot.user.jid}:`, err))
-            }
-        })
-        
-        // Actualizar el tiempo del último envío
-        lastSent[chatId] = now
+        // Configurar intervalo para enviar cada minuto
+        global.autoInterval[key] = setInterval(() => {
+            sendAutoMessage(conn, chatId)
+        }, 60_000) // cada 60s
     }
 }
 
