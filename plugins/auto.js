@@ -1,101 +1,76 @@
-import { schedule } from 'node-schedule'
-import fetch from 'node-fetch'
+let autoInterval = {}
 
-let handler = async (m, { conn, args, text, usedPrefix, command }) => {
-    if (!args[0]) return m.reply(`*[❗] Formato incorrecto*\n\n*Uso correcto:*
-🔰 ${usedPrefix + command} on -> Activar mensajes automáticos
-🔰 ${usedPrefix + command} off -> Desactivar mensajes automáticos
-    
-*Ejemplo:* ${usedPrefix + command} on`)
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  const chatId = m.chat
 
-    let chat = global.db.data.chats[m.chat]
-    
-    if (args[0].toLowerCase() === 'on') {
-        if (chat.automensaje) return m.reply('*[❗] Los mensajes automáticos ya están activados en este chat*')
-        chat.automensaje = true
-        await startAutoMessages(conn, m.chat)
-        m.reply('*[✅] Mensajes automáticos activados*\n\n*Se enviarán mensajes cada minuto*')
-    } else if (args[0].toLowerCase() === 'off') {
-        if (!chat.automensaje) return m.reply('*[❗] Los mensajes automáticos ya están desactivados en este chat*')
-        chat.automensaje = false
-        m.reply('*[✅] Mensajes automáticos desactivados*')
+  // Detener envío
+  if (args[0] === 'off') {
+    if (autoInterval[chatId]) {
+      clearInterval(autoInterval[chatId])
+      delete autoInterval[chatId]
+      return m.reply('🛑 Mensajes automáticos detenidos.')
     } else {
-        m.reply(`*[❗] Formato incorrecto*\n\n*Uso correcto:*
-🔰 ${usedPrefix + command} on -> Activar mensajes automáticos
-🔰 ${usedPrefix + command} off -> Desactivar mensajes automáticos
-        
-*Ejemplo:* ${usedPrefix + command} on`)
+      return m.reply('No hay mensajes automáticos activos en este chat.')
     }
+  }
+
+  // Evitar duplicados
+  if (autoInterval[chatId]) {
+    return m.reply(`Ya está activo. Usa *${usedPrefix + command} off* para detener.`)
+  }
+
+  // Listas con 5 ítems cada una
+  const frases = [
+    'La vida es un 10% lo que me ocurre y 90% cómo reacciono a ello.',
+    'El éxito es la suma de pequeños esfuerzos repetidos día tras día.',
+    'Cada día es una nueva oportunidad para cambiar tu vida.',
+    'No cuentes los días, haz que los días cuenten.',
+    'El único lugar donde el éxito viene antes que el trabajo es en el diccionario.'
+  ]
+  const animos = [
+    '¡Tú eres más fuerte de lo que crees!',
+    'Sigue adelante, lo mejor está por venir.',
+    'Cada paso, por pequeño que sea, te acerca a tu meta.',
+    'Cree en ti: tienes todo lo necesario para triunfar.',
+    'Hoy es un gran día para empezar algo nuevo.'
+  ]
+  const chistes = [
+    '¿Por qué los pájaros no usan Facebook? ¡Porque ya tienen Twitter!',
+    '¿Qué le dice un gusano a otro gusano? Voy a dar una vuelta a la manzana.',
+    '—Oye, ¿cuál es tu plato favorito? —Pues el hondo, ¡porque cabe más comida!',
+    '¿Cómo se dice pañuelo en japonés? Saka-moko.',
+    '—¿Cuál es tu animal favorito? —El pingüino, ¡porque siempre va de etiqueta!'
+  ]
+  const noticias = [
+    'Noticia: Científicos descubren un nuevo planeta potencialmente habitable.',
+    'Noticia: Avanza vacuna que promete reducir resfriados comunes.',
+    'Noticia: Tecnología de IA crea obras de arte en segundos.',
+    'Noticia: Nuevas baterías recargan tu móvil en 5 minutos.',
+    'Noticia: Robot cirujano realiza primera operación sin supervisión humana.'
+  ]
+
+  const categories = [
+    { name: 'Frase', list: frases },
+    { name: 'Ánimo', list: animos },
+    { name: 'Chiste', list: chistes },
+    { name: 'Noticia', list: noticias }
+  ]
+
+  // Confirmación de arranque
+  m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto.')
+
+  // Iniciar intervalo
+  autoInterval[chatId] = setInterval(() => {
+    const cat = categories[Math.floor(Math.random() * categories.length)]
+    const text = cat.list[Math.floor(Math.random() * cat.list.length)]
+    conn.sendMessage(chatId, { text: `*${cat.name}:* ${text}` })
+  }, 60_000)
 }
 
-handler.help = ['automensaje <on/off>']
-handler.tags = ['group']
-handler.command = /^(automensaje|autom)$/i
+handler.command = ['autoenvios']
+handler.help = ['autoenvios', 'autoenvios off']
+handler.tags = ['tools']
 handler.group = true
 handler.admin = true
-handler.botAdmin = true
 
 export default handler
-
-// Mensajes predefinidos por categoría
-const mensajes = {
-    frases: [
-        "🌟 *Frase del día:* La vida es como un libro, cada día una nueva página llena de sorpresas ✨",
-        "🎯 *Reflexión:* El éxito no es el final, el fracaso no es fatal: es el coraje para continuar lo que cuenta 💫",
-        "🌈 *Inspiración:* Sé el cambio que quieres ver en el mundo 🌍",
-        "💭 *Pensamiento:* La felicidad no es algo hecho. Viene de tus propias acciones ✨",
-        "🌺 *Motivación:* Cada día es una nueva oportunidad para cambiar tu vida 🌟"
-    ],
-    chistes: [
-        "😄 ¿Qué hace una abeja en el gimnasio?\n¡Zum-ba! 🐝",
-        "😂 ¿Por qué los pájaros no usan Facebook?\nPorque ya tienen Twitter 🐦",
-        "🤣 ¿Qué le dice un jaguar a otro jaguar?\n¡Jaguar you! 🐆",
-        "😅 ¿Por qué el libro de matemáticas está triste?\n¡Porque tiene muchos problemas! 📚",
-        "😆 ¿Qué hace una vaca en una computadora?\n¡Vacebook! 🐮"
-    ],
-    animo: [
-        "💪 *¡Tú puedes con todo!* Hoy será un día increíble ⭐",
-        "🌞 *¡Buenos días!* Que la energía positiva te acompañe en todo momento 🌈",
-        "✨ *¡Ánimo!* Cada día es una nueva oportunidad para brillar 🌟",
-        "🎯 *¡A por todas!* El éxito te está esperando 🚀",
-        "💫 *¡Confía en ti!* Eres capaz de lograr todo lo que te propongas 🌠"
-    ],
-    noticias: [
-        "📰 *Tecnología:* La IA sigue revolucionando el mundo digital 🤖",
-        "🌍 *Medio Ambiente:* Nuevas iniciativas para combatir el cambio climático 🌱",
-        "🎮 *Gaming:* Los últimos lanzamientos están batiendo récords 🎯",
-        "📱 *Apps:* Las aplicaciones más descargadas de la semana 💫",
-        "🤖 *Innovación:* Nuevos avances en robótica y automatización ⚡"
-    ],
-    consejos: [
-        "💡 *Tip del día:* Bebe agua regularmente para mantenerte hidratado 💧",
-        "🧘‍♀️ *Bienestar:* Dedica 5 minutos al día a la meditación 🌸",
-        "📚 *Productividad:* Organiza tus tareas por prioridad 📝",
-        "🌿 *Salud:* Una caminata diaria mejora tu estado de ánimo 🚶‍♂️",
-        "💪 *Fitness:* Estira tu cuerpo cada mañana para activarte 🌅"
-    ]
-}
-
-// Función para obtener un mensaje aleatorio
-function getMensajeAleatorio() {
-    const categorias = Object.keys(mensajes)
-    const categoriaAleatoria = categorias[Math.floor(Math.random() * categorias.length)]
-    const mensajesCategoria = mensajes[categoriaAleatoria]
-    return mensajesCategoria[Math.floor(Math.random() * mensajesCategoria.length)]
-}
-
-// Función para iniciar los mensajes automáticos
-async function startAutoMessages(conn, chatId) {
-    // Programar el envío de mensajes cada minuto
-    schedule.scheduleJob('*/1 * * * *', async () => {
-        try {
-            const chat = global.db.data.chats[chatId]
-            if (!chat?.automensaje) return // Si se desactivó, no enviar más mensajes
-            
-            const mensaje = getMensajeAleatorio()
-            await conn.sendMessage(chatId, { text: mensaje })
-        } catch (error) {
-            console.error('Error al enviar mensaje automático:', error)
-        }
-    })
-}
