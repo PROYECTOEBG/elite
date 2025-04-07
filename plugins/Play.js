@@ -1,7 +1,7 @@
 import fetch from "node-fetch";
 import yts from "yt-search";
 
-// API en formato Base64
+// API en Base64
 const encodedApi = "aHR0cHM6Ly9hcGkudnJlZGVuLndlYi5pZC9hcGkveXRtcDM=";
 const getApiUrl = () => Buffer.from(encodedApi, "base64").toString("utf-8");
 
@@ -20,22 +20,28 @@ const fetchWithRetries = async (url, maxRetries = 2) => {
   throw new Error("No se pudo obtener la música después de varios intentos.");
 };
 
-// Handler principal .spotify
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text || !text.trim()) {
-    throw `⭐ 𝘐𝘯𝘨𝘳𝘦𝘴𝘢 𝘦𝘭 𝘵𝘪́𝘵𝘶𝘭𝘰 𝘥𝘦 𝘭𝘢 𝘤𝘢𝘯𝘤𝘪𝘰́𝘯 𝘲𝘶𝘦 𝘥𝘦𝘴𝘦𝘢𝘴 𝘥𝘦𝘴𝘤𝘢𝘳𝘨𝘢𝘳.\n\n» 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Cypher - Rich Vagos`;
+    throw `⭐ 𝘐𝘯𝘨𝘳𝘦𝘴𝘢 𝘦𝘭 𝘵𝘪́𝘵𝘶𝘭𝘰 𝘥𝘦 𝘭𝘢 𝘤𝘢𝘯𝘤𝘪𝘰́𝘯.\n\n» 𝘌𝘫𝘦𝘮𝘱𝘭𝘰:\n${usedPrefix + command} Mi canción favorita`;
   }
 
   try {
     await conn.sendMessage(m.chat, { react: { text: "⚡", key: m.key } });
 
+    // Mensaje rápido mientras busca y descarga
+    await conn.sendMessage(m.chat, {
+      text: "*Buscando tu canción, un momento...*"
+    }, { quoted: m });
+
     const searchResults = await yts(text.trim());
     const video = searchResults.videos[0];
     if (!video) throw new Error("No se encontraron resultados.");
 
+    // Disparar la descarga sin bloquear la interfaz
     const apiUrl = `${getApiUrl()}?url=${encodeURIComponent(video.url)}`;
-    const apiData = await fetchWithRetries(apiUrl);
+    const apiDataPromise = fetchWithRetries(apiUrl); // <-- se lanza antes
 
+    // Enviar mensaje visual mientras descarga el audio
     await conn.sendMessage(m.chat, {
       text: `*⌈📀 SPOTIFY PREMIUM 📀⌋*\n01:27 ━━━━━⬤──── 05:48\n*⇄ㅤ   ◁   ❚❚   ▷   ↻*\n${video.title}`,
       contextInfo: {
@@ -50,6 +56,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
         }
       }
     }, { quoted: m });
+
+    // Esperar ahora sí la descarga
+    const apiData = await apiDataPromise;
 
     await conn.sendMessage(m.chat, {
       audio: { url: apiData.download.url },
