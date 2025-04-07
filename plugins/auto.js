@@ -1,25 +1,31 @@
+// Guarda todos los intervalos por bot+chat
 let autoInterval = {}
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   const chatId = m.chat
+  const botId  = conn.user?.jid
+  const key    = `${botId}|${chatId}`
 
-  // Detener envío
+  // Obtener todas las conexiones (bot principal + subbots)
+  const connections = [conn, ...(global.conns?.map(c => c) || [])]
+
+  // apagar
   if (args[0] === 'off') {
-    if (autoInterval[chatId]) {
-      clearInterval(autoInterval[chatId])
-      delete autoInterval[chatId]
+    if (autoInterval[key]) {
+      clearInterval(autoInterval[key])
+      delete autoInterval[key]
       return m.reply('🛑 Mensajes automáticos detenidos.')
     } else {
-      return m.reply('No hay mensajes automáticos activos en este chat.')
+      return m.reply('No hay envíos automáticos activos en este chat.')
     }
   }
 
-  // Evitar duplicados
-  if (autoInterval[chatId]) {
+  // si ya existe
+  if (autoInterval[key]) {
     return m.reply(`Ya está activo. Usa *${usedPrefix + command} off* para detener.`)
   }
 
-  // Listas con 5 ítems cada una
+  // Listas de 5 ítems cada una
   const frases = [
     'La vida es un 10% lo que me ocurre y 90% cómo reacciono a ello.',
     'El éxito es la suma de pequeños esfuerzos repetidos día tras día.',
@@ -50,27 +56,37 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   ]
 
   const categories = [
-    { name: 'Frase', list: frases },
-    { name: 'Ánimo', list: animos },
-    { name: 'Chiste', list: chistes },
+    { name: 'Frase',   list: frases },
+    { name: 'Ánimo',   list: animos },
+    { name: 'Chiste',  list: chistes },
     { name: 'Noticia', list: noticias }
   ]
 
-  // Confirmación de arranque
-  m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto.')
-
-  // Iniciar intervalo
-  autoInterval[chatId] = setInterval(() => {
-    const cat = categories[Math.floor(Math.random() * categories.length)]
-    const text = cat.list[Math.floor(Math.random() * cat.list.length)]
-    conn.sendMessage(chatId, { text: `*${cat.name}:* ${text}` })
-  }, 60_000)
+  // Iniciar automáticamente si no está activo
+  if (!autoInterval[key]) {
+    await m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto en todos los bots.')
+    
+    autoInterval[key] = setInterval(() => {
+      const cat  = categories[Math.floor(Math.random() * categories.length)]
+      const text = cat.list[Math.floor(Math.random() * cat.list.length)]
+      
+      // Enviar a través de todas las conexiones
+      connections.forEach(bot => {
+        if (bot?.user?.jid) { // Verificar que la conexión es válida
+          bot.sendMessage(chatId, { text: `*${cat.name}:* ${text}` })
+          .catch(err => console.error(`Error al enviar mensaje con bot ${bot.user.jid}:`, err))
+        }
+      })
+    }, 60_000) // cada 60s
+  }
 }
 
-handler.command = ['autoenvios']
-handler.help = ['autoenvios', 'autoenvios off']
-handler.tags = ['tools']
-handler.group = true
-handler.admin = true
+handler.command = ['autoenvios', 'automensajes']
+handler.help    = ['autoenvios off', 'automensajes off']
+handler.tags    = ['tools']
+// quitamos group/admin/rowner para que funcione en cualquier sesión
+handler.group  = false
+handler.admin  = false
+handler.rowner = false
 
 export default handler
