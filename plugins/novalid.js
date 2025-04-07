@@ -37,11 +37,7 @@ export async function before(m) {
     await m.reply(`︎✦ ¡Hey! 
 El comando ${comando} no es válido, verifica si está bien escrito e intenta de nuevo.
 
-©EliteBotGlobal 2023
-    
-    
-    
-    🍁 El comando "${comando}" no es válido.\nUsa "#menu" para ver los comandos disponibles.`);
+©EliteBotGlobal 2023`);
 
     /*
     let txt = `👤 User: ${m.pushName || 'Anónimo'}\n🌍 Pais: ${global.userNationality}\n🐢 Bot: ${packname}\n🌻 Comando: ${comando}`.trim();
