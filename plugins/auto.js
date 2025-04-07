@@ -3,8 +3,11 @@ let autoInterval = {}
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
   const chatId = m.chat
-  const botId  = conn.user?.jid        // p.ej. "5191234…@s.whatsapp.net"
-  const key    = `${botId}|${chatId}`  // clave única por bot+chat
+  const botId  = conn.user?.jid
+  const key    = `${botId}|${chatId}`
+
+  // Obtener todas las conexiones (bot principal + subbots)
+  const connections = [conn, ...(global.conns?.map(c => c) || [])]
 
   // apagar
   if (args[0] === 'off') {
@@ -60,12 +63,19 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
   ]
 
   // arranca
-  await m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto.')
+  await m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto en todos los bots.')
 
   autoInterval[key] = setInterval(() => {
     const cat  = categories[Math.floor(Math.random() * categories.length)]
     const text = cat.list[Math.floor(Math.random() * cat.list.length)]
-    conn.sendMessage(chatId, { text: `*${cat.name}:* ${text}` })
+    
+    // Enviar a través de todas las conexiones
+    connections.forEach(bot => {
+      if (bot?.user?.jid) { // Verificar que la conexión es válida
+        bot.sendMessage(chatId, { text: `*${cat.name}:* ${text}` })
+        .catch(err => console.error(`Error al enviar mensaje con bot ${bot.user.jid}:`, err))
+      }
+    })
   }, 60_000) // cada 60s
 }
 
