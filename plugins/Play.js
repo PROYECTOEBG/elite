@@ -36,8 +36,39 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const apiUrl = `${getApiUrl()}?url=${encodeURIComponent(video.url)}`;
     const apiData = await fetchWithRetries(apiUrl);
 
+    // Formatear la hora actual (ej: "7:12 p. m.")
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('es-MX', { 
+      hour: 'numeric', 
+      minute: '2-digit', 
+      hour12: true 
+    }).toLowerCase();
+
+    // Mensaje con formato idéntico al de la imagen
+    const messageText = 
+`*${video.title.toUpperCase()}*  
+Elite Bot Global  
+${video.url}  
+
+*SPOTIFY PREMIUM*  
+01:27 ━━━━━━━────── 05:48  
+⇄ㅤ◁ㅤ❚❚ㅤ▷ㅤ↻  
+✔ ✅ ✅ ✅  
+${video.title}  
+
+${timeString}`;
+
+    // Enviar mensaje con botón "VER CANAL"
     await conn.sendMessage(m.chat, {
-      text: `*⌈📀 SPOTIFY PREMIUM 📀⌋*\n01:27 ━━━━━⬤──── 05:48\n*⇄ㅤ   ◁   ❚❚   ▷   ↻*\n${video.title}`,
+      text: messageText,
+      footer: ' ', // Espacio para separar el botón
+      buttons: [
+        { 
+          buttonId: `${usedPrefix}vercanal`, 
+          buttonText: { displayText: 'VER CANAL' }, 
+          type: 1 
+        }
+      ],
       contextInfo: {
         externalAdReply: {
           title: video.title,
@@ -51,10 +82,26 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       }
     }, { quoted: m });
 
+    // Enviar el audio con metadatos
     await conn.sendMessage(m.chat, {
-      audio: { url: apiData.download.url },
+      audio: { 
+        url: apiData.download.url,
+      },
       mimetype: "audio/mpeg",
-      fileName: `${video.title}.mp3`
+      fileName: `${video.title}.mp3`,
+      ptt: false,
+      contextInfo: {
+        mentionedJid: [m.sender],
+        forwardingScore: 999,
+        isForwarded: true,
+        externalAdReply: {
+          title: video.title,
+          body: "Reproduciendo en Spotify Premium",
+          thumbnailUrl: video.thumbnail,
+          mediaType: 1,
+          renderLargerThumbnail: true
+        }
+      }
     }, { quoted: m });
 
     await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
@@ -68,6 +115,9 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 };
 
-handler.command = ['spotify'];
+// Comandos y configuración
+handler.help = ['spotify <búsqueda>'];
+handler.tags = ['downloader', 'music'];
+handler.command = /^(spotify|music|vercanal)$/i;
 handler.exp = 0;
 export default handler;
