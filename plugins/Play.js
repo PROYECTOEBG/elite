@@ -96,7 +96,7 @@ ${timeString}`;
         isForwarded: true,
         externalAdReply: {
           title: video.title,
-          body: "01:27 ━━━━━━━⬤────── 05:48",
+          body: "⇄ㅤ   ◁ㅤ   ❚❚ㅤ   ▷ㅤ  ↻",
           thumbnailUrl: video.thumbnail,
           mediaType: 1,
           renderLargerThumbnail: true
