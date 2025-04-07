@@ -1,31 +1,12 @@
 // Guarda todos los intervalos por bot+chat
 let autoInterval = {}
 
-let handler = async (m, { conn, args, usedPrefix, command }) => {
-  const chatId = m.chat
-  const botId  = conn.user?.jid
-  const key    = `${botId}|${chatId}`
-
-  // Obtener todas las conexiones (bot principal + subbots)
-  const connections = [conn, ...(global.conns?.map(c => c) || [])]
-
-  // apagar
-  if (args[0] === 'off') {
-    if (autoInterval[key]) {
-      clearInterval(autoInterval[key])
-      delete autoInterval[key]
-      return m.reply('🛑 Mensajes automáticos detenidos.')
-    } else {
-      return m.reply('No hay envíos automáticos activos en este chat.')
-    }
-  }
-
-  // si ya existe
-  if (autoInterval[key]) {
-    return m.reply(`Ya está activo. Usa *${usedPrefix + command} off* para detener.`)
-  }
-
-  // Listas de 5 ítems cada una
+// Función para iniciar el autoenvío
+const startAutoSend = (conn, chatId) => {
+  const botId = conn.user?.jid
+  const key = `${botId}|${chatId}`
+  
+  // Listas de mensajes
   const frases = [
     'La vida es un 10% lo que me ocurre y 90% cómo reacciono a ello.',
     'El éxito es la suma de pequeños esfuerzos repetidos día tras día.',
@@ -62,10 +43,10 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     { name: 'Noticia', list: noticias }
   ]
 
-  // Iniciar automáticamente si no está activo
+  // Obtener todas las conexiones (bot principal + subbots)
+  const connections = [conn, ...(global.conns?.map(c => c) || [])]
+
   if (!autoInterval[key]) {
-    await m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto en todos los bots.')
-    
     autoInterval[key] = setInterval(() => {
       const cat  = categories[Math.floor(Math.random() * categories.length)]
       const text = cat.list[Math.floor(Math.random() * cat.list.length)]
@@ -80,6 +61,50 @@ let handler = async (m, { conn, args, usedPrefix, command }) => {
     }, 60_000) // cada 60s
   }
 }
+
+// Función para detener el autoenvío
+const stopAutoSend = (conn, chatId) => {
+  const botId = conn.user?.jid
+  const key = `${botId}|${chatId}`
+  
+  if (autoInterval[key]) {
+    clearInterval(autoInterval[key])
+    delete autoInterval[key]
+    return true
+  }
+  return false
+}
+
+let handler = async (m, { conn, args, usedPrefix, command }) => {
+  const chatId = m.chat
+  const botId  = conn.user?.jid
+  const key    = `${botId}|${chatId}`
+
+  // apagar
+  if (args[0] === 'off') {
+    if (stopAutoSend(conn, chatId)) {
+      return m.reply('🛑 Mensajes automáticos detenidos.')
+    } else {
+      return m.reply('No hay envíos automáticos activos en este chat.')
+    }
+  }
+
+  // si ya existe
+  if (autoInterval[key]) {
+    return m.reply(`Ya está activo. Usa *${usedPrefix + command} off* para detener.`)
+  }
+
+  // Iniciar automáticamente
+  startAutoSend(conn, chatId)
+  await m.reply('✅ Envío automático activado. Mandaré un mensaje cada minuto en todos los bots.')
+}
+
+// Activar automáticamente al cargar el plugin
+global.autoSend = startAutoSend
+global.stopAutoSend = stopAutoSend
+
+// Activar en todos los chats al iniciar
+global.autoSend(conn, m.chat)
 
 handler.command = ['autoenvios', 'automensajes']
 handler.help    = ['autoenvios off', 'automensajes off']
