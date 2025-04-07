@@ -27,7 +27,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
   }
 
   try {
-    await conn.sendMessage(m.chat, { react: { text: "⚡", key: m.key } });
+    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
 
     const searchResults = await yts(text.trim());
     const video = searchResults.videos[0];
@@ -37,7 +37,7 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
     const apiData = await fetchWithRetries(apiUrl);
 
     await conn.sendMessage(m.chat, {
-      text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n- 𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹 *2023*`,
+      text: `01:27 ━━━━━⬤────── 05:48\n*⇄ㅤ      ◁        ❚❚        ▷        ↻*\n╴𝗘𝗹𝗶𝘁𝗲 𝗕𝗼𝘁 𝗚𝗹𝗼𝗯𝗮𝗹`,
       contextInfo: {
         externalAdReply: {
           title: video.title,
