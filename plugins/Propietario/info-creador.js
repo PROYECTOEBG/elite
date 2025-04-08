@@ -12,15 +12,6 @@ const cat = `𝗖𝗥𝗘𝗔𝗗𝗢𝗥 𝗗𝗘 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢
 𝗧𝗞: https://www.tiktok.com/@manuelito.15?_t=8hzBNnZmjxt&_r=1
 𝗬𝗧: https://youtube.com/@jeffomx15?si=ZQEyYXh-W18M83BB
 
-🪀 𝗖𝗢𝗠𝗨𝗡𝗜𝗗𝗔𝗗¹
-https://chat.whatsapp.com/GzqYw7fK9CADEWEtfL6804
-
-🪀 𝗖𝗢𝗠𝗨𝗡𝗜𝗗𝗔𝗗²
-https://chat.whatsapp.com/GzqYw7fK9CADEWEtfL6804
-
-🪀 𝗔𝗖𝗧𝗨𝗔𝗟𝗜𝗭𝗔𝗖𝗜𝗢𝗡𝗘𝗦
-https://chat.whatsapp.com/CMmqp8LGph5IV3Mc9TeA5s
-
 𝖡𝖺𝗌𝖾 𝗈𝗋𝗂𝗀𝗂𝗇𝖺𝗅 𝗌𝗂𝗇𝖼𝖾 2023 𝖤𝖡𝖦`
 
 await conn.sendFile(m.chat, pp, 'gata.mp4', cat, fkontak)
