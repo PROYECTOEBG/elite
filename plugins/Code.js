@@ -13,107 +13,111 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const sessionPath = path.join(sessionDir, number.split('@')[0]);
     const rid = number.split('@')[0];
 
-    try {
-        // Crear directorio si no existe
-        if (!fs.existsSync(sessionDir)) {
-            fs.mkdirSync(sessionDir, { recursive: true });
-        }
+    try {  
+        // Crear directorio si no existe  
+        if (!fs.existsSync(sessionDir)) {  
+            fs.mkdirSync(sessionDir, { recursive: true });  
+        }  
 
-        // Reacción de espera
-        await m.react('⌛');
+        // Reacción de espera  
+        await m.react('⌛');  
 
-        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
-        const { version } = await fetchLatestBaileysVersion();
-        const logger = pino({ level: "silent" });
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);  
+        const { version } = await fetchLatestBaileysVersion();  
+        const logger = pino({ level: "silent" });  
 
-        const socky = makeWASocket({
-            version,
-            logger,
-            auth: {
-                creds: state.creds,
-                keys: makeCacheableSignalKeyStore(state.keys, logger)
-            },
-            browser: ['Azura Ultra Subbot', 'Chrome', '3.0'],
-            printQRInTerminal: false,
-            generateHighQualityLinkPreview: true
-        });
+        const socky = makeWASocket({  
+            version,  
+            logger,  
+            auth: {  
+                creds: state.creds,  
+                keys: makeCacheableSignalKeyStore(state.keys, logger)  
+            },  
+            browser: ['Azura Ultra Subbot', 'Chrome', '3.0'],  
+            printQRInTerminal: false,  
+            generateHighQualityLinkPreview: true  
+        });  
 
-        let sentCodeMessage = false;
+        let sentCodeMessage = false;  
 
-        // Función para manejar la actualización de conexión
-        const handleConnectionUpdate = async (update) => {
-            const { qr, connection, lastDisconnect } = update;
+        // Función para manejar la actualización de conexión  
+        const handleConnectionUpdate = async (update) => {  
+            const { qr, connection, lastDisconnect } = update;  
 
-            if (qr && !sentCodeMessage) {
-                try {
-                    const code = await socky.requestPairingCode(rid);
-                    
-                    await conn.sendMessage(m.chat, {
-                        video: { url: "https://cdn.russellxz.click/b0cbbbd3.mp4" },
-                        caption: "🔐 *Código generado:*\nAbre WhatsApp > Vincular dispositivo y pega el siguiente código:",
-                        gifPlayback: true
-                    }, { quoted: m });
+            if (qr && !sentCodeMessage) {  
+                try {  
+                    // Solicitar el código de vinculación
+                    const code = await socky.requestPairingCode(rid);  
 
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    
-                    await conn.sendMessage(m.chat, {
-                        text: "```" + code + "```"
-                    }, { quoted: m });
-                    
-                    sentCodeMessage = true;
-                } catch (error) {
-                    console.error('Error al enviar código:', error);
-                    await m.react('❌');
-                }
-            }
+                    // Enviar video con el mensaje de vinculación
+                    await conn.sendMessage(m.chat, {  
+                        video: { url: "https://cdn.russellxz.click/b0cbbbd3.mp4" },  
+                        caption: "🔐 *Código generado:*\nAbre WhatsApp > Vincular dispositivo y pega el siguiente código:",  
+                        gifPlayback: true  
+                    }, { quoted: m });  
 
-            if (connection === "open") {
-                try {
-                    await conn.sendMessage(m.chat, {
+                    // Enviar el código generado
+                    await new Promise(resolve => setTimeout(resolve, 1000));  
+
+                    await conn.sendMessage(m.chat, {  
+                        text: "```" + code + "```"  
+                    }, { quoted: m });  
+
+                    sentCodeMessage = true;  
+                } catch (error) {  
+                    console.error('Error al generar o enviar código:', error);  
+                    await m.react('❌');  
+                }  
+            }  
+
+            if (connection === "open") {  
+                try {  
+                    await conn.sendMessage(m.chat, {  
                         text: `╭───〔 *🤖 SUBBOT CONECTADO* 〕───╮
-│
-│ ✅ *Bienvenido a Azura Ultra 2.0*
-│
-│ Ya eres parte del mejor sistema de juegos RPG
-│
-│ 🛠️ Usa los siguientes comandos para comenzar:
-│
-│ ${usedPrefix}help
-│ ${usedPrefix}menu
-│
-╰────✦ *Azura Ultra Plus* ✦────╯`
+
+    │
+    │ ✅ Bienvenido a Azura Ultra 2.0
+    │
+    │ Ya eres parte del mejor sistema de juegos RPG
+    │
+    │ 🛠️ Usa los siguientes comandos para comenzar:
+    │
+    │ ${usedPrefix}help
+    │ ${usedPrefix}menu
+    │
+    ╰────✦ Azura Ultra Plus ✦────╯`
                     }, { quoted: m });
 
                     // Guardar la conexión
                     if (!global.conns) global.conns = [];
-                    global.conns.push(socky);
-                    
-                    await m.react('✅');
-                } catch (error) {
-                    console.error('Error al enviar mensaje de conexión:', error);
-                    await m.react('❌');
-                }
-            }
+                    global.conns.push(socky);  
 
-            if (connection === "close") {
-                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-                if (shouldReconnect) {
-                    console.log('Conexión cerrada, intentando reconectar...');
-                    setTimeout(() => handleConnectionUpdate(update), 5000);
-                }
-            }
-        };
+                    await m.react('✅');  
+                } catch (error) {  
+                    console.error('Error al enviar mensaje de conexión:', error);  
+                    await m.react('❌');  
+                }  
+            }  
 
-        // Configurar event listeners
-        socky.ev.on('connection.update', handleConnectionUpdate);
-        socky.ev.on('creds.update', saveCreds);
+            if (connection === "close") {  
+                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;  
+                if (shouldReconnect) {  
+                    console.log('Conexión cerrada, intentando reconectar...');  
+                    setTimeout(() => handleConnectionUpdate(update), 5000);  
+                }  
+            }  
+        };  
 
-    } catch (error) {
-        console.error('Error en serbot:', error);
-        await m.react('❌');
-        await conn.sendMessage(m.chat, {
-            text: `❌ *Error al conectar el sub-bot*\n\nPor favor intenta nuevamente o contacta al soporte.`
-        }, { quoted: m });
+        // Configurar event listeners  
+        socky.ev.on('connection.update', handleConnectionUpdate);  
+        socky.ev.on('creds.update', saveCreds);  
+
+    } catch (error) {  
+        console.error('Error en serbot:', error);  
+        await m.react('❌');  
+        await conn.sendMessage(m.chat, {  
+            text: `❌ *Error al conectar el sub-bot*\n\nPor favor intenta nuevamente o contacta al soporte.`  
+        }, { quoted: m });  
     }
 };
 
