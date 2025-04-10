@@ -1,46 +1,43 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 
-// Crea una instancia del cliente de WhatsApp
 const client = new Client({
     authStrategy: new LocalAuth()
 });
 
-// Array de frases para enviar
 const frases = [
-    '¡Hola! ¿Cómo estás?',
-    'Recuerda tomar un descanso.',
-    '¿Sabías que la programación es divertida?',
-    '¡Sigue aprendiendo algo nuevo hoy!',
+    '¡Hola! ¿Cómo están todos?',
+    'Recuerden tomar un descanso.',
+    '¿Sabían que la programación es divertida?',
+    '¡Sigan aprendiendo algo nuevo hoy!',
     'La perseverancia es clave para el éxito.'
 ];
 
 let index = 0;
 
-// Generar QR para la autenticación
 client.on('qr', (qr) => {
-    // Genera y muestra el código QR en la terminal
     qrcode.generate(qr, { small: true });
 });
 
-// Cuando el cliente está listo
-client.on('ready', () => {
+client.on('ready', async () => {
     console.log('¡Cliente listo!');
 
-    // Enviar mensajes cada minuto
-    setInterval(() => {
-        const message = frases[index];
-        const numeroDestino = 'número_de_destino@c.us'; // Reemplaza con el número real
-        client.sendMessage(numeroDestino, message)
-            .then(response => {
-                console.log(`Mensaje enviado: ${message}`);
-            })
-            .catch(err => {
-                console.error('Error al enviar el mensaje:', err);
-            });
-        index = (index + 1) % frases.length; // Cicla a través de las frases
-    }, 60000); // 60000 ms = 1 minuto
+    setInterval(async () => {
+        try {
+            const message = frases[index];
+            const chats = await client.getChats();
+            const grupos = chats.filter(chat => chat.isGroup);
+
+            for (const grupo of grupos) {
+                await client.sendMessage(grupo.id._serialized, message);
+                console.log(`Mensaje enviado al grupo: ${grupo.name}`);
+            }
+
+            index = (index + 1) % frases.length;
+        } catch (err) {
+            console.error('Error al enviar mensajes a grupos:', err);
+        }
+    }, 60000); // Cada 60 segundos
 });
 
-// Inicializar el cliente
 client.initialize();
