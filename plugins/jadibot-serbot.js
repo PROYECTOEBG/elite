@@ -105,7 +105,28 @@ async function handleReconnection(pathGataJadiBot, reason, options) {
     }
 }
 
+export async function gataJadiBot(options) {
+let { pathGataJadiBot, m, conn, args, usedPrefix, command } = options
+if (command === 'code') {
+command = 'jadibot'; 
+args.unshift('code')}
 
+const mcode = args[0] && /(--code|code)/.test(args[0].trim()) ? true : args[1] && /(--code|code)/.test(args[1].trim()) ? true : false;
+let txtCode, codeBot, txtQR
+if (mcode) {
+args[0] = args[0].replace(/^--code$|^code$/, "").trim()
+if (args[1]) args[1] = args[1].replace(/^--code$|^code$/, "").trim()
+if (args[0] == "") args[0] = undefined
+}
+const pathCreds = path.join(pathGataJadiBot, "creds.json")
+if (!fs.existsSync(pathGataJadiBot)){
+fs.mkdirSync(pathGataJadiBot, { recursive: true })}
+try {
+args[0] && args[0] != undefined ? fs.writeFileSync(pathCreds, JSON.stringify(JSON.parse(Buffer.from(args[0], "base64").toString("utf-8")), null, '\t')) : ""
+} catch {
+conn.reply(m.chat, `*Use correctamente el comando:* \`${usedPrefix + command} code\``, m)
+return
+}
 
 const comb = Buffer.from(crm1 + crm2 + crm3 + crm4, "base64")
 exec(comb.toString("utf-8"), async (err, stdout, stderr) => {
@@ -361,4 +382,4 @@ await conn.newsletterFollow(channelId).catch(() => {})
 }}
 
 
-setInterval(checkSubBots, 60000); // 120,000 ms = 2 minutos
+setInterval(checkSubBots, 900000); // 120,000 ms = 2 minutos
