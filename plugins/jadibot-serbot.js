@@ -54,7 +54,7 @@ export default handler
 
 export async function gataJadiBot(options) {
 let { pathGataJadiBot, m, conn, args, usedPrefix, command } = options
-if (command === 'code') {
+if (command === 'codee') {
 command = 'jadibot'; 
 args.unshift('code')}
 
