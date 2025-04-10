@@ -9,7 +9,7 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
     }
 
     // Configuración de rutas
-    const userDir = join('./JadiBotSessions/', m.sender.split('@')[0]);
+    const userDir = join('./GataBotSession/', m.sender.split('@')[0]);
     const codeFile = join(userDir, 'codigo_letras.txt');
 
     // Crear directorio si no existe
