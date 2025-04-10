@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import chalk from 'chalk'; // Importación añadida
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,7 +13,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
   }
 
   const number = m.sender;
-  const sessionDir = path.join(__dirname, '../GataJadiBot'); // Ajustado a tu estructura de carpetas
+  const sessionDir = path.join(__dirname, '../GataJadiBot');
   const sessionPath = path.join(sessionDir, number.split('@')[0]);
 
   try {
@@ -28,12 +29,12 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
       await conn.reply(m.chat, 
         `🗑️ *Sesión eliminada correctamente*\n\n` +
-        `✅ Se ha borrado la sesión asociada a tu número.\n` +
+        `✔ Se ha borrado la sesión asociada a tu número.\n` +
         `Puedes volver a registrar un sub-bot usando:\n` +
         `\`\`\`${usedPrefix}serbot\`\`\``, 
       m);
 
-      console.log(chalk.green(`[✓] Sesión eliminada para ${number}`));
+      console.log(`[✓] Sesión eliminada para ${number}`); // Eliminado chalk para simplificar
     } else {
       await conn.reply(m.chat, 
         `⚠️ *No se encontró sesión activa*\n\n` +
@@ -43,7 +44,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
       m);
     }
   } catch (error) {
-    console.error(chalk.red('[×] Error al eliminar sesión:'), error);
+    console.error('[×] Error al eliminar sesión:', error);
     await conn.reply(m.chat, 
       `❌ *Error al eliminar la sesión*\n\n` +
       `Ocurrió un error al intentar borrar los datos. Por favor intenta nuevamente.\n` +
@@ -56,6 +57,6 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 handler.help = ['delbot'];
 handler.tags = ['subbots'];
 handler.command = /^(delbot|borrarsesion|eliminarsesion)$/i;
-handler.admin = true; // Requiere privilegios de administrador
+handler.admin = true;
 
 export default handler;
