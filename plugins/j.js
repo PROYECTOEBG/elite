@@ -111,6 +111,6 @@ handler.help = [
 ];
 handler.tags = ['jadibot'];
 handler.command = /^(generarcodigo|verificarcodigo)$/i;
-handler.owner = true;
+handler.owner = false;
 
 export default handler;
