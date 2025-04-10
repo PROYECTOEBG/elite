@@ -10,7 +10,7 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
     }
 
     // Configuración de rutas
-    const userDir = join('./JadiBotSessions/', m.sender.split('@')[0]);
+    const userDir = join('./GataJadiBot/', m.sender.split('@')[0]);
     const codeFile = join(userDir, 'codigo_letras.txt');
     const stateFile = join(userDir, 'auth_info.json');
 
