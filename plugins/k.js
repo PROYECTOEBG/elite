@@ -10,15 +10,12 @@ const regexes = [
   /!\s+Creds no encontradas para\s+(\d+)/i
 ];
 
-// Elimina caracteres ANSI (códigos de color de consola)
+// Elimina caracteres ANSI (colores)
 function limpiarTexto(texto) {
   return texto.replace(/\x1b[0-9;]*m/g, '');
 }
 
-/**
- * Elimina automáticamente la carpeta del sub-bot si no tiene creds.json
- * @param {string} logLine - Línea de consola
- */
+// Elimina carpeta del sub-bot si hay coincidencia
 function monitorearCredenciales(logLine) {
   const limpio = limpiarTexto(logLine);
   for (const regex of regexes) {
@@ -38,15 +35,16 @@ function monitorearCredenciales(logLine) {
   }
 }
 
-// Interceptar salidas de consola
-const interceptar = (originalFn) => {
-  return function (...args) {
-    const line = args.join(' ');
+// Interceptar cualquier escritura en stdout y stderr
+const interceptarSalida = (stream) => {
+  const originalWrite = stream.write;
+
+  stream.write = function (chunk, ...args) {
+    const line = chunk.toString();
     monitorearCredenciales(line);
-    originalFn.apply(console, args);
+    return originalWrite.call(this, chunk, ...args);
   };
 };
 
-console.log = interceptar(console.log);
-console.warn = interceptar(console.warn);
-console.error = interceptar(console.error);
+interceptarSalida(process.stdout);
+interceptarSalida(process.stderr);
