@@ -1,51 +1,52 @@
-const handler = async (m, { conn, usedPrefix }) => { // Añadido usedPrefix en los parámetros
-  // Datos del creador (personalizables)
-  const creatorInfo = {
-    name: "Russell xz 😊",
-    number: "15167096032@s.whatsapp.net",
-    botName: "Azura Ultra Subbot",
-    description: "Desarrollador de bots WhatsApp"
+const handler = async (m, { conn, usedPrefix }) => {
+  // Información del creador (personalizable)
+  const owner = {
+    number: "593993370003@s.whatsapp.net",
+    name: "Kevv.",
+    botName: "Elite Bot Global",
+    businessInfo: "Desarrollador de bots WhatsApp"
   };
 
-  // Mensaje único con toda la información
-  const fullMessage = `
-🌟 *INFORMACIÓN DEL CREADOR* 🌟
-
-🤖 *Bot:* ${creatorInfo.botName}
-👤 *Nombre:* ${creatorInfo.name}
-📞 *Número:* https://wa.me/${creatorInfo.number.split('@')[0]}
-📝 *Descripción:* ${creatorInfo.description}
-
+  // Mensaje mejor estructurado
+  const contactMessage = `
 💬 *Puedes contactarme para:*
-• Soporte técnico
-• Consultas sobre el bot
-• Desarrollo de bots personalizados
-• Reporte de errores
+- Soporte técnico
+- Consultas sobre el bot
+- Desarrollo de bots personalizados
+- Reporte de errores
+- Precios a mi privado 
 
-*¡Toca el enlace del número para enviar un mensaje directo!*
-  `.trim();
+*Toca el contacto arriba para enviar un mensaje directo.*
+`.trim();
 
-  // Enviar el mensaje único con botones interactivos
-  await conn.sendMessage(m.chat, {
-    text: fullMessage,
-    footer: "Azura Ultra Subbot - Soporte",
-    templateButtons: [
-      {
-        urlButton: {
-          displayText: "📲 Contactar por WhatsApp",
-          url: `https://wa.me/${creatorInfo.number.split('@')[0]}`
-        }
-      },
-      {
-        quickReplyButton: {
-          displayText: "📋 Más información",
-          id: `${usedPrefix || '#'}info` // Usamos usedPrefix si existe, o '#' como valor por defecto
-        }
+  try {
+    // Enviar contacto vCard (mejorado)
+    await conn.sendMessage(m.chat, {
+      contacts: {
+        displayName: owner.name,
+        contacts: [{
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${owner.name}\nORG:${owner.botName};\nTEL;type=CELL;type=VOICE;waid=${owner.number.split('@')[0]}:+${owner.number.split('@')[0]}\nNOTE:${owner.businessInfo}\nEND:VCARD`
+        }]
       }
-    ]
-  }, { quoted: m });
+    }, { quoted: m });
+
+    // Enviar mensaje informativo (mejorado)
+    await conn.sendMessage(m.chat, { 
+      text: contactMessage,
+      contextInfo: {
+        mentionedJid: [owner.number]
+      }
+    }, { quoted: m });
+
+  } catch (error) {
+    console.error(chalk.red('Error al enviar contacto:'), error);
+    await conn.sendMessage(m.chat, {
+      text: '❌ Ocurrió un error al mostrar la información de contacto. Por favor intenta nuevamente.'
+    }, { quoted: m });
+  }
 };
 
+// Configuración del comando
 handler.help = ['creador', 'owner', 'contacto'];
 handler.tags = ['info'];
 handler.command = /^(creador|owner|contacto|soporte|developer)$/i;
