@@ -8,8 +8,8 @@ const __dirname = path.dirname(__filename);
 
 const handler = async (m, { conn, usedPrefix, command }) => {
   // Verificar si el usuario tiene permisos
-  //if (!global.db.data.settings[conn.user.jid].restrict) {
-   // return conn.reply(m.chat, '⚠️ Este comando solo está disponible para administradores.', m);
+  if (!global.db.data.settings[conn.user.jid].restrict) {
+   return conn.reply(m.chat, '⚠️ Este comando solo está disponible para administradores.', m);
   }
 
   const number = m.sender;
