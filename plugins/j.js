@@ -1,195 +1,92 @@
-import { randomInt } from 'crypto';
-import { join } from 'path';
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
-import { makeWASocket, useSingleFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
-import pkg from '@whiskeysockets/baileys/package.json' assert { type: 'json' };
+import { default as makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } from "@whiskeysockets/baileys";
+import { Boom } from "@hapi/boom";
+import path from "path";
+import pino from "pino";
+import fs from "fs";
 
-const handler = async (m, { conn, usedPrefix, command, args }) => {
-    // Verificación mejorada de propietario
-    if (!global.db?.data?.settings[conn.user.jid]?.jadibotmd) {
-        return m.reply('🚫 *Acceso restringido*: Esta función es solo para el propietario del bot.');
-    }
+let sentCodeMessage = false;
 
-    // Configuración robusta de rutas
-    const userDir = join('./GataJadiBot/', m.sender.split('@')[0]);
-    const codeFile = join(userDir, 'codigo_letras.txt');
-    const stateFile = join(userDir, 'auth_info.json');
-    const keyFile = join(userDir, 'signal_keys.json');
-
-    // Creación segura de directorio
-    if (!existsSync(userDir)) {
-        try {
-            mkdirSync(userDir, { recursive: true, mode: 0o755 });
-        } catch (e) {
-            console.error('Error creando directorio:', e);
-            return m.reply('❌ Error al configurar sesión.');
-        }
-    }
-
-    // Generación de código mejorada
-    const generateSecureCode = () => {
-        const prefix = 'ELITE-';
-        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-        const codeLength = 8; // Más largo para mayor seguridad
-        
-        return prefix + Array.from({length: codeLength}, () => 
-            chars.charAt(randomInt(0, chars.length))).join('');
-    };
-
-    // Función de vinculación completamente revisada
-    const linkDevice = async (code) => {
-        let sock;
-        try {
-            // Configuración robusta de autenticación
-            const { state, saveState } = useSingleFileAuthState(stateFile, {
-                logger: pino({ level: 'silent' })
-            });
-
-            // Inicialización segura del socket
-            sock = makeWASocket({
-                version: [3, 5300, 0], // Versión específica para estabilidad
-                printQRInTerminal: false,
-                auth: {
-                    ...state,
-                    // Inicialización explícita de claves
-                    keys: {
-                        ...state.keys,
-                        signedPreKey: state.keys?.signedPreKey || {
-                            keyId: 1,
-                            keyPair: generateKeyPair(),
-                            signature: Buffer.alloc(64)
-                        }
-                    }
-                },
-                browser: ['ELITE-BOT', 'Desktop', pkg.version],
-                markOnlineOnConnect: false,
-                syncFullHistory: false
-            });
-
-            // Manejadores de eventos críticos
-            sock.ev.on('connection.update', (update) => {
-                const { connection, lastDisconnect } = update;
-                if (connection === 'close') {
-                    const reason = new DisconnectReason(lastDisconnect?.error?.output?.statusCode);
-                    console.error('Conexión cerrada:', reason);
-                }
-            });
-
-            // Proceso de vinculación con manejo de errores
-            const numericCode = code.replace(/^ELITE-/, '').substring(0, 6);
-            const result = await sock.requestPairingCode(m.sender.split('@')[0], numericCode);
-            
-            if (result) {
-                await saveState();
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error('Error en vinculación:', error);
-            sock?.end(); // Cierre seguro del socket
-            throw error;
-        } finally {
-            sock?.ev.removeAllListeners();
-        }
-    };
-
-    // Implementación de comandos con manejo completo de errores
-    if (command === 'generarcodigo') {
-        try {
-            const verificationCode = generateSecureCode();
-            writeFileSync(codeFile, verificationCode, { mode: 0o600 });
-            
-            const instructions = [
-                '🔒 *VINCULACIÓN SEGURA* 🔒',
-                `Código: *${verificationCode}*`,
-                '',
-                '1. Abre WhatsApp en tu dispositivo secundario',
-                '2. Ve a Ajustes → Dispositivos vinculados',
-                '3. Selecciona "Vincular con código"',
-                `4. Ingresa: *${verificationCode.replace('ELITE-', '')}*`,
-                '',
-                '⚠️ Código válido por 3 minutos'
-            ].join('\n');
-
-            await conn.sendMessage(m.chat, { 
-                text: instructions,
-                contextInfo: {
-                    externalAdReply: {
-                        title: 'ELITE BOT GLOBAL',
-                        body: 'Vinculación Segura',
-                        thumbnail: readFileSync('./media/menus/MenuSecure.jpg'),
-                        mediaType: 1,
-                        showAdAttribution: false
-                    }
-                }
-            }, { quoted: m });
-
-            // Eliminación programada segura
-            const cleanUp = () => existsSync(codeFile) && unlinkSync(codeFile);
-            setTimeout(cleanUp, 180000).unref();
-
-        } catch (error) {
-            console.error('Error crítico:', error);
-            await m.reply('⚠️ Error grave al generar código. Verifica logs.');
-        }
-
-    } else if (command === 'verificarcodigo') {
-        if (!args[0] || !args[0].startsWith('ELITE-')) {
-            return m.reply(`📌 Formato: ${usedPrefix}verificarcodigo ELITE-ABCD1234`);
-        }
-
-        if (!existsSync(codeFile)) {
-            return m.reply('⏳ No hay código activo. Genera uno nuevo primero.');
-        }
-
-        try {
-            const storedCode = readFileSync(codeFile, 'utf-8').trim();
-            const inputCode = args[0].toUpperCase();
-
-            if (inputCode !== storedCode) {
-                return m.reply('❌ Código incorrecto. Verifica y reintenta.');
-            }
-
-            const success = await linkDevice(inputCode);
-            
-            if (success) {
-                unlinkSync(codeFile);
-                await conn.sendMessage(m.chat, {
-                    text: '✅ *DISPOSITIVO VINCULADO* \n\nConexión establecida con éxito!',
-                    contextInfo: {
-                        externalAdReply: {
-                            title: 'ELITE BOT GLOBAL',
-                            body: 'Vinculación completada',
-                            thumbnail: readFileSync('./media/menus/MenuSuccess.jpg'),
-                            mediaType: 1
-                        }
-                    }
-                }, { quoted: m });
-            } else {
-                await m.reply('⚠️ Vinculación fallida. Intenta nuevamente.');
-            }
-        } catch (error) {
-            console.error('Error de verificación:', error);
-            await m.reply('❌ Error crítico durante vinculación. Contacta al soporte.');
-        }
-    }
-};
-
-// Función auxiliar para generar claves (requerida para el error específico)
-function generateKeyPair() {
-    return {
-        public: Buffer.alloc(32),
-        private: Buffer.alloc(32)
-    };
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-handler.help = [
-    'generarcodigo → Genera código de vinculación',
-    'verificarcodigo [código] → Valida el código'
-];
-handler.tags = ['jadibot', 'seguridad'];
-handler.command = /^(generarcodigo|verificarcodigo)$/i;
-handler.owner = false;
-handler.limit = true;
+async function generarcodigo(msg, sock) {
+  try {
+    const number = msg.key?.participant || msg.key.remoteJid;
+    const sessionDir = path.join(__dirname, "GataJadiBot");
+    const sessionPath = path.join(sessionDir, number);
+    const rid = number.split("@")[0];
 
-export default handler;
+    if (!fs.existsSync(sessionDir)) fs.mkdirSync(sessionDir, { recursive: true });
+
+    await sock.sendMessage(msg.key.remoteJid, {
+      react: { text: '⌛', key: msg.key }
+    });
+
+    const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+    const { version } = await fetchLatestBaileysVersion();
+    const logger = pino({ level: "silent" });
+
+    const socky = makeWASocket({
+      version,
+      logger,
+      auth: {
+        creds: state.creds,
+        keys: makeCacheableSignalKeyStore(state.keys, logger)
+      },
+      browser: ['Windows', 'Chrome']
+    });
+
+    socky.ev.on("connection.update", async (c) => {
+      const { qr, connection } = c;
+
+      if (qr && !sentCodeMessage) {
+        const code = await socky.requestPairingCode(rid);
+        await sock.sendMessage(msg.key.remoteJid, {
+          video: { url: "https://cdn.russellxz.click/b0cbbbd3.mp4" },
+          caption: "🔐 *Código generado:*\nAbre WhatsApp > Vincular dispositivo y pega el siguiente código:",
+          gifPlayback: true
+        }, { quoted: msg });
+        await sleep(1000);
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: "```" + code + "```"
+        }, { quoted: msg });
+        sentCodeMessage = true;
+      }
+
+      if (connection === "open") {
+        await sock.sendMessage(msg.key.remoteJid, {
+          text: `
+╭───〔 *🤖 SUBBOT CONECTADO* 〕───╮
+│
+│ ✅ *Bienvenido a Azura Ultra 2.0*
+│
+│ Ya eres parte del mejor sistema de juegos RPG
+│
+│ 🛠️ Usa los siguientes comandos para comenzar:
+│
+│ ${global.prefix}help
+│ ${global.prefix}menu
+│
+│ ℹ️ Por defecto, el subbot está en *modo privado*.
+│ Solo tú puedes usarlo.
+│
+│ ➕ Usa ${global.prefix}setprefix para cambiar el prefijo.
+│
+│ 🔄 Si el bot se traba, ejecuta:
+│ ${global.prefix}delbots y luego ${global.prefix}serbot
+│
+╰────✦ *Sky Ultra Plus* ✦────╯`
+        }, { quoted: msg });
+        await joinChannels(socky);
+        await sock.sendMessage(msg.key.remoteJid, {
+          react: { text: "🔁", key: msg.key }
+        });
+      }
+    });
+  } catch (error) {
+    console.error("Error en generarcodigo:", error);
+  }
+}
+
+export default generarcodigo;
