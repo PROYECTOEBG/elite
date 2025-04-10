@@ -56,7 +56,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 // Configuración del comando
 handler.help = ['delbot'];
 handler.tags = ['subbots'];
-handler.command = /^(delbot|borrarsesion|eliminarsesion)$/i;
-handler.admin = true;
+handler.command = /^(deletesesion|borrarsesion|eliminarsesion)$/i;
+handler.admin = false;
 
 export default handler;
