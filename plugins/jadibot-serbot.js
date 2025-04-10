@@ -61,12 +61,12 @@ gataJBOptions.command = command
 gataJBOptions.fromCommand = true
 gataJadiBot(gataJBOptions)
 } 
-handler.command = /^(jadibot|serbot|rentbot)/i
+handler.command = /^(jadibot|serbot|rentbot|code)/i
 export default handler 
 
 export async function gataJadiBot(options) {
 let { pathGataJadiBot, m, conn, args, usedPrefix, command } = options
-if (command === 'codee') {
+if (command === 'code') {
 command = 'jadibot'; 
 args.unshift('code')}
 
@@ -273,7 +273,7 @@ m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
 > Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
 
 *Política de uso:*
-
+github.com/GataNina-Li/GataBot-MD/blob/master/terms.md
 `}, { quoted: m }) : ''
 }}
 setInterval(async () => {
@@ -400,4 +400,4 @@ continue
     }
 }
 
-setInterval(checkSubBots, 60000);
+setInterval(checkSubBots, 1800000); //30min
