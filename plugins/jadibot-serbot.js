@@ -1,16 +1,3 @@
-/*⚠ PROHIBIDO EDITAR ⚠
-Este codigo fue modificado, adaptado y mejorado por
-- ReyEndymion >> https://github.com/ReyEndymion
-El codigo de este archivo esta inspirado en el codigo original de:
-- Aiden_NotLogic >> https://github.com/ferhacks
-*El archivo original del MysticBot-MD fue liberado en mayo del 2024 aceptando su liberacion*
-El codigo de este archivo fue parchado en su momento por:
-- BrunoSobrino >> https://github.com/BrunoSobrino
-Contenido adaptado para GataBot-MD por:
-- GataNina-Li >> https://github.com/GataNina-Li
-- elrebelde21 >> https://github.com/elrebelde21
-*/
- 
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import(global.baileys));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -18,7 +5,7 @@ import fs from "fs"
 import path from "path"
 import pino from 'pino'
 import chalk from 'chalk'
-import util from 'util' 
+import util from 'util'
 import * as ws from 'ws'
 import { getDevice } from '@whiskeysockets/baileys'
 const { child, spawn, exec } = await import('child_process')
@@ -38,14 +25,17 @@ let rtx2 = `${lenguajeGB['smsIniJadi2']()}`
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const gataJBOptions = {}
-const retryMap = new Map(); 
+const retryMap = new Map();
 const maxAttempts = 5;
+// Set para almacenar los sub-bots que ya han mostrado el mensaje de error
+if (!global.reportedMissingCreds) global.reportedMissingCreds = new Set();
+
 if (global.conns instanceof Array) console.log()
 else global.conns = []
 let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
 if (!global.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`${lenguajeGB['smsSoloOwnerJB']()}`)
 if (m.fromMe || conn.user.jid === m.sender) return
-//if (conn.user.jid !== global.conn.user.jid) return conn.reply(m.chat, `${lenguajeGB['smsJBPrincipal']()} wa.me/${global.conn.user.jid.split`@`[0]}&text=${usedPrefix + command}`, m) 
+//if (conn.user.jid !== global.conn.user.jid) return conn.reply(m.chat, `${lenguajeGB['smsJBPrincipal']()} wa.me/${global.conn.user.jid.split`@`[0]}&text=${usedPrefix + command}`, m)
 let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
 let id = `${who.split`@`[0]}`  //conn.getName(who)
 let pathGataJadiBot = path.join("./GataJadiBot/", id)
@@ -60,14 +50,77 @@ gataJBOptions.usedPrefix = usedPrefix
 gataJBOptions.command = command
 gataJBOptions.fromCommand = true
 gataJadiBot(gataJBOptions)
-} 
+}
 handler.command = /^(jadibot|serbot|rentbot|code)/i
-export default handler 
+export default handler
+
+async function checkSubBots() {
+    const subBotDir = path.resolve("./GataJadiBot");
+    if (!fs.existsSync(subBotDir)) return;
+    const subBotFolders = fs.readdirSync(subBotDir).filter(folder =>
+        fs.statSync(path.join(subBotDir, folder)).isDirectory()
+    );
+
+    for (const folder of subBotFolders) {  
+        const pathGataJadiBot = path.join(subBotDir, folder);  
+        const credsPath = path.join(pathGataJadiBot, "creds.json");  
+        const subBot = global.conns.find(conn =>   
+            conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);  
+
+        if (!fs.existsSync(credsPath)) {
+            // Comprobar si ya se ha reportado este error para este sub-bot
+            if (!global.reportedMissingCreds.has(folder)) {
+                console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Eliminando carpeta...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                global.reportedMissingCreds.add(folder);
+                
+                // Eliminar la carpeta del sub-bot
+                try {
+                    fs.rmdirSync(pathGataJadiBot, { recursive: true });
+                    console.log(chalk.green(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Carpeta del Sub-bot (+${folder}) eliminada correctamente\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                } catch (error) {
+                    console.error(chalk.red(`Error al eliminar la carpeta del Sub-bot (+${folder}):`, error));
+                }
+            }
+            continue;
+        }
+
+        if (!subBot || !subBot.user) {  
+            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));  
+            const retries = retryMap.get(folder) || 0;  
+            if (retries >= 5) {  
+                console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));  
+                // Descomentar la siguiente línea para eliminar carpetas que alcanzaron el límite de reintentos
+                // fs.rmdirSync(pathGataJadiBot, { recursive: true });  
+                retryMap.delete(folder);  
+                continue;  
+            }  
+
+            try {  
+                await gataJadiBot({  
+                    pathGataJadiBot,  
+                    m: null,  
+                    conn: global.conn,  
+                    args: [],  
+                    usedPrefix: '#',  
+                    command: 'jadibot',  
+                    fromCommand: false  
+                });  
+                retryMap.delete(folder); // Resetear intentos si se conecta  
+            } catch (e) {  
+                console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);  
+                retryMap.set(folder, retries + 1);  
+            }  
+        }  
+    }
+}
+
+// Programar la ejecución de checkSubBots cada 30 minutos
+setInterval(checkSubBots, 1800000);
 
 export async function gataJadiBot(options) {
 let { pathGataJadiBot, m, conn, args, usedPrefix, command } = options
 if (command === 'code') {
-command = 'jadibot'; 
+command = 'jadibot';
 args.unshift('code')}
 
 const mcode = args[0] && /(--code|code)/.test(args[0].trim()) ? true : args[1] && /(--code|code)/.test(args[1].trim()) ? true : false;
@@ -119,13 +172,13 @@ if (qr && !mcode) {
 if (m?.chat) {
 txtQR = await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: rtx.trim() + '\n' + drmer.toString("utf-8")}, { quoted: m})
 } else {
-return 
+return
 }
 if (txtQR && txtQR.key) {
 setTimeout(() => { conn.sendMessage(m.sender, { delete: txtQR.key })}, 30000)
 }
 return
-} 
+}
 if (qr && mcode) {
 let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
 secret = secret.match(/.{1,4}/g)?.join("-")
@@ -157,7 +210,7 @@ sock.ws.close()
 }
 sock.ev.removeAllListeners()
 let i = global.conns.indexOf(sock)		
-if (i < 0) return 
+if (i < 0) return
 delete global.conns[i]
 global.conns.splice(i, 1)
 }}
@@ -166,16 +219,16 @@ const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.erro
 if (connection === 'close') {
 if (reason === 428) {
 if (reconnectAttempts < maxAttempts) {
-const delay = 1000 * Math.pow(2, reconnectAttempts); 
+const delay = 1000 * Math.pow(2, reconnectAttempts);
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue cerrada inesperadamente. Intentando reconectar en ${delay / 1000} segundos... (Intento ${reconnectAttempts + 1}/${maxAttempts})\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 await sleep(1000);
 reconnectAttempts++;
 await creloadHandler(true).catch(console.error);
 } else {
 console.log(chalk.redBright(`Sub-bot (+${path.basename(pathGataJadiBot)}) agotó intentos de reconexión. intentando más tardes...`));
-}            
-/*console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue cerrada inesperadamente. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
-await creloadHandler(true).catch(console.error)*/
+}
+/console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue cerrada inesperadamente. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
+await creloadHandler(true).catch(console.error)/
 }
 if (reason === 408) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
@@ -184,14 +237,14 @@ await creloadHandler(true).catch(console.error)
 if (reason === 440) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue reemplazada por otra sesión activa.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 try {
-if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathGataJadiBot)}@s.whatsapp.net`, {text : '*HEMOS DETECTADO UNA NUEVA SESIÓN, BORRE LA NUEVA SESIÓN PARA CONTINUAR*\n\n> *SI HAY ALGÚN PROBLEMA VUELVA A CONECTARSE*' }, { quoted: m || null }) : ""
+if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathGataJadiBot)}@s.whatsapp.net`, {text : 'HEMOS DETECTADO UNA NUEVA SESIÓN, BORRE LA NUEVA SESIÓN PARA CONTINUAR\n\n> SI HAY ALGÚN PROBLEMA VUELVA A CONECTARSE' }, { quoted: m || null }) : ""
 } catch (error) {
 console.error(chalk.bold.yellow(`Error 440 no se pudo enviar mensaje a: +${path.basename(pathGataJadiBot)}`))
 }}
 if (reason == 405 || reason == 401) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Credenciales no válidas o dispositivo desconectado manualmente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 try {
-if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathGataJadiBot)}@s.whatsapp.net`, {text : '*🟢 SESIÓN PENDIENTE*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT, USANDO EL COMANDOS:* /jadibot' }, { quoted: m || null }) : ""
+if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathGataJadiBot)}@s.whatsapp.net`, {text : '🟢 SESIÓN PENDIENTE\n\n> INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT, USANDO EL COMANDOS: /jadibot' }, { quoted: m || null }) : ""
 } catch (error) {
 console.error(chalk.bold.yellow(`Error 405 no se pudo enviar mensaje a: +${path.basename(pathGataJadiBot)}`))
 }
@@ -201,7 +254,7 @@ if (reason === 500) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Conexión perdida en la sesión (+${path.basename(pathGataJadiBot)}). Borrando datos...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 
 if (options.fromCommand) {
-m?.chat ? await conn.sendMessage(m.chat, {text: '*CONEXIÓN PÉRDIDA*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT*' }, { quoted: m || null }) : ""
+m?.chat ? await conn.sendMessage(m.chat, {text: 'CONEXIÓN PÉRDIDA\n\n> INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT' }, { quoted: m || null }) : ""
 }
 //fs.rmdirSync(pathGataJadiBot, { recursive: true })
 }
@@ -216,9 +269,9 @@ fs.rmdirSync(pathGataJadiBot, { recursive: true })
 
 if (global.db.data == null) loadDatabase()
 if (connection == `open`) {
-reconnectAttempts = 0; 
+reconnectAttempts = 0;
 if (!global.db.data?.users) loadDatabase()
-let userName, userJid 
+let userName, userJid
 userName = sock.authState.creds.me.name || 'Anónimo'
 userJid = sock.authState.creds.me.jid || `${path.basename(pathGataJadiBot)}@s.whatsapp.net`
 console.log(chalk.bold.cyanBright(`\n❒⸺⸺⸺⸺【• SUB-BOT •】⸺⸺⸺⸺❒\n│\n│ 🟢 ${userName} (+${path.basename(pathGataJadiBot)}) conectado exitosamente.\n│\n❒⸺⸺⸺【• CONECTADO •】⸺⸺⸺❒`))
@@ -237,7 +290,7 @@ ${user?.registered ? `✅ *Verificación:* ${user?.registered ? user.name : 'No'
 🐈 *Bot:* ${gt}
 ⭐ *Versión del bot:* \`${vs}\`
 💫 *Versión sub bot:* \`${vsJB}\`\n
-> *¡Conviértete en sub-bot ahora!*
+> ¡Conviértete en sub-bot ahora!
 wa.me/${path.basename(pathGataJadiBot)}?text=${usedPrefix + command}+code
 `.trim()
 let ppch = await sock.profilePictureUrl(userJid, 'image').catch(_ => gataMenu)
@@ -254,31 +307,33 @@ renderLargerThumbnail: false
 }}}, { quoted: null })
 await sleep(3000)
 await joinChannels(sock)
-m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
-> ⚠️ *Usa en este momento el comando ${usedPrefix}codetoken para que tengas un respaldo de la sesión*\n
-> Para pausar tú sesión (actualmente este comando solo hace una pausa temporal):
+m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ IMPORTANTE
+⚠️ Usa en este momento el comando ${usedPrefix}codetoken para que tengas un respaldo de la sesión\n
+Para pausar tú sesión (actualmente este comando solo hace una pausa temporal):
 \`${usedPrefix}stop\`\n
-> Eliminar datos y cerrar sesión:
+Eliminar datos y cerrar sesión:
 \`${usedPrefix}borrarsesion\`\n
-> Solicitar código QR o volver a conectar sin token:
+Solicitar código QR o volver a conectar sin token:
 \`${usedPrefix + command}\`\n
-> Solicitar código de 8 dígitos:
+Solicitar código de 8 dígitos:
 \`${usedPrefix + command} code\`\n
-> Crear sesión (solo si no has cerrado la sesión en WhatsApp):
+Crear sesión (solo si no has cerrado la sesión en WhatsApp):
 \`${usedPrefix + command} [token]\`\n
-💡 *Recomendaciones:*
-> Puedes hacer una pausa definitiva primero obteniendo el token de la sesión, luego borrar los datos y cuando quieras volver a ser bot usa el token para crear la sesión (Solo funciona mientras no cierres la sesión en WhatsApp).\n
-> Si tienes problemas de conexión, elimina los datos y usa el token o solicita un nuevo código QR o código de 8 dígitos.\n
-> Si te llega un mensaje de *"sesión reemplazada"* realiza la indicación anterior.\n
-> Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
+💡 Recomendaciones:
+Puedes hacer una pausa definitiva primero obteniendo el token de la sesión, luego borrar los datos y cuando quieras volver a ser bot usa el token para crear la sesión (Solo funciona mientras no cierres la sesión en WhatsApp).\n
+Si tienes problemas de conexión, elimina los datos y usa el token o solicita un nuevo código QR o código de 8 dígitos.\n
+Si te llega un mensaje de "sesión reemplazada" realiza la indicación anterior.\n
+Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
 
-*Política de uso:*
+
+
+Política de uso:
 github.com/GataNina-Li/GataBot-MD/blob/master/terms.md
 `}, { quoted: m }) : ''
 }}
 setInterval(async () => {
 if (!sock.user) {
-try { sock.ws.close() } catch (e) {      
+try { sock.ws.close() } catch (e) {
 //console.log(await creloadHandler(true).catch(console.error))
 }
 sock.ev.removeAllListeners()
@@ -313,13 +368,13 @@ sock.ev.off('call', sock.onCall)
 sock.ev.off('connection.update', sock.connectionUpdate)
 sock.ev.off('creds.update', sock.credsUpdate)
 }
-sock.welcome = lenguajeGB['smsWelcome']() 
-sock.bye = lenguajeGB['smsBye']() 
-sock.spromote = lenguajeGB['smsSpromote']() 
-sock.sdemote = lenguajeGB['smsSdemote']() 
-sock.sDesc = lenguajeGB['smsSdesc']() 
-sock.sSubject = lenguajeGB['smsSsubject']() 
-sock.sIcon = lenguajeGB['smsSicon']() 
+sock.welcome = lenguajeGB['smsWelcome']()
+sock.bye = lenguajeGB['smsBye']()
+sock.spromote = lenguajeGB['smsSpromote']()
+sock.sdemote = lenguajeGB['smsSdemote']()
+sock.sDesc = lenguajeGB['smsSdesc']()
+sock.sSubject = lenguajeGB['smsSsubject']()
+sock.sIcon = lenguajeGB['smsSicon']()
 sock.sRevoke = lenguajeGB['smsSrevoke']()
 
 sock.handler = handler.handler.bind(sock)
@@ -330,13 +385,13 @@ sock.onCall = handler.callUpdate.bind(sock)
 sock.connectionUpdate = connectionUpdate.bind(sock)
 sock.credsUpdate = saveCreds.bind(sock, true)
 
-sock.ev.on(`messages.upsert`, sock.handler)
-sock.ev.on(`group-participants.update`, sock.participantsUpdate)
-sock.ev.on(`groups.update`, sock.groupsUpdate)
-sock.ev.on(`message.delete`, sock.onDelete)
-sock.ev.on(`call`, sock.onCall)
-sock.ev.on(`connection.update`, sock.connectionUpdate)
-sock.ev.on(`creds.update`, sock.credsUpdate)
+sock.ev.on(messages.upsert, sock.handler)
+sock.ev.on(group-participants.update, sock.participantsUpdate)
+sock.ev.on(groups.update, sock.groupsUpdate)
+sock.ev.on(message.delete, sock.onDelete)
+sock.ev.on(call, sock.onCall)
+sock.ev.on(connection.update, sock.connectionUpdate)
+sock.ev.on(creds.update, sock.credsUpdate)
 isInit = false
 return true
 }
@@ -354,50 +409,50 @@ await conn.newsletterFollow(channelId).catch(() => {})
 }}
 
 async function checkSubBots() {
-    const subBotDir = path.resolve("./GataJadiBot");
-    if (!fs.existsSync(subBotDir)) return;
-    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
-        fs.statSync(path.join(subBotDir, folder)).isDirectory()
-    );
+const subBotDir = path.resolve("./GataJadiBot");
+if (!fs.existsSync(subBotDir)) return;
+const subBotFolders = fs.readdirSync(subBotDir).filter(folder =>
+fs.statSync(path.join(subBotDir, folder)).isDirectory()
+);
 
-    for (const folder of subBotFolders) {
-        const pathGataJadiBot = path.join(subBotDir, folder);
-        const credsPath = path.join(pathGataJadiBot, "creds.json");
-        const subBot = global.conns.find(conn => 
-            conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);
+for (const folder of subBotFolders) {  
+    const pathGataJadiBot = path.join(subBotDir, folder);  
+    const credsPath = path.join(pathGataJadiBot, "creds.json");  
+    const subBot = global.conns.find(conn =>   
+        conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);  
 
-        if (!fs.existsSync(credsPath)) {
-console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
+    if (!fs.existsSync(credsPath)) {
+
+console.log(chalk.bold.yellowBright(\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡))
 continue
 }
 
-        if (!subBot || !subBot.user) {
-            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
-            const retries = retryMap.get(folder) || 0;
-            if (retries >= 5) {
-                console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-             //  fs.rmdirSync(pathGataJadiBot, { recursive: true });
-                retryMap.delete(folder);
-                continue;
-            }
+if (!subBot || !subBot.user) {  
+        console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))  
+        const retries = retryMap.get(folder) || 0;  
+        if (retries >= 5) {  
+            console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));  
+         //  fs.rmdirSync(pathGataJadiBot, { recursive: true });  
+            retryMap.delete(folder);  
+            continue;  
+        }  
 
-            try {
-                await gataJadiBot({
-                    pathGataJadiBot,
-                    m: null,
-                    conn: global.conn,
-                    args: [],
-                    usedPrefix: '#',
-                    command: 'jadibot',
-                    fromCommand: false
-                });
-                retryMap.delete(folder); // Resetear intentos si se conecta
-            } catch (e) {
-                console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);
-                retryMap.set(folder, retries + 1);
-            }
-        }
-    }
+        try {  
+            await gataJadiBot({  
+                pathGataJadiBot,  
+                m: null,  
+                conn: global.conn,  
+                args: [],  
+                usedPrefix: '#',  
+                command: 'jadibot',  
+                fromCommand: false  
+            });  
+            retryMap.delete(folder); // Resetear intentos si se conecta  
+        } catch (e) {  
+            console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);  
+            retryMap.set(folder, retries + 1);  
+        }  
+    }  
 }
 
-setInterval(checkSubBots, 1800000); //30min
+}
