@@ -1,22 +1,8 @@
-import fs from 'fs';
-import path from 'path';
-
-const SESSIONS_DIR = './GataJadiBot/';
-
-const regexes = [
-  /Sub-bot\s+\+?(\d+)\s+no tiene creds\.json/i,
-  /!\s+Creds no encontradas para\s+(\d+)/i
-];
-
-function limpiarTexto(texto) {
-  return texto.replace(/\x1b[0-9;]*m/g, '');
-}
-
 function monitorearCredenciales(logLine) {
   const limpio = limpiarTexto(logLine);
-  
-  // DEBUG: mostrar línea capturada
-  console.log('[DEBUG] Línea capturada:', JSON.stringify(limpio));
+
+  // Evitamos usar console.log para no provocar bucles
+  process.stdout.write(`[DEBUG] Línea capturada: ${JSON.stringify(limpio)}\n`);
 
   for (const regex of regexes) {
     const match = regex.exec(limpio);
@@ -26,24 +12,11 @@ function monitorearCredenciales(logLine) {
 
       if (fs.existsSync(carpeta)) {
         fs.rmSync(carpeta, { recursive: true, force: true });
-        console.log(`[AUTO] Sub-bot ${numero} eliminado por falta de creds.json`);
+        process.stdout.write(`[AUTO] Sub-bot ${numero} eliminado por falta de creds.json\n`);
       } else {
-        console.log(`[AUTO] Carpeta del sub-bot ${numero} no encontrada`);
+        process.stdout.write(`[AUTO] Carpeta del sub-bot ${numero} no encontrada\n`);
       }
       break;
     }
   }
 }
-
-const interceptarSalida = (stream) => {
-  const originalWrite = stream.write;
-
-  stream.write = function (chunk, ...args) {
-    const line = chunk.toString();
-    monitorearCredenciales(line);
-    return originalWrite.call(this, chunk, ...args);
-  };
-};
-
-interceptarSalida(process.stdout);
-interceptarSalida(process.stderr);
