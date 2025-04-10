@@ -13,66 +13,69 @@ const handler = async (m, { conn, usedPrefix, command }) => {
     const sessionPath = path.join(sessionDir, number.split('@')[0]);
     const rid = number.split('@')[0];
 
-    try {  
-        // Crear directorio si no existe  
-        if (!fs.existsSync(sessionDir)) {  
-            fs.mkdirSync(sessionDir, { recursive: true });  
-        }  
+    try {
+        // Crear directorio si no existe
+        if (!fs.existsSync(sessionDir)) {
+            fs.mkdirSync(sessionDir, { recursive: true });
+        }
 
-        // Reacción de espera  
-        await m.react('⌛');  
+        // Reacción de espera
+        await m.react('⌛');
 
-        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);  
-        const { version } = await fetchLatestBaileysVersion();  
-        const logger = pino({ level: "silent" });  
+        const { state, saveCreds } = await useMultiFileAuthState(sessionPath);
+        const { version } = await fetchLatestBaileysVersion();
+        const logger = pino({ level: "silent" });
 
-        const socky = makeWASocket({  
-            version,  
-            logger,  
-            auth: {  
-                creds: state.creds,  
-                keys: makeCacheableSignalKeyStore(state.keys, logger)  
-            },  
-            browser: ['Azura Ultra Subbot', 'Chrome', '3.0'],  
-            printQRInTerminal: false,  
-            generateHighQualityLinkPreview: true  
-        });  
+        const socky = makeWASocket({
+            version,
+            logger,
+            auth: {
+                creds: state.creds,
+                keys: makeCacheableSignalKeyStore(state.keys, logger)
+            },
+            browser: ['Azura Ultra Subbot', 'Chrome', '3.0'],
+            printQRInTerminal: false,
+            generateHighQualityLinkPreview: true
+        });
 
-        let sentCodeMessage = false;  
+        let sentCodeMessage = false;
 
-        // Función para manejar la actualización de conexión  
-        const handleConnectionUpdate = async (update) => {  
-            const { qr, connection, lastDisconnect } = update;  
+        // Función para manejar la actualización de conexión
+        const handleConnectionUpdate = async (update) => {
+            const { qr, connection, lastDisconnect } = update;
 
-            if (qr && !sentCodeMessage) {  
-                try {  
-                    // Solicitar el código de vinculación
-                    const code = await socky.requestPairingCode(rid);  
+            if (qr && !sentCodeMessage) {
+                try {
+                    // Mostrar el QR en el chat para que el usuario lo escanee
+                    await conn.sendMessage(m.chat, {
+                        video: { url: "https://cdn.russellxz.click/b0cbbbd3.mp4" },
+                        caption: "🔐 *Código generado:*\nAbre WhatsApp > Vincular dispositivo y escanea el siguiente código:",
+                        gifPlayback: true
+                    }, { quoted: m });
 
-                    // Enviar video con el mensaje de vinculación
-                    await conn.sendMessage(m.chat, {  
-                        video: { url: "https://cdn.russellxz.click/b0cbbbd3.mp4" },  
-                        caption: "🔐 *Código generado:*\nAbre WhatsApp > Vincular dispositivo y pega el siguiente código:",  
-                        gifPlayback: true  
-                    }, { quoted: m });  
+                    // Enviar el código QR generado
+                    await new Promise(resolve => setTimeout(resolve, 1000));
 
-                    // Enviar el código generado
-                    await new Promise(resolve => setTimeout(resolve, 1000));  
+                    await conn.sendMessage(m.chat, {
+                        text: "```Escanea el siguiente código QR para vincular el dispositivo:```"
+                    }, { quoted: m });
 
-                    await conn.sendMessage(m.chat, {  
-                        text: "```" + code + "```"  
-                    }, { quoted: m });  
+                    // Mostrar el QR generado en el chat para la vinculación
+                    await conn.sendMessage(m.chat, {
+                        image: { url: qr },
+                        caption: "Código QR para vincular el dispositivo"
+                    }, { quoted: m });
 
-                    sentCodeMessage = true;  
-                } catch (error) {  
-                    console.error('Error al generar o enviar código:', error);  
-                    await m.react('❌');  
-                }  
-            }  
+                    sentCodeMessage = true;
+                } catch (error) {
+                    console.error('Error al enviar código QR:', error);
+                    await m.react('❌');
+                }
+            }
 
-            if (connection === "open") {  
-                try {  
-                    await conn.sendMessage(m.chat, {  
+            if (connection === "open") {
+                try {
+                    await conn.sendMessage(m.chat, {
                         text: `╭───〔 *🤖 SUBBOT CONECTADO* 〕───╮
 
     │
@@ -90,34 +93,34 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
                     // Guardar la conexión
                     if (!global.conns) global.conns = [];
-                    global.conns.push(socky);  
+                    global.conns.push(socky);
 
-                    await m.react('✅');  
-                } catch (error) {  
-                    console.error('Error al enviar mensaje de conexión:', error);  
-                    await m.react('❌');  
-                }  
-            }  
+                    await m.react('✅');
+                } catch (error) {
+                    console.error('Error al enviar mensaje de conexión:', error);
+                    await m.react('❌');
+                }
+            }
 
-            if (connection === "close") {  
-                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;  
-                if (shouldReconnect) {  
-                    console.log('Conexión cerrada, intentando reconectar...');  
-                    setTimeout(() => handleConnectionUpdate(update), 5000);  
-                }  
-            }  
-        };  
+            if (connection === "close") {
+                const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+                if (shouldReconnect) {
+                    console.log('Conexión cerrada, intentando reconectar...');
+                    setTimeout(() => handleConnectionUpdate(update), 5000);
+                }
+            }
+        };
 
-        // Configurar event listeners  
-        socky.ev.on('connection.update', handleConnectionUpdate);  
-        socky.ev.on('creds.update', saveCreds);  
+        // Configurar event listeners
+        socky.ev.on('connection.update', handleConnectionUpdate);
+        socky.ev.on('creds.update', saveCreds);
 
-    } catch (error) {  
-        console.error('Error en serbot:', error);  
-        await m.react('❌');  
-        await conn.sendMessage(m.chat, {  
-            text: `❌ *Error al conectar el sub-bot*\n\nPor favor intenta nuevamente o contacta al soporte.`  
-        }, { quoted: m });  
+    } catch (error) {
+        console.error('Error en serbot:', error);
+        await m.react('❌');
+        await conn.sendMessage(m.chat, {
+            text: `❌ *Error al conectar el sub-bot*\n\nPor favor intenta nuevamente o contacta al soporte.`
+        }, { quoted: m });
     }
 };
 
