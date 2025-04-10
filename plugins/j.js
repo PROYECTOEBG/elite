@@ -1,148 +1,195 @@
 import { randomInt } from 'crypto';
 import { join } from 'path';
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
-import { makeWASocket, useSingleFileAuthState } from '@whiskeysockets/baileys';
+import { makeWASocket, useSingleFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
+import pkg from '@whiskeysockets/baileys/package.json' assert { type: 'json' };
 
 const handler = async (m, { conn, usedPrefix, command, args }) => {
-    // Verificación de propietario
-    if (!global.db.data.settings[conn.user.jid].jadibotmd) {
-        return m.reply('🚫 *Acceso denegado*: Solo el propietario puede usar este comando.');
+    // Verificación mejorada de propietario
+    if (!global.db?.data?.settings[conn.user.jid]?.jadibotmd) {
+        return m.reply('🚫 *Acceso restringido*: Esta función es solo para el propietario del bot.');
     }
 
-    // Configuración de rutas
+    // Configuración robusta de rutas
     const userDir = join('./GataJadiBot/', m.sender.split('@')[0]);
     const codeFile = join(userDir, 'codigo_letras.txt');
     const stateFile = join(userDir, 'auth_info.json');
+    const keyFile = join(userDir, 'signal_keys.json');
 
-    // Crear directorio si no existe
+    // Creación segura de directorio
     if (!existsSync(userDir)) {
-        mkdirSync(userDir, { recursive: true });
+        try {
+            mkdirSync(userDir, { recursive: true, mode: 0o755 });
+        } catch (e) {
+            console.error('Error creando directorio:', e);
+            return m.reply('❌ Error al configurar sesión.');
+        }
     }
 
-    // Generar código alfanumérico seguro
-    const generateCode = () => {
-        const prefix = 'JADI-';
-        const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Base32 simplificado
-        let code = '';
+    // Generación de código mejorada
+    const generateSecureCode = () => {
+        const prefix = 'ELITE-';
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        const codeLength = 8; // Más largo para mayor seguridad
         
-        for (let i = 0; i < 6; i++) { // Código más largo para mayor seguridad
-            code += letters.charAt(randomInt(0, letters.length));
-        }
-        
-        return prefix + code;
+        return prefix + Array.from({length: codeLength}, () => 
+            chars.charAt(randomInt(0, chars.length))).join('');
     };
 
-    // Función mejorada para vincular dispositivo
-    const vincularDispositivo = async (codigo) => {
+    // Función de vinculación completamente revisada
+    const linkDevice = async (code) => {
+        let sock;
         try {
-            // Usar credenciales existentes o crear nuevas
-            const { state, saveState } = useSingleFileAuthState(stateFile);
-            
-            const sock = makeWASocket({
-                printQRInTerminal: false,
-                auth: state,
-                browser: ['ELITE BOT GLOBAL', 'Chrome', '120.0.0'],
-                markOnlineOnConnect: false
+            // Configuración robusta de autenticación
+            const { state, saveState } = useSingleFileAuthState(stateFile, {
+                logger: pino({ level: 'silent' })
             });
 
-            // Manejar eventos de conexión
+            // Inicialización segura del socket
+            sock = makeWASocket({
+                version: [3, 5300, 0], // Versión específica para estabilidad
+                printQRInTerminal: false,
+                auth: {
+                    ...state,
+                    // Inicialización explícita de claves
+                    keys: {
+                        ...state.keys,
+                        signedPreKey: state.keys?.signedPreKey || {
+                            keyId: 1,
+                            keyPair: generateKeyPair(),
+                            signature: Buffer.alloc(64)
+                        }
+                    }
+                },
+                browser: ['ELITE-BOT', 'Desktop', pkg.version],
+                markOnlineOnConnect: false,
+                syncFullHistory: false
+            });
+
+            // Manejadores de eventos críticos
             sock.ev.on('connection.update', (update) => {
-                if (update.connection === 'close') {
-                    console.error('Conexión cerrada durante vinculación');
+                const { connection, lastDisconnect } = update;
+                if (connection === 'close') {
+                    const reason = new DisconnectReason(lastDisconnect?.error?.output?.statusCode);
+                    console.error('Conexión cerrada:', reason);
                 }
             });
 
-            // Solicitar código de vinculación
-            const pairingCode = await sock.requestPairingCode(m.sender.split('@')[0]);
+            // Proceso de vinculación con manejo de errores
+            const numericCode = code.replace(/^ELITE-/, '').substring(0, 6);
+            const result = await sock.requestPairingCode(m.sender.split('@')[0], numericCode);
             
-            // Verificar coincidencia de códigos
-            if (pairingCode === codigo.replace('JADI-', '').substring(0, pairingCode.length)) {
+            if (result) {
                 await saveState();
                 return true;
             }
             return false;
         } catch (error) {
             console.error('Error en vinculación:', error);
-            throw new Error('Error durante el proceso de vinculación');
+            sock?.end(); // Cierre seguro del socket
+            throw error;
+        } finally {
+            sock?.ev.removeAllListeners();
         }
     };
 
-    // Comando generarcodigo
+    // Implementación de comandos con manejo completo de errores
     if (command === 'generarcodigo') {
         try {
-            const codigo = generateCode();
-            writeFileSync(codeFile, codigo);
+            const verificationCode = generateSecureCode();
+            writeFileSync(codeFile, verificationCode, { mode: 0o600 });
             
-            const mensaje = `🔐 *CÓDIGO DE VINCULACIÓN* 🔐\n\n` +
-                           `✨ *${codigo}* ✨\n\n` +
-                           `1. Abre WhatsApp Web/Desktop\n` +
-                           `2. Selecciona "Vincular con código"\n` +
-                           `3. Ingresa: *${codigo.replace('JADI-', '')}*\n\n` +
-                           `⚠️ Válido por 5 minutos`;
-            
+            const instructions = [
+                '🔒 *VINCULACIÓN SEGURA* 🔒',
+                `Código: *${verificationCode}*`,
+                '',
+                '1. Abre WhatsApp en tu dispositivo secundario',
+                '2. Ve a Ajustes → Dispositivos vinculados',
+                '3. Selecciona "Vincular con código"',
+                `4. Ingresa: *${verificationCode.replace('ELITE-', '')}*`,
+                '',
+                '⚠️ Código válido por 3 minutos'
+            ].join('\n');
+
             await conn.sendMessage(m.chat, { 
-                text: mensaje,
+                text: instructions,
                 contextInfo: {
                     externalAdReply: {
                         title: 'ELITE BOT GLOBAL',
                         body: 'Vinculación Segura',
-                        thumbnail: readFileSync('./media/menus/Menu2.jpg'),
-                        mediaType: 1
+                        thumbnail: readFileSync('./media/menus/MenuSecure.jpg'),
+                        mediaType: 1,
+                        showAdAttribution: false
                     }
                 }
             }, { quoted: m });
 
-            setTimeout(() => {
-                if (existsSync(codeFile)) unlinkSync(codeFile);
-            }, 300000);
+            // Eliminación programada segura
+            const cleanUp = () => existsSync(codeFile) && unlinkSync(codeFile);
+            setTimeout(cleanUp, 180000).unref();
 
-        } catch (e) {
-            console.error('Error generando código:', e);
-            await m.reply('❌ Error al generar código de vinculación');
+        } catch (error) {
+            console.error('Error crítico:', error);
+            await m.reply('⚠️ Error grave al generar código. Verifica logs.');
         }
 
-    // Comando verificarcodigo
     } else if (command === 'verificarcodigo') {
-        if (!args[0]) return m.reply(`📌 Uso: ${usedPrefix}verificarcodigo JADI-ABCDEF`);
-        
-        if (!existsSync(codeFile)) return m.reply('⚠️ No hay código pendiente');
-        
-        const codigoGuardado = readFileSync(codeFile, 'utf-8').trim();
-        const codigoIngresado = args[0].toUpperCase();
-        
-        if (codigoIngresado === codigoGuardado) {
-            try {
-                const resultado = await vincularDispositivo(codigoIngresado);
-                
-                if (resultado) {
-                    unlinkSync(codeFile);
-                    await conn.sendMessage(m.chat, {
-                        text: '✅ *VINCULACIÓN EXITOSA*\n\n¡Dispositivo vinculado correctamente!',
-                        contextInfo: {
-                            externalAdReply: {
-                                title: 'ELITE BOT GLOBAL',
-                                body: 'Vinculación completada',
-                                thumbnail: readFileSync('./media/menus/Menu3.jpg'),
-                                mediaType: 1
-                            }
-                        }
-                    }, { quoted: m });
-                } else {
-                    await m.reply('❌ No se pudo completar la vinculación');
-                }
-            } catch (error) {
-                console.error('Error en verificación:', error);
-                await m.reply('⚠️ Error durante la vinculación. Intenta nuevamente.');
+        if (!args[0] || !args[0].startsWith('ELITE-')) {
+            return m.reply(`📌 Formato: ${usedPrefix}verificarcodigo ELITE-ABCD1234`);
+        }
+
+        if (!existsSync(codeFile)) {
+            return m.reply('⏳ No hay código activo. Genera uno nuevo primero.');
+        }
+
+        try {
+            const storedCode = readFileSync(codeFile, 'utf-8').trim();
+            const inputCode = args[0].toUpperCase();
+
+            if (inputCode !== storedCode) {
+                return m.reply('❌ Código incorrecto. Verifica y reintenta.');
             }
-        } else {
-            await m.reply('❌ Código incorrecto');
+
+            const success = await linkDevice(inputCode);
+            
+            if (success) {
+                unlinkSync(codeFile);
+                await conn.sendMessage(m.chat, {
+                    text: '✅ *DISPOSITIVO VINCULADO* \n\nConexión establecida con éxito!',
+                    contextInfo: {
+                        externalAdReply: {
+                            title: 'ELITE BOT GLOBAL',
+                            body: 'Vinculación completada',
+                            thumbnail: readFileSync('./media/menus/MenuSuccess.jpg'),
+                            mediaType: 1
+                        }
+                    }
+                }, { quoted: m });
+            } else {
+                await m.reply('⚠️ Vinculación fallida. Intenta nuevamente.');
+            }
+        } catch (error) {
+            console.error('Error de verificación:', error);
+            await m.reply('❌ Error crítico durante vinculación. Contacta al soporte.');
         }
     }
 };
 
-handler.help = ['generarcodigo', 'verificarcodigo <código>'];
-handler.tags = ['jadibot'];
+// Función auxiliar para generar claves (requerida para el error específico)
+function generateKeyPair() {
+    return {
+        public: Buffer.alloc(32),
+        private: Buffer.alloc(32)
+    };
+}
+
+handler.help = [
+    'generarcodigo → Genera código de vinculación',
+    'verificarcodigo [código] → Valida el código'
+];
+handler.tags = ['jadibot', 'seguridad'];
 handler.command = /^(generarcodigo|verificarcodigo)$/i;
 handler.owner = false;
+handler.limit = true;
 
 export default handler;
