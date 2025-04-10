@@ -1,48 +1,60 @@
-let handler = async (m, { conn }) => {
-    // Información del creador (personaliza estos datos)
-    const creatorInfo = {
-        name: "Russell xz 💬️", // Nombre del creador
-        number: "593993370003", // Número internacional (formato libre)
-        botName: "EliteBot Global", // Nombre de tu bot
-        version: "2.0" // Versión del bot
-    };
+const handler = async (m, { conn, usedPrefix }) => {
+  // Información del creador (personalizable)
+  const owner = {
+    number: "15167096032@s.whatsapp.net",
+    name: "Russell xz 🤖",
+    botName: "Azura Ultra Subbot",
+    businessInfo: "Desarrollador de bots WhatsApp"
+  };
 
-    // Hora actual formateada (ej: "12:03 a. m.")
-    const timeString = new Date().toLocaleTimeString('es-MX', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    }).toLowerCase();
+  // Mensaje mejor estructurado
+  const contactMessage = `
+🌟 *INFORMACIÓN DEL CREADOR* 🌟
 
-    // Mensaje estructurado como en la imagen
+ℹ️ *Bot:* ${owner.botName}
+👤 *Nombre:* ${owner.name}
+📞 *Número:* +${owner.number.split('@')[0]}
+📌 *Descripción:* ${owner.businessInfo}
+
+💬 *Puedes contactarme para:*
+- Soporte técnico
+- Consultas sobre el bot
+- Desarrollo de bots personalizados
+- Reporte de errores
+
+*Toca el contacto arriba para enviar un mensaje directo.*
+`.trim();
+
+  try {
+    // Enviar contacto vCard (mejorado)
     await conn.sendMessage(m.chat, {
-        text: `*${creatorInfo.botName.toUpperCase()} ${creatorInfo.version}*\n\n` +
-              `${creatorInfo.number}\n\n` +
-              `Nos despedimos con cariño; gracias por compartir momentos en ${creatorInfo.botName} 💬️.\n\n` +
-              `${timeString}\n\n` +
-              `#creador\n` +
-              `${timeString} ✓\n\n` +
-              `~ ${creatorInfo.botName.toLowerCase()} ${creatorInfo.version}\n` +
-              `${creatorInfo.number}\n\n` +
-              `${creatorInfo.name}\n\n` +
-              `${timeString}`,
-        
-        footer: "Mensaje | Añadir contacto", // Pie de mensaje como en la imagen
-        contextInfo: {
-            mentionedJid: [m.sender],
-            externalAdReply: {
-                title: creatorInfo.botName,
-                body: `Creado por ${creatorInfo.name}`,
-                thumbnailUrl: "https://example.com/bot-thumbnail.jpg", // URL de miniatura
-                mediaType: 1,
-                renderLargerThumbnail: true
-            }
-        }
+      contacts: {
+        displayName: owner.name,
+        contacts: [{
+          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${owner.name}\nORG:${owner.botName};\nTEL;type=CELL;type=VOICE;waid=${owner.number.split('@')[0]}:+${owner.number.split('@')[0]}\nNOTE:${owner.businessInfo}\nEND:VCARD`
+        }]
+      }
     }, { quoted: m });
+
+    // Enviar mensaje informativo (mejorado)
+    await conn.sendMessage(m.chat, { 
+      text: contactMessage,
+      contextInfo: {
+        mentionedJid: [owner.number]
+      }
+    }, { quoted: m });
+
+  } catch (error) {
+    console.error(chalk.red('Error al enviar contacto:'), error);
+    await conn.sendMessage(m.chat, {
+      text: '❌ Ocurrió un error al mostrar la información de contacto. Por favor intenta nuevamente.'
+    }, { quoted: m });
+  }
 };
 
 // Configuración del comando
-handler.help = ['Kevv'];
+handler.help = ['creador', 'owner', 'contacto'];
 handler.tags = ['info'];
-handler.command = /^(kevv|creador|contacto)$/i;
+handler.command = /^(kevv|owner|contacto|soporte|developer)$/i;
+
 export default handler;
