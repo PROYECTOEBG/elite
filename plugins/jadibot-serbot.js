@@ -90,7 +90,7 @@ printQRInTerminal: false,
 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
 msgRetry,
 msgRetryCache,
-browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['GataBot-MD (Sub Bot)', 'Chrome','2.0.0'],
+browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['EliteBot)', 'Chrome','2.0.0'],
 version: version,
 generateHighQualityLinkPreview: true
 };
