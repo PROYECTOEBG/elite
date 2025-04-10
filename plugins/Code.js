@@ -44,51 +44,40 @@ const handler = async (m, { conn, usedPrefix, command }) => {
         const handleConnectionUpdate = async (update) => {
             const { qr, connection, lastDisconnect } = update;
 
-            if (qr && !sentCodeMessage) {
-                try {
-                    // Mostrar el QR en el chat para que el usuario lo escanee
-                    await conn.sendMessage(m.chat, {
-                        video: { url: "https://cdn.russellxz.click/b0cbbbd3.mp4" },
-                        caption: "🔐 *Código generado:*\nAbre WhatsApp > Vincular dispositivo y escanea el siguiente código:",
-                        gifPlayback: true
-                    }, { quoted: m });
-
-                    // Enviar el código QR generado
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-
-                    await conn.sendMessage(m.chat, {
-                        text: "```Escanea el siguiente código QR para vincular el dispositivo:```"
-                    }, { quoted: m });
-
-                    // Mostrar el QR generado en el chat para la vinculación
-                    await conn.sendMessage(m.chat, {
-                        image: { url: qr },
-                        caption: "Código QR para vincular el dispositivo"
-                    }, { quoted: m });
-
-                    sentCodeMessage = true;
-                } catch (error) {
-                    console.error('Error al enviar código QR:', error);
-                    await m.react('❌');
-                }
-            }
-
             if (connection === "open") {
                 try {
+                    // Generar un código de emparejamiento al estilo WhatsApp
+                    const generateCode = () => {
+                        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                        let code = '';
+                        for (let i = 0; i < 16; i++) {
+                            code += characters.charAt(Math.floor(Math.random() * characters.length));
+                        }
+                        return code;
+                    };
+
+                    const pairingCode = generateCode();
+
+                    // Enviar el código generado al chat para vincular el dispositivo
+                    await conn.sendMessage(m.chat, {
+                        text: `🔐 *Código de emparejamiento:*\n\nAbre WhatsApp > Vincular dispositivo y pega el siguiente código:\n\n*${pairingCode}*`
+                    }, { quoted: m });
+
+                    // Enviar un mensaje de bienvenida
                     await conn.sendMessage(m.chat, {
                         text: `╭───〔 *🤖 SUBBOT CONECTADO* 〕───╮
 
-    │
-    │ ✅ Bienvenido a Azura Ultra 2.0
-    │
-    │ Ya eres parte del mejor sistema de juegos RPG
-    │
-    │ 🛠️ Usa los siguientes comandos para comenzar:
-    │
-    │ ${usedPrefix}help
-    │ ${usedPrefix}menu
-    │
-    ╰────✦ Azura Ultra Plus ✦────╯`
+│
+│ ✅ Bienvenido a Azura Ultra 2.0
+│
+│ Ya eres parte del mejor sistema de juegos RPG
+│
+│ 🛠️ Usa los siguientes comandos para comenzar:
+│
+│ ${usedPrefix}help
+│ ${usedPrefix}menu
+│
+╰────✦ Azura Ultra Plus ✦────╯`
                     }, { quoted: m });
 
                     // Guardar la conexión
@@ -97,7 +86,7 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
                     await m.react('✅');
                 } catch (error) {
-                    console.error('Error al enviar mensaje de conexión:', error);
+                    console.error('Error al enviar código de emparejamiento:', error);
                     await m.react('❌');
                 }
             }
