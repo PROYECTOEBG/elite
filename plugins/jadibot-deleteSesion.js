@@ -1,25 +1,61 @@
-const fs = require("fs");
-const path = require("path");
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const handler = async (msg, { conn }) => {
-  const number = msg.key?.participant || msg.key.remoteJid;
-  const sessionDir = path.join(__dirname, "../subbots");
-  const sessionPath = path.join(sessionDir, number);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-  if (fs.existsSync(sessionPath)) {
-    fs.rmSync(sessionPath, { recursive: true, force: true });
-    await conn.sendMessage(msg.key.remoteJid, {
-      text: `🗑️ *Tu sesión ha sido eliminada correctamente.*\n\nPuedes volver a usar *serbot* cuando gustes.`,
-      quoted: msg
-    });
-    console.log(`✅ Carpeta del subbot ${number} eliminada por comando.`);
-  } else {
-    await conn.sendMessage(msg.key.remoteJid, {
-      text: `⚠️ *No se encontró ninguna carpeta activa para eliminar.*`,
-      quoted: msg
-    });
+const handler = async (m, { conn, usedPrefix, command }) => {
+  // Verificar si el usuario tiene permisos
+  if (!global.db.data.settings[conn.user.jid].restrict) {
+    return conn.reply(m.chat, '⚠️ Este comando solo está disponible para administradores.', m);
+  }
+
+  const number = m.sender;
+  const sessionDir = path.join(__dirname, '../GataJadiBot'); // Ajustado a tu estructura de carpetas
+  const sessionPath = path.join(sessionDir, number.split('@')[0]);
+
+  try {
+    if (fs.existsSync(sessionPath)) {
+      // Eliminar la sesión de manera recursiva
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+      
+      // Eliminar de la lista de conexiones activas si existe
+      const index = global.conns.findIndex(conn => conn.user?.jid === number);
+      if (index !== -1) {
+        global.conns.splice(index, 1);
+      }
+
+      await conn.reply(m.chat, 
+        `🗑️ *Sesión eliminada correctamente*\n\n` +
+        `✅ Se ha borrado la sesión asociada a tu número.\n` +
+        `Puedes volver a registrar un sub-bot usando:\n` +
+        `\`\`\`${usedPrefix}serbot\`\`\``, 
+      m);
+
+      console.log(chalk.green(`[✓] Sesión eliminada para ${number}`));
+    } else {
+      await conn.reply(m.chat, 
+        `⚠️ *No se encontró sesión activa*\n\n` +
+        `No existe una sesión de sub-bot asociada a tu número.\n` +
+        `Para crear una nueva sesión usa:\n` +
+        `\`\`\`${usedPrefix}serbot\`\`\``, 
+      m);
+    }
+  } catch (error) {
+    console.error(chalk.red('[×] Error al eliminar sesión:'), error);
+    await conn.reply(m.chat, 
+      `❌ *Error al eliminar la sesión*\n\n` +
+      `Ocurrió un error al intentar borrar los datos. Por favor intenta nuevamente.\n` +
+      `Si el problema persiste, contacta al soporte.`, 
+    m);
   }
 };
 
-handler.command = ["delbots"];
-module.exports = handler;
+// Configuración del comando
+handler.help = ['delbot'];
+handler.tags = ['subbots'];
+handler.command = /^(delbot|borrarsesion|eliminarsesion)$/i;
+handler.admin = true; // Requiere privilegios de administrador
+
+export default handler;
