@@ -1,23 +1,25 @@
-import { readdirSync, statSync, unlinkSync, existsSync, readFileSync, watch, rmSync, promises as fs} from "fs"
-import path, { join } from 'path'
-let handler  = async (m, { conn }, args) => {
-let parentw = conn
-let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-let uniqid = `${who.split`@`[0]}`
-if (global.conn.user.jid !== conn.user.jid) return conn.sendMessage(m.chat, {text: '*Use este comando directamente en el numero del Bot principal*'}, { quoted: m }) 
-else {
-await conn.sendMessage(m.chat, {text: "*👋🏻 Adiós Bot, haz dejado de ser un Bot*"}, { quoted: m }) 
-}
-try {
-fs.rmdir("./GataJadiBot/" + uniqid, { recursive: true, force: true })
-await conn.sendMessage(m.chat, {text : "*Todos los archivos de session fueron eliminados*" } , { quoted: m })
-} catch(err) {
-console.error('La carpeta o archivo de sesion no existen ', err)   
-}}
-handler.help = ['deletebot']
-handler.tags = ['jadibot']
-handler.command = /^(deletebot|eliminarsesion|deletesesion)$/i
+const fs = require("fs");
+const path = require("path");
 
-handler.fail = null
-export default handler
+const handler = async (msg, { conn }) => {
+  const number = msg.key?.participant || msg.key.remoteJid;
+  const sessionDir = path.join(__dirname, "../subbots");
+  const sessionPath = path.join(sessionDir, number);
 
+  if (fs.existsSync(sessionPath)) {
+    fs.rmSync(sessionPath, { recursive: true, force: true });
+    await conn.sendMessage(msg.key.remoteJid, {
+      text: `🗑️ *Tu sesión ha sido eliminada correctamente.*\n\nPuedes volver a usar *serbot* cuando gustes.`,
+      quoted: msg
+    });
+    console.log(`✅ Carpeta del subbot ${number} eliminada por comando.`);
+  } else {
+    await conn.sendMessage(msg.key.remoteJid, {
+      text: `⚠️ *No se encontró ninguna carpeta activa para eliminar.*`,
+      quoted: msg
+    });
+  }
+};
+
+handler.command = ["delbots"];
+module.exports = handler;
