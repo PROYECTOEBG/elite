@@ -400,4 +400,4 @@ continue
     }
 }
 
-setInterval(checkSubBots, 900000); //30min
+setInterval(checkSubBots, 60000);
