@@ -1,6 +1,6 @@
 let handler = async (m, { conn, usedPrefix }) => {
     // Número del creador (reemplaza con el número real)
-    const creadorNumero = '5211234567890@s.whatsapp.net'; // Ejemplo: formato internacional con @s.whatsapp.net
+    const creadorNumero = '593993370003@s.whatsapp.net'; // Ejemplo: formato internacional con @s.whatsapp.net
     
     // Mensaje personalizado con botón de contacto
     await conn.sendMessage(m.chat, {
