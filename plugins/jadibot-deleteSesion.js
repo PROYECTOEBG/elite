@@ -1,62 +1,37 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import chalk from 'chalk'; // Importación añadida
+/*⚠ PROHIBIDO EDITAR ⚠ -- ⚠ PROHIBIDO EDITAR ⚠ -- ⚠ PROHIBIDO EDITAR ⚠
+El codigo de este archivo fue realizado por:
+- ReyEndymion >> https://github.com/ReyEndymion
+*/
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { readdirSync, statSync, unlinkSync, existsSync, readFileSync, watch, rmSync, promises as fs} from "fs"
+import path, { join } from 'path'
 
-const handler = async (m, { conn, usedPrefix, command }) => {
-  // Verificar si el usuario tiene permisos
-  if (!global.db.data.settings[conn.user.jid].restrict) {
-   return conn.reply(m.chat, '⚠️ Este comando solo está disponible para administradores.', m);
-  }
-
-  const number = m.sender;
-  const sessionDir = path.join(__dirname, '../GataJadiBot');
-  const sessionPath = path.join(sessionDir, number.split('@')[0]);
-
-  try {
-    if (fs.existsSync(sessionPath)) {
-      // Eliminar la sesión de manera recursiva
-      fs.rmSync(sessionPath, { recursive: true, force: true });
-      
-      // Eliminar de la lista de conexiones activas si existe
-      const index = global.conns.findIndex(conn => conn.user?.jid === number);
-      if (index !== -1) {
-        global.conns.splice(index, 1);
-      }
-
-      await conn.reply(m.chat, 
-        `🗑️ *Sesión eliminada correctamente*\n\n` +
+let handler  = async (m, { conn, usedPrefix, command}, args) => {
+let parentw = conn
+let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
+let uniqid = `${who.split`@`[0]}`
+let userS = `${conn.getName(who)}`
+    
+if (global.conn.user.jid !== conn.user.jid) {
+return conn.sendMessage(m.chat, {text: lenguajeGB.smsJBDel() + `\n\n*https://api.whatsapp.com/send/?phone=${global.conn.user.jid.split`@`[0]}&text=${usedPrefix + command}&type=phone_number&app_absent=0*`}, { quoted: m }) 
+} else {
+try {
+await fs.rmdir("./GataJadiBot/" + uniqid, { recursive: true, force: true })
+await conn.sendMessage(m.chat, { text: lenguajeGB.smsJBAdios() }, { quoted: m })
+await conn.sendMessage(m.chat, { text : lenguajeGB.smsJBCerrarS() } , { quoted: m })
+} catch(err) {
+if (err.code === 'ENOENT' && err.path === `./GataJadiBot/${uniqid}`) {
+await conn.sendMessage(m.chat, { text: "🗑️ *Sesión eliminada correctamente*\n\n` +
         `✔ Se ha borrado la sesión asociada a tu número.\n` +
         `Puedes volver a registrar un sub-bot usando:\n` +
-        `\`\`\`${usedPrefix}serbot\`\`\``, 
-      m);
+        `\`\`\`${usedPrefix}serbot\`\`\`" }, { quoted: m })
+} else {
+console.error(userS + ' ' + lenguajeGB.smsJBErr(), err)
+}}}
+}
 
-      console.log(`[✓] Sesión eliminada para ${number}`); // Eliminado chalk para simplificar
-    } else {
-      await conn.reply(m.chat, 
-        `⚠️ *No se encontró sesión activa*\n\n` +
-        `No existe una sesión de sub-bot asociada a tu número.\n` +
-        `Para crear una nueva sesión usa:\n` +
-        `\`\`\`${usedPrefix}serbot\`\`\``, 
-      m);
-    }
-  } catch (error) {
-    console.error('[×] Error al eliminar sesión:', error);
-    await conn.reply(m.chat, 
-      `❌ *Error al eliminar la sesión*\n\n` +
-      `Ocurrió un error al intentar borrar los datos. Por favor intenta nuevamente.\n` +
-      `Si el problema persiste, contacta al soporte.`, 
-    m);
-  }
-};
+handler.command = /^(deletesess?ion|eliminarsesion|borrarsesion|delsess?ion|cerrarsesion)$/i
+handler.private = false
+handler.fail = null
 
-// Configuración del comando
-handler.help = ['delbot'];
-handler.tags = ['subbots'];
-handler.command = /^(deletesesion|borrarsesion|eliminarsesion)$/i;
-
-
-export default handler;
+export default handler
