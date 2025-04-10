@@ -1,32 +1,28 @@
-const handler = async (msg, { conn }) => {
-  const ownerNumber = "15167096032@s.whatsapp.net"; // Número del creador
-  const ownerName = "Russell xz 🤖"; // Nombre visible del creador
-
-  const messageText = `📞 *Contacto del Creador del Subbot:*
-
-Si tienes dudas, preguntas o sugerencias sobre el funcionamiento de *Azura Ultra Subbot*, puedes contactar a su creador.
-
-📌 *Nombre:* Russell
-📌 *Número:* +1 (516) 709-6032
-💬 *Toca el contacto para enviarle un mensaje directo.`;
-
-  // Enviar contacto vCard
-  await conn.sendMessage(msg.key.remoteJid, {
-    contacts: {
-      displayName: ownerName,
-      contacts: [
-        {
-          vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${ownerName}\nTEL;waid=${ownerNumber.split('@')[0]}:+${ownerNumber.split('@')[0]}\nEND:VCARD`
+let handler = async (m, { conn, usedPrefix }) => {
+    // Número del creador (reemplaza con el número real)
+    const creadorNumero = '5211234567890@s.whatsapp.net'; // Ejemplo: formato internacional con @s.whatsapp.net
+    
+    // Mensaje personalizado con botón de contacto
+    await conn.sendMessage(m.chat, {
+        text: `👑 *Creador de EliteBot Global* 👑\n\n¡Hola! Soy *Kevv*, el desarrollador de este bot. Contáctame para soporte o colaboraciones.`,
+        contacts: {
+            displayName: 'Kevv (Creador)',
+            contacts: [{ vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:Kevv\nTEL;type=CELL;type=VOICE;waid=${creadorNumero.split('@')[0]}:${creadorNumero.split('@')[0]}\nEND:VCARD` }]
+        },
+        contextInfo: {
+            externalAdReply: {
+                title: 'EliteBot Global',
+                body: 'Creado por Kevv',
+                thumbnailUrl: 'https://telegra.ph/file/1a5d3e8d4a9c9a0e7a1c2.jpg', // Imagen opcional
+                mediaType: 1,
+                renderLargerThumbnail: true
+            }
         }
-      ]
-    }
-  });
-
-  // Enviar texto informativo
-  await conn.sendMessage(msg.key.remoteJid, {
-    text: messageText
-  }, { quoted: msg });
+    }, { quoted: m });
 };
 
-handler.command = ['kevv'];
-module.exports = handler;
+// Configuración del comando
+handler.help = ['Kevv'];
+handler.tags = ['info'];
+handler.command = /^(kevv|contacto|creador)$/i;
+export default handler;
