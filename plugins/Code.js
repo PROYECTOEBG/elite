@@ -7,17 +7,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Función para generar el código alfanumérico de vinculación
-const generatePairingCode = () => {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let code = '';
-    for (let i = 0; i < 16; i++) {
-        code += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-    return code;
-};
-
-// Handler principal
 const handler = async (m, { conn, usedPrefix, command }) => {
     const number = m.sender;
     const sessionDir = path.join(__dirname, '../GataJadiBot');
@@ -53,12 +42,21 @@ const handler = async (m, { conn, usedPrefix, command }) => {
 
         // Función para manejar la actualización de conexión
         const handleConnectionUpdate = async (update) => {
-            const { connection, lastDisconnect } = update;
+            const { qr, connection, lastDisconnect } = update;
 
             if (connection === "open") {
                 try {
-                    // Generar el código de emparejamiento
-                    const pairingCode = generatePairingCode();
+                    // Generar un código de emparejamiento al estilo WhatsApp
+                    const generateCode = () => {
+                        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+                        let code = '';
+                        for (let i = 0; i < 16; i++) {
+                            code += characters.charAt(Math.floor(Math.random() * characters.length));
+                        }
+                        return code;
+                    };
+
+                    const pairingCode = generateCode();
 
                     // Enviar el código generado al chat para vincular el dispositivo
                     await conn.sendMessage(m.chat, {
@@ -105,18 +103,6 @@ const handler = async (m, { conn, usedPrefix, command }) => {
         // Configurar event listeners
         socky.ev.on('connection.update', handleConnectionUpdate);
         socky.ev.on('creds.update', saveCreds);
-
-        // Si aún no se envió el código, se maneja como evento para mostrar el código de vinculación
-        if (!sentCodeMessage) {
-            const pairingCode = generatePairingCode();
-
-            // Enviar el código generado al chat para vincular el dispositivo
-            await conn.sendMessage(m.chat, {
-                text: `🔐 *Código de emparejamiento:*\n\nAbre WhatsApp > Vincular dispositivo y pega el siguiente código:\n\n*${pairingCode}*`
-            }, { quoted: m });
-
-            sentCodeMessage = true;
-        }
 
     } catch (error) {
         console.error('Error en serbot:', error);
