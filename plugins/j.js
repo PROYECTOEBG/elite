@@ -1,7 +1,6 @@
-import { generate } from 'random-words';
 import { randomInt } from 'crypto';
 import { join } from 'path';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from 'fs';
 
 const handler = async (m, { conn, usedPrefix, command, args }) => {
     // Verificar si el usuario es propietario del bot
@@ -18,7 +17,7 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
         mkdirSync(userDir, { recursive: true });
     }
 
-    // Generar código alfanumérico
+    // Generar código alfanumérico sin dependencias externas
     const generateCode = () => {
         const prefix = 'JADI-'; // Prefijo personalizable
         const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Eliminamos I y O para evitar confusión
@@ -62,7 +61,7 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
         setTimeout(() => {
             if (existsSync(codeFile)) {
                 try {
-                    fs.unlinkSync(codeFile);
+                    unlinkSync(codeFile);
                 } catch (e) {
                     console.error('Error al eliminar código:', e);
                 }
@@ -80,9 +79,9 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
         const codigoIngresado = args[0].toUpperCase();
         
         if (codigoIngresado === codigoGuardado) {
-            // Aquí iría la lógica para completar la vinculación
+            // Lógica para completar la vinculación
             try {
-                fs.unlinkSync(codeFile);
+                unlinkSync(codeFile);
             } catch (e) {
                 console.error('Error al eliminar código:', e);
             }
@@ -99,7 +98,7 @@ const handler = async (m, { conn, usedPrefix, command, args }) => {
                 }
             }, { quoted: m });
             
-            // Aquí podrías agregar lógica adicional como guardar credenciales, etc.
+            // Aquí podrías agregar lógica adicional como guardar credenciales
         } else {
             await m.reply('❌ *Código incorrecto*\nEl código ingresado no coincide. Por favor inténtalo nuevamente.');
         }
@@ -112,6 +111,6 @@ handler.help = [
 ];
 handler.tags = ['jadibot'];
 handler.command = /^(generarcodigo|verificarcodigo)$/i;
-handler.owner = false;
+handler.owner = true;
 
 export default handler;
