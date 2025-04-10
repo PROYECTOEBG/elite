@@ -1,4 +1,4 @@
-const handler = async (m, { conn }) => {
+const handler = async (m, { conn, usedPrefix }) => { // Añadido usedPrefix en los parámetros
   // Datos del creador (personalizables)
   const creatorInfo = {
     name: "Russell xz 😊",
@@ -39,7 +39,7 @@ const handler = async (m, { conn }) => {
       {
         quickReplyButton: {
           displayText: "📋 Más información",
-          id: `${usedPrefix}info`
+          id: `${usedPrefix || '#'}info` // Usamos usedPrefix si existe, o '#' como valor por defecto
         }
       }
     ]
