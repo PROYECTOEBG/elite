@@ -3,28 +3,21 @@ import path from 'path';
 
 const baseDir = path.join(process.cwd(), 'GataJadiBot');
 
-fs.readdir(baseDir, (err, files) => {
-  if (err) return console.error('Error leyendo GataJadiBot:', err);
+try {
+  const folders = fs.readdirSync(baseDir);
 
-  files.forEach(folder => {
+  folders.forEach(folder => {
     const folderPath = path.join(baseDir, folder);
-    const credsPath = path.join(folderPath, 'creds.json');
 
-    fs.stat(folderPath, (err, stats) => {
-      if (err || !stats.isDirectory()) return;
+    if (fs.statSync(folderPath).isDirectory()) {
+      const credsFile = path.join(folderPath, 'creds.json');
 
-      fs.access(credsPath, fs.constants.F_OK, (err) => {
-        if (err) {
-          // creds.json no existe, eliminar carpeta
-          fs.rm(folderPath, { recursive: true, force: true }, (err) => {
-            if (err) {
-              console.error(`Error eliminando ${folder}:`, err);
-            } else {
-              console.log(`Carpeta eliminada: ${folder}`);
-            }
-          });
-        }
-      });
-    });
+      if (!fs.existsSync(credsFile)) {
+        fs.rmSync(folderPath, { recursive: true, force: true });
+        console.log(`Carpeta eliminada: ${folderPath}`);
+      }
+    }
   });
-});
+} catch (err) {
+  console.error('Error durante la limpieza de sesiones:', err);
+}
