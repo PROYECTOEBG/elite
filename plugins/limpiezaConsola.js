@@ -1,44 +1,42 @@
-const fs = require('fs');
-const path = require('path');
+// limpiezaConsole.js (ES Module)
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Configuración
 const SESSION_PREFIX = 'GataJadibot_';
 const MAX_RETRIES = 10;
 
-// Función mejorada para extraer el número
+// Obtener __dirname en ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Función para extraer el número
 function extractPhoneNumber(message) {
     const regex = /\(\+(\d+)\)/g;
     const matches = [...message.matchAll(regex)];
     return matches.length ? matches[0][1] : null;
 }
 
-// Función reforzada para eliminar la carpeta
+// Función para eliminar la carpeta
 function deleteSessionFolder(phoneNumber) {
-    if (!phoneNumber) {
-        console.log('❌ No se pudo extraer el número del mensaje');
-        return;
-    }
-
-    const folderPath = path.join(__dirname, `${SESSION_PREFIX}${phoneNumber}`);
+    if (!phoneNumber) return;
     
-    console.log(`🔍 Buscando carpeta en: ${folderPath}`); // Debug
+    const folderPath = path.join(__dirname, `${SESSION_PREFIX}${phoneNumber}`);
     
     if (fs.existsSync(folderPath)) {
         try {
             fs.rmSync(folderPath, { recursive: true, force: true });
             console.log(`✅ Sesión eliminada: ${folderPath}`);
-            return true;
         } catch (error) {
-            console.error(`❌ Error crítico al borrar: ${error}`);
-            return false;
+            console.error(`❌ Error al borrar: ${error}`);
         }
     } else {
-        console.log(`⚠️ La carpeta no existe: ${folderPath}`);
-        return false;
+        console.log(`⚠️ Carpeta no encontrada: ${folderPath}`);
     }
 }
 
-// Interceptar TODOS los logs (solución más robusta)
+// Interceptar console.log
 const originalConsole = {
     log: console.log,
     warn: console.warn,
@@ -66,17 +64,12 @@ function checkLogs(message) {
     if (message.includes('Intentando reconectar') && 
         message.includes(`(Intento ${MAX_RETRIES}/10)`)) {
         const phoneNumber = extractPhoneNumber(message);
-        if (phoneNumber) {
-            console.log(`🛑 Detectado fallo crítico en: +${phoneNumber}`);
-            deleteSessionFolder(phoneNumber);
-        }
+        deleteSessionFolder(phoneNumber);
     }
 }
 
-// Activar interceptación
+// Activar
 interceptConsole();
 
-// Simulación de mensaje de error (para pruebas)
-// setTimeout(() => {
-//     console.warn("Intentando reconectar (+593968467001) en 5 segundos... (Intento 10/10)");
-// }, 3000);
+// Opcional: Exportar funciones si necesitas usarlas en otros módulos
+export { deleteSessionFolder, interceptConsole };
