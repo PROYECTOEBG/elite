@@ -1,23 +1,24 @@
 import fs from 'fs';
 import path from 'path';
 
-const baseDir = path.join(process.cwd(), 'GataJadiBot');
+// Hook de consola
+const originalLog = console.log;
 
-try {
-  const folders = fs.readdirSync(baseDir);
+console.log = function (...args) {
+  originalLog(...args);
 
-  folders.forEach(folder => {
-    const folderPath = path.join(baseDir, folder);
+  const logStr = args.join(' ');
 
-    if (fs.statSync(folderPath).isDirectory()) {
-      const credsFile = path.join(folderPath, 'creds.json');
+  const match = logStr.match(/Intentando reconectar \+(\d+)/);
 
-      if (!fs.existsSync(credsFile)) {
-        fs.rmSync(folderPath, { recursive: true, force: true });
-        console.log(`Carpeta eliminada: ${folderPath}`);
-      }
+  if (match) {
+    const number = match[1];
+    const baseDir = path.join(process.cwd(), 'GataJadiBot');
+    const folderPath = path.join(baseDir, number);
+
+    if (fs.existsSync(folderPath)) {
+      fs.rmSync(folderPath, { recursive: true, force: true });
+      originalLog(`[AUTO-LIMPIEZA] Carpeta eliminada para el número: ${number}`);
     }
-  });
-} catch (err) {
-  console.error('Error durante la limpieza de sesiones:', err);
-}
+  }
+};
