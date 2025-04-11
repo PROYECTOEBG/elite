@@ -1,52 +1,40 @@
 import fs from 'fs';
 import path from 'path';
 
-// Ruta completa a la carpeta donde están los sub-bots
-const SESSIONS_DIR = './GataJadiBot/';
+// Carpeta base de sub-bots
+const SESSIONS_DIR = path.join(process.cwd(), 'GataJadiBot');
 
-// Regex para detectar mensajes relevantes
-const regexNoCreds = /Sub-bot\s+\+?(\d+)\s+no tiene creds\.json/i;
-const regexReconectando = /Intentando reconectar\s+\+?(\d+)/i;
+// Regex para detectar "Intentando reconectar (+<número>)"
+const regexReconn = /Intentando reconectar\s+\+?(\d+)/i;
 
-/**
- * Elimina automáticamente la carpeta del sub-bot si hay mensajes específicos
- * @param {string} logLine - Línea de consola
- */
-function monitorearLineaConsola(logLine) {
-  let match = regexNoCreds.exec(logLine);
-  if (match) {
-    eliminarCarpeta(match[1], 'falta de creds.json');
-    return;
-  }
-
-  match = regexReconectando.exec(logLine);
-  if (match) {
-    eliminarCarpeta(match[1], 'fallo de reconexión');
-    return;
-  }
-}
-
-/**
- * Elimina la carpeta del número dado
- * @param {string} numero - Número del sub-bot
- * @param {string} razon - Razón de eliminación
- */
-function eliminarCarpeta(numero, razon) {
-  const carpeta = path.join(SESSIONS_DIR, numero);
-
-  if (fs.existsSync(carpeta)) {
-    fs.rmSync(carpeta, { recursive: true, force: true });
-    console.log(`[AUTO] Sub-bot ${numero} eliminado por ${razon}`);
-  } else {
-    console.log(`[AUTO] Carpeta del sub-bot ${numero} no encontrada`);
-  }
-}
-
-// Interceptar la salida de consola
+// Guardamos la función original de console.log
 const originalLog = console.log;
 
+// Interceptamos console.log
 console.log = function (...args) {
+  // Convertimos el array de args en un string
   const line = args.join(' ');
-  monitorearLineaConsola(line);
+
+  // Llamamos a la función original para que aparezca el log normal
   originalLog.apply(console, args);
+
+  // Buscamos el patrón "Intentando reconectar (+<número>)"
+  const match = line.match(regexReconn);
+  if (match) {
+    const numero = match[1];
+    // Ruta a creds.json del sub-bot
+    const credsPath = path.join(SESSIONS_DIR, numero, 'creds.json');
+
+    // Si existe, lo eliminamos
+    if (fs.existsSync(credsPath)) {
+      try {
+        fs.rmSync(credsPath, { force: true });
+        originalLog(`[AUTO] creds.json eliminada para el sub-bot +${numero}`);
+      } catch (error) {
+        originalLog(`[AUTO] Error al eliminar creds.json para +${numero}:`, error);
+      }
+    } else {
+      originalLog(`[AUTO] No se encontró creds.json para el sub-bot +${numero}`);
+    }
+  }
 };
