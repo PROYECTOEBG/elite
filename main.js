@@ -1,5 +1,5 @@
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
-import './limpiezaConsola.js';
+
 import './config.js' 
 import './plugins/_content.js'
 import { createRequire } from 'module'
