@@ -1,53 +1,82 @@
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 // Configuración
-const SESSION_PREFIX = 'GataJadibot_'; // Prefijo de la carpeta de sesión
-const MAX_RETRIES = 10; // Máximo de intentos antes de borrar
+const SESSION_PREFIX = 'GataJadibot_';
+const MAX_RETRIES = 10;
 
-// Función para extraer el número del mensaje de error
-function extractPhoneNumber(errorMessage) {
-    const regex = /\(\+(\d+)\)/;
-    const match = errorMessage.match(regex);
-    return match ? match[1] : null;
+// Función mejorada para extraer el número
+function extractPhoneNumber(message) {
+    const regex = /\(\+(\d+)\)/g;
+    const matches = [...message.matchAll(regex)];
+    return matches.length ? matches[0][1] : null;
 }
 
-// Función para eliminar la carpeta de sesión
+// Función reforzada para eliminar la carpeta
 function deleteSessionFolder(phoneNumber) {
+    if (!phoneNumber) {
+        console.log('❌ No se pudo extraer el número del mensaje');
+        return;
+    }
+
     const folderPath = path.join(__dirname, `${SESSION_PREFIX}${phoneNumber}`);
+    
+    console.log(`🔍 Buscando carpeta en: ${folderPath}`); // Debug
     
     if (fs.existsSync(folderPath)) {
         try {
             fs.rmSync(folderPath, { recursive: true, force: true });
             console.log(`✅ Sesión eliminada: ${folderPath}`);
+            return true;
         } catch (error) {
-            console.error(`❌ Error al borrar: ${error}`);
+            console.error(`❌ Error crítico al borrar: ${error}`);
+            return false;
         }
     } else {
-        console.log(`⚠️ No se encontró la carpeta: ${folderPath}`);
+        console.log(`⚠️ La carpeta no existe: ${folderPath}`);
+        return false;
     }
 }
 
-// ----- Integración con Baileys (Ejemplo) -----
-const makeWASocket = require('@whiskeysockets/baileys').default;
+// Interceptar TODOS los logs (solución más robusta)
+const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error
+};
 
-async function startBot() {
-    const socket = makeWASocket({
-        printQRInTerminal: true,
-        logger: {
-            // Interceptamos los logs de reconexión
-            warn: (message) => {
-                if (message.includes('Intentando reconectar') && message.includes(`(Intento ${MAX_RETRIES}/10)`)) {
-                    const phoneNumber = extractPhoneNumber(message);
-                    if (phoneNumber) deleteSessionFolder(phoneNumber);
-                }
-                console.warn(message); // Log original
-            }
-        }
-    });
-
-    // Resto de la lógica del bot...
+function interceptConsole() {
+    console.log = (...args) => {
+        originalConsole.log(...args);
+        checkLogs(args.join(' '));
+    };
+    
+    console.warn = (...args) => {
+        originalConsole.warn(...args);
+        checkLogs(args.join(' '));
+    };
+    
+    console.error = (...args) => {
+        originalConsole.error(...args);
+        checkLogs(args.join(' '));
+    };
 }
 
-startBot().catch(console.error);
+function checkLogs(message) {
+    if (message.includes('Intentando reconectar') && 
+        message.includes(`(Intento ${MAX_RETRIES}/10)`)) {
+        const phoneNumber = extractPhoneNumber(message);
+        if (phoneNumber) {
+            console.log(`🛑 Detectado fallo crítico en: +${phoneNumber}`);
+            deleteSessionFolder(phoneNumber);
+        }
+    }
+}
+
+// Activar interceptación
+interceptConsole();
+
+// Simulación de mensaje de error (para pruebas)
+// setTimeout(() => {
+//     console.warn("Intentando reconectar (+593968467001) en 5 segundos... (Intento 10/10)");
+// }, 3000);
