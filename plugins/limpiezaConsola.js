@@ -1,40 +1,53 @@
-import fs from 'fs';
-import path from 'path';
+const fs = require('fs');
+const path = require('path');
+const { execSync } = require('child_process');
 
-// Carpeta base de sub-bots
-const SESSIONS_DIR = path.join(process.cwd(), 'GataJadiBot');
+// Configuración
+const SESSION_PREFIX = 'GataJadibot_'; // Prefijo de la carpeta de sesión
+const MAX_RETRIES = 10; // Máximo de intentos antes de borrar
 
-// Regex para detectar "Intentando reconectar (+<número>)"
-const regexReconn = /Intentando reconectar\s+\+?(\d+)/i;
+// Función para extraer el número del mensaje de error
+function extractPhoneNumber(errorMessage) {
+    const regex = /\(\+(\d+)\)/;
+    const match = errorMessage.match(regex);
+    return match ? match[1] : null;
+}
 
-// Guardamos la función original de console.log
-const originalLog = console.log;
-
-// Interceptamos console.log
-console.log = function (...args) {
-  // Convertimos el array de args en un string
-  const line = args.join(' ');
-
-  // Llamamos a la función original para que aparezca el log normal
-  originalLog.apply(console, args);
-
-  // Buscamos el patrón "Intentando reconectar (+<número>)"
-  const match = line.match(regexReconn);
-  if (match) {
-    const numero = match[1];
-    // Ruta a creds.json del sub-bot
-    const credsPath = path.join(SESSIONS_DIR, numero, 'creds.json');
-
-    // Si existe, lo eliminamos
-    if (fs.existsSync(credsPath)) {
-      try {
-        fs.rmSync(credsPath, { force: true });
-        originalLog(`[AUTO] creds.json eliminada para el sub-bot +${numero}`);
-      } catch (error) {
-        originalLog(`[AUTO] Error al eliminar creds.json para +${numero}:`, error);
-      }
+// Función para eliminar la carpeta de sesión
+function deleteSessionFolder(phoneNumber) {
+    const folderPath = path.join(__dirname, `${SESSION_PREFIX}${phoneNumber}`);
+    
+    if (fs.existsSync(folderPath)) {
+        try {
+            fs.rmSync(folderPath, { recursive: true, force: true });
+            console.log(`✅ Sesión eliminada: ${folderPath}`);
+        } catch (error) {
+            console.error(`❌ Error al borrar: ${error}`);
+        }
     } else {
-      originalLog(`[AUTO] No se encontró creds.json para el sub-bot +${numero}`);
+        console.log(`⚠️ No se encontró la carpeta: ${folderPath}`);
     }
-  }
-};
+}
+
+// ----- Integración con Baileys (Ejemplo) -----
+const makeWASocket = require('@whiskeysockets/baileys').default;
+
+async function startBot() {
+    const socket = makeWASocket({
+        printQRInTerminal: true,
+        logger: {
+            // Interceptamos los logs de reconexión
+            warn: (message) => {
+                if (message.includes('Intentando reconectar') && message.includes(`(Intento ${MAX_RETRIES}/10)`)) {
+                    const phoneNumber = extractPhoneNumber(message);
+                    if (phoneNumber) deleteSessionFolder(phoneNumber);
+                }
+                console.warn(message); // Log original
+            }
+        }
+    });
+
+    // Resto de la lógica del bot...
+}
+
+startBot().catch(console.error);
