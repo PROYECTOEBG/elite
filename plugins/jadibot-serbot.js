@@ -26,6 +26,13 @@ const { CONNECTING } = ws
 import { makeWASocket } from '../lib/simple.js'
 import '../plugins/_content.js'
 import { fileURLToPath } from 'url'
+
+// Configuración de reconexión
+ const MAX_RECONNECT_ATTEMPTS = 10;
+ const RECONNECT_INTERVAL = 5000; // 5 segundos
+ const MAX_RECONNECT_DELAY = 60000; // 1 minuto máximo entre intentos
+ 
+ 
 let crm1 = "Y2QgcGx1Z2lucy"
 let crm2 = "A7IG1kNXN1b"
 let crm3 = "SBpbmZvLWRvbmFyLmpz"
