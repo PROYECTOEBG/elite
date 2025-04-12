@@ -29,12 +29,12 @@ const retryMap = new Map();
 const maxAttempts = 5;
 if (global.conns instanceof Array) console.log()
 else global.conns = []
+
 let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
 if (!global.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`${lenguajeGB['smsSoloOwnerJB']()}`)
 if (m.fromMe || conn.user.jid === m.sender) return
-//if (conn.user.jid !== global.conn.user.jid) return conn.reply(m.chat, `${lenguajeGB['smsJBPrincipal']()} wa.me/${global.conn.user.jid.split`@`[0]}&text=${usedPrefix + command}`, m) 
 let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-let id = `${who.split`@`[0]}`  //conn.getName(who)
+let id = `${who.split`@`[0]}`
 let pathGataJadiBot = path.join("./GataJadiBot/", id)
 if (!fs.existsSync(pathGataJadiBot)){
 fs.mkdirSync(pathGataJadiBot, { recursive: true })
@@ -120,12 +120,12 @@ const dispositivo = await getDevice(m.key.id);
 if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
 txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m })
-codeBot = await m.reply(secret);
+codeBot = await m.reply(`*Código de conexión:* ${secret}\n\n*Nota:* Este código expirará en 30 segundos`);
 } else {
 txtCode = await conn.sendButton(m.chat, rtx2.trim() + '\n' + drmer.toString("utf-8"), wm + `\n*Código:* ${secret}`, 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', null, [[`Copiar código`, secret]], null, null, m)
 }} else {
 txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m })
-codeBot = await m.reply(secret);
+codeBot = await m.reply(`*Código de conexión:* ${secret}\n\n*Nota:* Este código expirará en 30 segundos`);
 }
 console.log(secret);
 }
@@ -155,14 +155,12 @@ if (reason === 428) {
 if (reconnectAttempts < maxAttempts) {
 const delay = 1000 * Math.pow(2, reconnectAttempts); 
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue cerrada inesperadamente. Intentando reconectar en ${delay / 1000} segundos... (Intento ${reconnectAttempts + 1}/${maxAttempts})\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
-await sleep(1000);
+await sleep(delay);
 reconnectAttempts++;
 await creloadHandler(true).catch(console.error);
 } else {
 console.log(chalk.redBright(`Sub-bot (+${path.basename(pathGataJadiBot)}) agotó intentos de reconexión. intentando más tardes...`));
 }            
-/*console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue cerrada inesperadamente. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
-await creloadHandler(true).catch(console.error)*/
 }
 if (reason === 408) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
@@ -190,7 +188,6 @@ console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄�
 if (options.fromCommand) {
 m?.chat ? await conn.sendMessage(m.chat, {text: '*CONEXIÓN PÉRDIDA*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT*' }, { quoted: m || null }) : ""
 }
-//fs.rmdirSync(pathGataJadiBot, { recursive: true })
 }
 if (reason === 515) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Reinicio automático para la sesión (+${path.basename(pathGataJadiBot)}).\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
@@ -332,7 +329,6 @@ continue
             const retries = retryMap.get(folder) || 0;
             if (retries >= 5) {
                 console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-             //  fs.rmdirSync(pathGataJadiBot, { recursive: true });
                 retryMap.delete(folder);
                 continue;
             }
@@ -347,13 +343,22 @@ continue
                     command: 'jadibot',
                     fromCommand: false
                 });
-                retryMap.delete(folder); // Resetear intentos si se conecta
+                retryMap.delete(folder);
             } catch (e) {
                 console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);
                 retryMap.set(folder, retries + 1);
+            }
+        } else {
+            // Reinicio forzado cada 30 segundos para subbots activos
+            try {
+                console.log(chalk.bold.blueBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Reiniciando conexión del sub-bot (+${folder})...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                await creloadHandler(true);
+            } catch (error) {
+                console.error(chalk.redBright(`Error al reiniciar sub-bot (+${folder}):`), error);
             }
         }
     }
 }
 
-setInterval(checkSubBots, 30000); 
+// Verificar y reiniciar subbots cada 30 segundos
+setInterval(checkSubBots, 30000);
