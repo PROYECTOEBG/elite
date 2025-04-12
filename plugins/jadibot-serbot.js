@@ -61,7 +61,7 @@ gataJBOptions.command = command
 gataJBOptions.fromCommand = true
 gataJadiBot(gataJBOptions)
 } 
-handler.command = /^(jadibot|serbot|code)/i
+handler.command = /^(jadibot|serbot|rentbot|code)/i
 export default handler 
 
 export async function gataJadiBot(options) {
@@ -400,4 +400,4 @@ continue
     }
 }
 
-setInterval(checkSubBots, 30000); //30min
+setInterval(checkSubBots, 1800000); //30min
