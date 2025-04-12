@@ -1,6 +1,11 @@
+// Añadir importación del módulo path al inicio del archivo
+import path from 'path'
+import chalk from 'chalk' // Asegurar que chalk está instalado e importado
+
 async function restartAndReconnectSubBots() {
     const subBotDir = path.resolve("./GataJadiBot");
     if (!fs.existsSync(subBotDir)) return;
+
     const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
         fs.statSync(path.join(subBotDir, folder)).isDirectory()
     );
@@ -8,21 +13,26 @@ async function restartAndReconnectSubBots() {
     for (const folder of subBotFolders) {
         const pathGataJadiBot = path.join(subBotDir, folder);
         const credsPath = path.join(pathGataJadiBot, "creds.json");
+        
+        // Corregir referencia a path.basename
+        const folderName = path.basename(pathGataJadiBot); 
+        
         const subBot = global.conns.find(conn => 
-            conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);
+            conn.user?.jid?.includes(folderName) || folderName === folder);
 
         if (!fs.existsSync(credsPath)) {
-            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folderName}) sin creds.json\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
             continue;
         }
 
-        // Si el sub-bot está conectado, lo desconectamos y luego lo reconectamos
-        if (subBot && subBot.close) {
-            try {
-                await subBot.close();  // Cierra la conexión
-                console.log(chalk.bold.yellowBright(`Reiniciando y reconectando el sub-bot (+${folder})...`));
+        try {
+            if (subBot?.ws && !subBot.ws.closed) {
+                await subBot.ws.close();
+                console.log(chalk.bold.yellow(`♻️ Reiniciando: +${folderName}`));
                 
-                // Vuelve a conectar el sub-bot
+                // Añadir delay antes de reconexión
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
                 await gataJadiBot({
                     pathGataJadiBot,
                     m: null,
@@ -32,14 +42,9 @@ async function restartAndReconnectSubBots() {
                     command: 'jadibot',
                     fromCommand: false
                 });
-            } catch (e) {
-                console.error(chalk.redBright(`Error al reiniciar y reconectar el sub-bot (+${folder}):`), e);
-            }
-        } else {
-            console.log(chalk.bold.yellowBright(`Sub-bot (+${folder}) no está conectado, intentando conectar...`));
-            try {
-                // Si el sub-bot no está conectado, lo intentamos activar
-                await gataJadiBot({
+            } else {
+                console.log(chalk.bold.cyan(`🔌 Conectando: +${folderName}`));
+                await gataJadiBot({ 
                     pathGataJadiBot,
                     m: null,
                     conn: global.conn,
@@ -48,12 +53,14 @@ async function restartAndReconnectSubBots() {
                     command: 'jadibot',
                     fromCommand: false
                 });
-            } catch (e) {
-                console.error(chalk.redBright(`Error al activar el sub-bot (+${folder}):`), e);
             }
+        } catch (e) {
+            console.error(chalk.red(`❌ Error en +${folderName}:`), e);
+            // Registrar error en archivo
+            fs.appendFileSync('./subbot_errors.log', `[${new Date().toISOString()}] ${folderName}: ${e.stack}\n\n`);
         }
     }
 }
 
-// Establecer el intervalo para reiniciar y reconectar cada 1 minuto
-setInterval(restartAndReconnectSubBots, 60000); // 1 minuto
+// Intervalo más seguro (5 minutos)
+setInterval(restartAndReconnectSubBots, 60000); 
