@@ -6,7 +6,7 @@ const handler = async () => {
   await delay(1000 * 60); // Esperar 1 minuto
 
   try {
-    const subBots = global.GataJadibot || [];
+    const subBots = global.GataJadibot || global.gataJadiBot || [];
 
     if (!Array.isArray(subBots) || subBots.length === 0) {
       console.log('[AUTO] No hay subbots activos para reiniciar.');
@@ -26,7 +26,7 @@ const handler = async () => {
   }
 };
 
-// Ejecutar automáticamente al cargar el plugin
-handler();
+// Ejecutar automáticamente al cargar el plugin, pero con retardo leve
+setTimeout(handler, 5000); // Esperar 5s para asegurar que globales estén listas
 
 export default function () {}
