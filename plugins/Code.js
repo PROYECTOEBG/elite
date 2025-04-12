@@ -4,7 +4,7 @@ import path from 'path';
 
 // Configuración inicial
 const __dirname = path.resolve();
-const sessionFolder = path.join(__dirname, 'sessions');
+const sessionFolder = path.join(__dirname, 'GataJadiBot');
 
 // Handler principal
 const handler = async (m, { conn, args, usedPrefix, command }) => {
