@@ -1,4 +1,4 @@
-/*const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, MessageRetryMap, makeCacheableSignalKeyStore, jidNormalizedUser, PHONENUMBER_MCC } = await import('@whiskeysockets/baileys');
+const { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, MessageRetryMap, makeCacheableSignalKeyStore, jidNormalizedUser, PHONENUMBER_MCC } = await import('@whiskeysockets/baileys');
 import moment from 'moment-timezone';
 import NodeCache from 'node-cache';
 import readline from 'readline';
@@ -138,10 +138,10 @@ serbot();
 };
 handler.help = ['code'];
 handler.tags = ['jadibot'];
-handler.command = ['code'];
+handler.command = ['codes'];
 // handler.register = true;
 export default handler;
 function sleep(ms) {
 return new Promise(resolve => setTimeout(resolve, ms));
 }
-*/
+
