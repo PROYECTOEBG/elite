@@ -1,22 +1,18 @@
-// plugin-auto-reconnect.js
+// Plugin para reiniciar automáticamente la conexión de los subbots cada minuto
 
-// Esta función verifica el estado de los subBots y reconecta si están caídos
-global.checkSubBots = async () => {
-  if (!global.subBots || typeof global.subBots !== 'object') return
-  console.log('[SubBots] Verificando conexiones...')
+setInterval(async () => {
+  if (!global.subBots) return
+  console.log('[SubBot AutoRestart] Reiniciando subbots...')
+
   for (const jid in global.subBots) {
+    const bot = global.subBots[jid]
+    if (!bot?.ws) continue
+
     try {
-      const bot = global.subBots[jid]
-      if (bot?.ws?.readyState !== 1) {
-        console.log(`[SubBot ${jid}] Desconectado. Intentando reconectar...`)
-        await bot.ev.emit('connection.update', { connection: 'close', lastDisconnect: {}, isReconnecting: true })
-      }
+      bot.ws.close() // Cierra la conexión WebSocket
+      console.log(`[SubBot AutoRestart] Subbot ${jid} desconectado. Esperando reconexión automática...`)
     } catch (e) {
-      console.error(`[SubBot ${jid}] Error al reconectar:`, e)
+      console.error(`[SubBot AutoRestart] Error al reiniciar ${jid}:`, e)
     }
   }
-}
-
-// Ejecuta checkSubBots automáticamente cada minuto desde la consola
-setInterval(checkSubBots, 60000) // 60,000 ms = 1 minuto
-console.log('[SubBots] Monitor de conexión iniciado: verificación cada 1 minuto.')
+}, 60000) // cada 1 minuto
