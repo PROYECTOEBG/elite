@@ -2,7 +2,7 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = '1'
 
 import './config.js' 
 //import './plugins/limpiezaConsole.js'
-import './plugins/_content.js'
+//import './plugins/_content.js'
 import { createRequire } from 'module'
 import path, { join } from 'path'
 import {fileURLToPath, pathToFileURL} from 'url'
@@ -25,7 +25,7 @@ import Datastore from '@seald-io/nedb';
 import store from './lib/store.js'
 import readline from 'readline'
 import NodeCache from 'node-cache' 
-import { YukiJadiBot } from './plugins/jadibot-serbot.js';
+//import { gatajadibot } from './plugins/jadibot-serbot.js';
 import pkg from 'google-libphonenumber'
 const { PhoneNumberUtil } = pkg
 const phoneUtil = PhoneNumberUtil.getInstance()
