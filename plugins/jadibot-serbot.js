@@ -1,16 +1,3 @@
-/*⚠ PROHIBIDO EDITAR ⚠
-Este codigo fue modificado, adaptado y mejorado por
-- ReyEndymion >> https://github.com/ReyEndymion
-El codigo de este archivo esta inspirado en el codigo original de:
-- Aiden_NotLogic >> https://github.com/ferhacks
-*El archivo original del MysticBot-MD fue liberado en mayo del 2024 aceptando su liberacion*
-El codigo de este archivo fue parchado en su momento por:
-- BrunoSobrino >> https://github.com/BrunoSobrino
-Contenido adaptado para GataBot-MD por:
-- GataNina-Li >> https://github.com/GataNina-Li
-- elrebelde21 >> https://github.com/elrebelde21
-*/
- 
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import(global.baileys));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -228,18 +215,7 @@ global.conns.push(sock)
 let user = global.db.data?.users[`${path.basename(pathGataJadiBot)}@s.whatsapp.net`]
 m?.chat ? await conn.sendMessage(m.chat, {text : args[0] ? `${lenguajeGB['smsJBCargando'](usedPrefix)}` : `${lenguajeGB['smsJBConexionTrue2']()}` + ` ${usedPrefix + command}`}, { quoted: m }) : ''
 let chtxt = `
-👤 *Usuario:* ${userName}
-${user?.registered ? `🗃️ *Registrado:* ${user?.registered ? 'Si' : 'No'}` : ''}
-${user?.registered ? `✅ *Verificación:* ${user?.registered ? user.name : 'No'}` : ''}
-🔑 *Método de conexión:* ${mcode ? 'Código de 8 dígitos' : 'Código QR'}
-💻 *Browser:* ${mcode ? 'Ubuntu' : 'Chrome'}
-📱 *WhatsApp:* ${m?.isWABusiness ? 'Business' : 'Messenger'}
-🐈 *Bot:* ${gt}
-⭐ *Versión del bot:* \`${vs}\`
-💫 *Versión sub bot:* \`${vsJB}\`\n
-> *¡Conviértete en sub-bot ahora!*
-wa.me/${path.basename(pathGataJadiBot)}?text=${usedPrefix + command}+code
-`.trim()
+👤 *Usuario:* ${userName}`.trim()
 let ppch = await sock.profilePictureUrl(userJid, 'image').catch(_ => gataMenu)
 await sleep(3000)
 await global.conn.sendMessage(ch.ch1, { text: chtxt, contextInfo: {
@@ -254,27 +230,7 @@ renderLargerThumbnail: false
 }}}, { quoted: null })
 await sleep(3000)
 await joinChannels(sock)
-m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
-> ⚠️ *Usa en este momento el comando ${usedPrefix}codetoken para que tengas un respaldo de la sesión*\n
-> Para pausar tú sesión (actualmente este comando solo hace una pausa temporal):
-\`${usedPrefix}stop\`\n
-> Eliminar datos y cerrar sesión:
-\`${usedPrefix}borrarsesion\`\n
-> Solicitar código QR o volver a conectar sin token:
-\`${usedPrefix + command}\`\n
-> Solicitar código de 8 dígitos:
-\`${usedPrefix + command} code\`\n
-> Crear sesión (solo si no has cerrado la sesión en WhatsApp):
-\`${usedPrefix + command} [token]\`\n
-💡 *Recomendaciones:*
-> Puedes hacer una pausa definitiva primero obteniendo el token de la sesión, luego borrar los datos y cuando quieras volver a ser bot usa el token para crear la sesión (Solo funciona mientras no cierres la sesión en WhatsApp).\n
-> Si tienes problemas de conexión, elimina los datos y usa el token o solicita un nuevo código QR o código de 8 dígitos.\n
-> Si te llega un mensaje de *"sesión reemplazada"* realiza la indicación anterior.\n
-> Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
-
-*Política de uso:*
-github.com/GataNina-Li/GataBot-MD/blob/master/terms.md
-`}, { quoted: m }) : ''
+m?.chat ? await conn.sendMessage(m.chat, {text : `hola`}, { quoted: m }) : ''
 }}
 setInterval(async () => {
 if (!sock.user) {
@@ -400,4 +356,4 @@ continue
     }
 }
 
-setInterval(checkSubBots, 1800000); //30min
+setInterval(checkSubBots, 30000); 
