@@ -2,107 +2,123 @@ import { makeWASocket, useMultiFileAuthState, fetchLatestBaileysVersion } from '
 import fs from 'fs';
 import path from 'path';
 
-// Configuración inicial
 const __dirname = path.resolve();
 const sessionFolder = path.join(__dirname, 'GataJadiBot');
 
-// Handler principal
-const handler = async (m, { conn, args, usedPrefix, command }) => {
+const handler = async (m, { conn }) => {
     try {
-        // Verificar si ya hay una sesión activa
         const sender = m.sender.replace(/[^0-9]/g, '');
         const userSessionPath = path.join(sessionFolder, sender);
         
-        if (fs.existsSync(path.join(userSessionPath, 'creds.json'))) {
+        // Verificación mejorada de sesión activa
+        const isSessionActive = () => {
+            if (!fs.existsSync(userSessionPath)) return false;
+            try {
+                const creds = fs.readFileSync(path.join(userSessionPath, 'creds.json'), 'utf8');
+                return creds && JSON.parse(creds).me?.id;
+            } catch {
+                return false;
+            }
+        };
+
+        if (isSessionActive()) {
             return conn.reply(m.chat, 
-                '⚠️ Ya tienes una sesión activa. Por favor, usa *.logout* primero si deseas vincular nuevamente.', 
+                '⚠️ *Sesión activa detectada*\n\n' +
+                'Parece que ya tienes una sesión vinculada.\n' +
+                'Usa el comando *.logout* para desconectar antes de vincular una nueva sesión.\n\n' +
+                'Si crees que esto es un error, elimina manualmente la carpeta:\n' +
+                `*GataBot_sessions/${sender}*`,
                 m
             );
         }
 
-        // Crear directorio de sesión si no existe
-        if (!fs.existsSync(userSessionPath)) {
-            fs.mkdirSync(userSessionPath, { recursive: true });
+        // Limpieza previa de sesión
+        if (fs.existsSync(userSessionPath)) {
+            fs.rmSync(userSessionPath, { recursive: true, force: true });
         }
 
-        // Configuración de la conexión
+        fs.mkdirSync(userSessionPath, { recursive: true });
+
         const { state, saveCreds } = await useMultiFileAuthState(userSessionPath);
         const { version } = await fetchLatestBaileysVersion();
 
         const sock = makeWASocket({
-            printQRInTerminal: false,
+            printQRInTerminal: true, // Para depuración
             auth: {
                 creds: state.creds,
                 keys: state.keys,
             },
-            browser: ['GataJadibot', 'Chrome', '120.0.0.0'],
-            version: version
+            browser: ['GataBot', 'Chrome', '121.0.0.0'],
+            version: version,
+            syncFullHistory: false
         });
 
-        // Manejo de eventos
         sock.ev.on('creds.update', saveCreds);
         sock.ev.on('connection.update', (update) => {
-            const { connection, lastDisconnect } = update;
-            if (connection === 'close') {
-                if (lastDisconnect?.error?.output?.statusCode !== 401) {
-                    // Reconectar si no fue un logout
-                    setTimeout(() => handler(m, { conn }), 5000);
-                }
+            if (update.connection === 'close') {
+                console.log('Conexión cerrada:', update.lastDisconnect?.error);
             }
         });
 
-        // Generar código de vinculación
-        const pairingCode = await sock.requestPairingCode(sender);
+        // Generar código con timeout
+        const pairingCode = await Promise.race([
+            sock.requestPairingCode(sender),
+            new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Tiempo de espera agotado')), 30000)
+        ]);
+
         const formattedCode = pairingCode.match(/.{1,4}/g).join('-');
 
-        // Mensaje de respuesta
-        const responseMsg = `*🔐 CÓDIGO DE VINCULACIÓN PARA GATABOT*\n\n`
-            + `✨ *Tu código:* \`${formattedCode}\`\n\n`
-            + `📌 *Instrucciones:*\n`
-            + `1. Abre WhatsApp en tu teléfono\n`
-            + `2. Ve a Ajustes > Dispositivos vinculados\n`
-            + `3. Selecciona "Vincular con número de teléfono"\n`
-            + `4. Ingresa este código cuando te lo pidan\n\n`
-            + `⚠️ *Este código expira en 2 minutos*\n`
-            + `🔒 *No lo compartas con nadie*`;
+        // Mensaje mejorado
+        const responseMsg = `*🔐 CÓDIGO DE VINCULACIÓN GATABOT*\n\n` +
+            `✨ *Código:* \`${formattedCode}\`\n\n` +
+            `📱 *Cómo vincular:*\n` +
+            `1. Abre WhatsApp > Ajustes\n` +
+            `2. Dispositivos vinculados > Vincular con número\n` +
+            `3. Ingresa este código exactamente como aparece\n\n` +
+            `⏳ *Válido por 2 minutos*\n` +
+            `🔒 *Solo para tu uso personal*\n\n` +
+            `⚠️ *Si tienes problemas:*\n` +
+            `- Verifica la hora de tu teléfono\n` +
+            `- Reinicia WhatsApp\n` +
+            `- Intenta en modo avión por 5 segundos`;
 
-        // Enviar mensaje con mención
-        const sentMsg = await conn.sendMessage(m.chat, {
+        const sentMsg = await conn.sendMessage(m.chat, { 
             text: responseMsg,
             mentions: [m.sender]
         }, { quoted: m });
 
-        // Autoeliminar después de 2 minutos
+        // Autoeliminación mejorada
         setTimeout(async () => {
             try {
-                await conn.sendMessage(m.chat, {
-                    delete: sentMsg.key
-                });
-                await sock.logout(); // Cerrar sesión después de expirar
+                await conn.sendMessage(m.chat, { delete: sentMsg.key });
+                await sock.end();
+                fs.rmSync(userSessionPath, { recursive: true, force: true });
             } catch (e) {
-                console.log('Error al limpiar:', e);
+                console.log('Error en limpieza:', e);
             }
         }, 120000);
 
     } catch (error) {
         console.error('Error en comando code:', error);
         
-        let errorMsg = '❌ Error al generar el código de vinculación';
-        if (error.message.includes('401')) {
-            errorMsg = '⚠️ Sesión no válida. Intenta reiniciar el bot.';
-        } else if (error.message.includes('timed out')) {
-            errorMsg = '⌛ Tiempo de espera agotado. Intenta nuevamente.';
+        let errorMsg = '❌ *Error al generar código*';
+        if (error.message.includes('timed out')) {
+            errorMsg = '⌛ *Tiempo agotado*\nEl servidor no respondió. Intenta nuevamente.';
+        } else if (error.message.includes('401') || error.message.includes('creds')) {
+            errorMsg = '🔐 *Error de autenticación*\nPor favor usa *.logout* y vuelve a intentar.';
+        } else if (error.message.includes('ENOENT')) {
+            errorMsg = '📁 *Error de sistema*\nEl bot no puede crear archivos necesarios.';
         }
         
-        await conn.reply(m.chat, errorMsg, m);
+        await conn.reply(m.chat, errorMsg + '\n\n' + 
+            'Si el problema persiste, contacta al soporte.', m);
     }
 };
 
-// Configuración del comando
 handler.help = ['code'];
 handler.tags = ['herramientas'];
 handler.command = /^(code|codigo|vincular)$/i;
-handler.owner = false; // Cambiar a true si solo el dueño puede usarlo
-handler.register = true;
+handler.owner = false;
 
 export default handler;
