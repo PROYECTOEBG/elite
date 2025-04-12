@@ -1,12 +1,10 @@
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import fs from 'fs';
+import path from 'path';
 
-const handler = async () => {
-  console.log('[AUTO] Reinicio automático de subbots en 1 minuto...');
-
-  await delay(1000 * 60); // Esperar 1 minuto
-
+async function reiniciarSubBots() {
   try {
-    const subBots = global.GataJadibot || global.gataJadiBot || [];
+    const subBots = global.conns || [];
 
     if (!Array.isArray(subBots) || subBots.length === 0) {
       console.log('[AUTO] No hay subbots activos para reiniciar.');
@@ -14,9 +12,9 @@ const handler = async () => {
     }
 
     for (let subbot of subBots) {
-      if (subbot?.ws?.close) {
-        subbot.ws.close();
-        console.log(`[AUTO] Subbot reiniciado: ${subbot.user?.id || 'sin ID'}`);
+      if (subbot?.ws?.readyState === 1) {
+        console.log(`[AUTO] Reiniciando subbot: ${subbot.user?.id || 'sin ID'}`);
+        subbot.ws.close(); // esto forza la reconexión si tienes retry automático
       }
     }
 
@@ -24,9 +22,11 @@ const handler = async () => {
   } catch (e) {
     console.error('[AUTO] Error al reiniciar subbots:', e);
   }
-};
+}
 
-// Ejecutar automáticamente al cargar el plugin, pero con retardo leve
-setTimeout(handler, 5000); // Esperar 5s para asegurar que globales estén listas
+// Ejecutar cada minuto
+setInterval(() => {
+  reiniciarSubBots().catch(console.error);
+}, 60 * 1000);
 
 export default function () {}
