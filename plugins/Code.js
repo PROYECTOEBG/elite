@@ -26,9 +26,9 @@ if (!fs.existsSync("./GataJadiBot/" + authFolderB)) {
 fs.mkdirSync("./GataJadiBot/" + authFolderB, { recursive: true });
 }
 if (args[0]) {
-fs.writeFileSync(`IanBot/creds.json`, Buffer.from(args[0], 'base64').toString('utf-8'))
+fs.writeFileSync(`GataJadiBot`, Buffer.from(args[0], 'base64').toString('utf-8'))
 }
-const { state, saveState, saveCreds } = await useMultiFileAuthState(`./IanBot/${authFolderB}`);
+const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadiBot/${authFolderB}`);
 const msgRetryCounterMap = (MessageRetryMap) => { };
 const msgRetryCounterCache = new NodeCache();
 const { version } = await fetchLatestBaileysVersion();
