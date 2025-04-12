@@ -356,6 +356,7 @@ await conn.newsletterFollow(channelId).catch(() => {})
 async function checkSubBots() {
     const subBotDir = path.resolve("./GataJadiBot");
     if (!fs.existsSync(subBotDir)) return;
+    
     const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
         fs.statSync(path.join(subBotDir, folder)).isDirectory()
     );
@@ -363,41 +364,38 @@ async function checkSubBots() {
     for (const folder of subBotFolders) {
         const pathGataJadiBot = path.join(subBotDir, folder);
         const credsPath = path.join(pathGataJadiBot, "creds.json");
-        const subBot = global.conns.find(conn => 
-            conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);
-
+        
         if (!fs.existsSync(credsPath)) {
-console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
-continue
-}
+            console.log(chalk.yellow(`[!] Creds no encontradas para ${folder}`));
+            continue;
+        }
 
-        if (!subBot || !subBot.user) {
-            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
-            const retries = retryMap.get(folder) || 0;
-            if (retries >= 5) {
-                console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-             //  fs.rmdirSync(pathGataJadiBot, { recursive: true });
-                retryMap.delete(folder);
-                continue;
-            }
-
-            try {
-                await gataJadiBot({
-                    pathGataJadiBot,
-                    m: null,
-                    conn: global.conn,
-                    args: [],
-                    usedPrefix: '#',
-                    command: 'jadibot',
-                    fromCommand: false
-                });
-                retryMap.delete(folder); // Resetear intentos si se conecta
-            } catch (e) {
-                console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);
-                retryMap.set(folder, retries + 1);
-            }
+        const isConnected = global.conns.some(conn => 
+            conn.user?.jid?.includes(folder));
+            
+        if (!isConnected) {
+            console.log(chalk.yellow(`[!] Sub-bot ${folder} desconectado, intentando reconectar...`));
+            await handleReconnection(pathGataJadiBot, 'checkSubBots', {
+                pathGataJadiBot,
+                m: null,
+                conn: global.conn,
+                args: [],
+                usedPrefix: '#',
+                command: 'jadibot',
+                fromCommand: false
+            });
         }
     }
 }
 
-setInterval(checkSubBots, 60000); //30min
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+function sleep(ms) {
+return new Promise(resolve => setTimeout(resolve, ms));}
+
+async function joinChannels(conn) {
+for (const channelId of Object.values(global.ch)) {
+await conn.newsletterFollow(channelId).catch(() => {})
+}}
+
+
+setInterval(checkSubBots, 60000); // 120,000 ms = 2 minutos
