@@ -1,7 +1,7 @@
-import fs from 'fs'
+/*import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import gataJadiBot from './jadibot-serbot.js' // Asegúrate de que esta ruta sea correcta
+import GataJadiBot from './jadibot-serbot.js' // Ruta corregida
 
 const reiniciarSubBots = async () => {
     const subBotDir = path.resolve("./GataJadiBot")
@@ -48,7 +48,7 @@ const reiniciarSubBots = async () => {
             console.log(chalk.bold.cyan(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[REINICIANDO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
 
-            await gataJadiBot({
+            await GataJadiBot({
                 pathGataJadiBot,
                 m: null,
                 conn: global.conn,
@@ -74,3 +74,4 @@ const reiniciarSubBots = async () => {
 
 // Ejecutar cada 1 minuto
 setInterval(reiniciarSubBots, 60 * 1000)
+*/
