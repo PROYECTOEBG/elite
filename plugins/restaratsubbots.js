@@ -1,4 +1,4 @@
-/*import fs from 'fs'
+import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 import GataJadiBot from './jadibot-serbot.js' // Ruta corregida
@@ -74,4 +74,4 @@ const reiniciarSubBots = async () => {
 
 // Ejecutar cada 1 minuto
 setInterval(reiniciarSubBots, 60 * 1000)
-*/
+
