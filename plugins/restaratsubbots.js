@@ -48,15 +48,17 @@ const reiniciarSubBots = async () => {
             console.log(chalk.bold.cyan(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[REINICIANDO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
 
-            await GataJadiBot({
-                pathGataJadiBot,
-                m: null,
-                conn: global.conn,
-                args: [],
-                usedPrefix: '#',
-                command: 'jadibot',
-                fromCommand: false
-            })
+            await GataJadiBot(
+                null, // m
+                {
+                    conn: global.conn,
+                    args: [],
+                    usedPrefix: '#',
+                    command: 'jadibot',
+                    isOwner: true, // Puedes ajustar esto según tu lógica
+                    pathGataJadiBot
+                }
+            )
 
             console.log(chalk.bold.green(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[CONECTADO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
@@ -74,4 +76,3 @@ const reiniciarSubBots = async () => {
 
 // Ejecutar cada 1 minuto
 setInterval(reiniciarSubBots, 60 * 1000)
-
