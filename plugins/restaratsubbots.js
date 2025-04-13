@@ -1,35 +1,101 @@
-import { watchFile, unwatchFile } from 'fs'
+import fs from 'fs'
+import path from 'path'
+import chalk from 'chalk'
 
-// Función para reiniciar los SubBots (GataJadiBot)
-const restartSubBots = async () => {
-  try {
-    console.log('🔄 *Reiniciando SubBots (GataJadiBot)...*');
+const handler = async (m, { conn, isROwner }) => {
+    if (!isROwner) return m.reply('⚠️ Este comando solo puede ser usado por el owner del bot')
     
-    // Aquí va la lógica para reiniciar los SubBots
-    // Si usas PM2, puedes descomentar esto:
-    // const { exec } = require('child_process');
-    // exec('pm2 restart GataJadiBot', (error) => {
-    //   if (error) console.error('❌ Error al reiniciar:', error);
-    //   else console.log('✅ SubBots reiniciados correctamente');
-    // });
+    const subBotDir = path.resolve("./GataJadiBot")
+    if (!fs.existsSync(subBotDir)) {
+        return m.reply('❌ No se encontró la carpeta de sub-bots (GataJadiBot)')
+    }
 
-    // Si no usas PM2, simplemente cierra el proceso (simulación)
-    process.exit(0); // Esto reiniciará el proceso actual (ajusta según tu sistema)
-    
-  } catch (error) {
-    console.error('❌ Error en el reinicio automático:', error);
-  }
-};
+    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
+        fs.statSync(path.join(subBotDir, folder)).isDirectory()
+    )
 
-// Configurar el intervalo de reinicio (60 segundos = 1 minuto)
-let restartInterval = setInterval(restartSubBots, 60 * 1000);
+    if (subBotFolders.length === 0) {
+        return m.reply('ℹ️ No hay sub-bots activos para reiniciar')
+    }
 
-// Opcional: Detener el reinicio si se edita el archivo (para desarrollo)
-watchFile(import.meta.url, () => {
-  unwatchFile(import.meta.url);
-  clearInterval(restartInterval);
-  console.log('✋ Reinicio automático detenido (archivo modificado)');
-});
+    // Notificación de inicio
+    const { key } = await conn.sendMessage(m.chat, { 
+        text: `🔄 Preparando reinicio de ${subBotFolders.length} sub-bots...` 
+    }, { quoted: m })
 
-// Mensaje de inicio
-console.log('⚡ *Plugin de Reinicio Automático Activado* ⚡\nSe reiniciarán los SubBots cada 1 minuto.');
+    // Contador de sub-bots reiniciados
+    let successCount = 0
+    let failCount = 0
+
+    for (const folder of subBotFolders) {
+        const pathGataJadiBot = path.join(subBotDir, folder)
+        const credsPath = path.join(pathGataJadiBot, "creds.json")
+
+        if (!fs.existsSync(credsPath)) {
+            console.log(chalk.yellow(`[!] Sub-bot (+${folder}) sin credenciales. Omitiendo...`))
+            failCount++
+            continue
+        }
+
+        try {
+            // 1. Buscar y cerrar conexión existente
+            const existingIndex = global.conns.findIndex(conn => 
+                conn.user?.jid?.includes(folder))
+            
+            if (existingIndex !== -1) {
+                try {
+                    global.conns[existingIndex].ws.close()
+                } catch (e) {
+                    console.error(chalk.red(`Error al cerrar conexión (+${folder}):`), e)
+                }
+                global.conns.splice(existingIndex, 1)
+            }
+
+            // 2. Mostrar en consola
+            console.log(chalk.bold.cyan(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[REINICIANDO]\n`))
+            console.log(chalk.gray('- [-> SUB-BOT -] ---'))
+
+            // 3. Crear nueva conexión
+            await gataJadiBot({
+                pathGataJadiBot,
+                m: null,
+                conn: global.conn,
+                args: [],
+                usedPrefix: '#',
+                command: 'jadibot',
+                fromCommand: false
+            })
+
+            console.log(chalk.bold.green(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[CONECTADO]\n`))
+            console.log(chalk.gray('- [-> SUB-BOT -] ---'))
+            
+            successCount++
+            
+            // Actualizar mensaje de progreso
+            await conn.sendMessage(m.chat, { 
+                text: `🔄 Reiniciando sub-bots...\n✅ ${successCount} | ❌ ${failCount}`, 
+                edit: key 
+            })
+
+        } catch (error) {
+            console.error(chalk.red(`[!] Error al reiniciar sub-bot (+${folder}):`), error)
+            failCount++
+        }
+    }
+
+    // Resultado final
+    await conn.sendMessage(m.chat, { 
+        text: `♻️ Reinicio de sub-bots completado:\n\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`,
+        edit: key 
+    })
+}
+
+handler.help = ['restartsubbots']
+handler.tags = ['owner']
+handler.command = ['restartsubbots', 'reiniciarsubbots'] 
+handler.owner = true
+
+export default handler
+
+// Función de delay para las animaciones
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
