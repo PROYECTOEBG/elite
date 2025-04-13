@@ -339,7 +339,17 @@ return new Promise(resolve => setTimeout(resolve, ms));}
 
 async function joinChannels(conn) {
 for (const channelId of Object.values(global.ch)) {
-await conn.newsletterFollow(channelId).catch(() => {})
+try {
+await conn.newsletterFollow(channelId).catch((err) => {
+if (err.output?.statusCode === 408) {
+console.log(chalk.bold.yellow(`Timeout al seguir el canal ${channelId}, continuando...`));
+} else {
+console.log(chalk.bold.red(`Error al seguir el canal ${channelId}: ${err.message}`));
+}
+});
+} catch (e) {
+console.log(chalk.bold.red(`Error inesperado al seguir canales: ${e.message}`));
+}
 }}
 
 async function checkSubBots() {
