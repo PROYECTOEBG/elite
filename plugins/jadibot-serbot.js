@@ -207,7 +207,13 @@ await creloadHandler(true).catch(console.error)
 } catch (error) {
 console.error(chalk.bold.yellow(`Error 405 no se pudo reconectar: +${path.basename(pathGataJadiBot)}`))
 }
+try {
+if (fs.existsSync(pathGataJadiBot)) {
 fs.rmdirSync(pathGataJadiBot, { recursive: true })
+}
+} catch (e) {
+console.error(chalk.bold.yellow(`Error al eliminar directorio: ${e.message}`))
+}
 }
 if (reason === 500) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Conexión perdida en la sesión (+${path.basename(pathGataJadiBot)}). Borrando datos...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
