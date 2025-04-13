@@ -37,13 +37,13 @@ const maxAttempts = 5;
 if (global.conns instanceof Array) console.log();
 else global.conns = [];
 
-// Función mejorada de reinicio para todos los bots
-async function restartAllBots() {
+// Función mejorada de reinicio para subbots
+async function restartSubBots() {
     if (isRestarting) return;
     isRestarting = true;
 
     console.log(chalk.bold.yellowBright('\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡'));
-    console.log(chalk.bold.yellowBright('┆ 🔄 Iniciando reinicio automático de todos los bots...'));
+    console.log(chalk.bold.yellowBright('┆ 🔄 Iniciando reinicio automático de subbots...'));
     console.log(chalk.bold.yellowBright('╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡'));
 
     try {
@@ -66,23 +66,23 @@ async function restartAllBots() {
             global.conns = [];
         }
 
-        // 2. Reiniciar el proceso principal
-        console.log(chalk.yellow('└─ Reiniciando proceso principal...'));
+        // 2. Reiniciar los subbots
+        console.log(chalk.yellow('└─ Reiniciando subbots...'));
+        await checkSubBots();
         
-        // Limpiar el temporizador de reinicio
-        if (restartTimer) {
-            clearInterval(restartTimer);
-            restartTimer = null;
-        }
-
-        // Forzar el reinicio
-        process.exit(0);
     } catch (e) {
-        console.error(chalk.red('└─ Error en el reinicio:'), e);
-        process.exit(1);
+        console.error(chalk.red('└─ Error en el reinicio de subbots:'), e);
     } finally {
         isRestarting = false;
     }
+}
+
+// Inicializar el temporizador de reinicio al cargar el módulo
+if (process.send) {
+    restartTimer = setInterval(async () => {
+        console.log(chalk.bold.magentaBright('\n[🔄] Ejecutando reinicio programado de subbots...'));
+        await restartSubBots();
+    }, AUTO_RESTART_INTERVAL);
 }
 
 let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
@@ -92,8 +92,8 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
     // Comando para reinicio manual
     if (command === 'restart' || command === 'reiniciar') {
         if (!isOwner) return m.reply(lenguajeGB['smsOwner']());
-        await m.reply('🔄 Reiniciando todos los bots...');
-        await restartAllBots();
+        await m.reply('🔄 Reiniciando subbots...');
+        await restartSubBots();
         return;
     }
 
@@ -112,14 +112,6 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
     gataJBOptions.usedPrefix = usedPrefix;
     gataJBOptions.command = command;
     gataJBOptions.fromCommand = true;
-
-    // Iniciar temporizador de reinicio si no existe
-    if (!restartTimer && process.send) {
-        restartTimer = setInterval(async () => {
-            console.log(chalk.bold.magentaBright('\n[🔄] Ejecutando reinicio programado...'));
-            await restartAllBots();
-        }, AUTO_RESTART_INTERVAL);
-    }
 
     gataJadiBot(gataJBOptions);
 };
