@@ -1,16 +1,3 @@
-/*⚠ PROHIBIDO EDITAR ⚠
-Este codigo fue modificado, adaptado y mejorado por
-- ReyEndymion >> https://github.com/ReyEndymion
-El codigo de este archivo esta inspirado en el codigo original de:
-- Aiden_NotLogic >> https://github.com/ferhacks
-*El archivo original del MysticBot-MD fue liberado en mayo del 2024 aceptando su liberacion*
-El codigo de este archivo fue parchado en su momento por:
-- BrunoSobrino >> https://github.com/BrunoSobrino
-Contenido adaptado para GataBot-MD por:
-- GataNina-Li >> https://github.com/GataNina-Li
-- elrebelde21 >> https://github.com/elrebelde21
-*/
- 
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import(global.baileys));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -228,17 +215,8 @@ global.conns.push(sock)
 let user = global.db.data?.users[`${path.basename(pathGataJadiBot)}@s.whatsapp.net`]
 m?.chat ? await conn.sendMessage(m.chat, {text : args[0] ? `${lenguajeGB['smsJBCargando'](usedPrefix)}` : `${lenguajeGB['smsJBConexionTrue2']()}` + ` ${usedPrefix + command}`}, { quoted: m }) : ''
 let chtxt = `
-👤 *Usuario:* ${userName}
-${user?.registered ? `🗃️ *Registrado:* ${user?.registered ? 'Si' : 'No'}` : ''}
-${user?.registered ? `✅ *Verificación:* ${user?.registered ? user.name : 'No'}` : ''}
-🔑 *Método de conexión:* ${mcode ? 'Código de 8 dígitos' : 'Código QR'}
-💻 *Browser:* ${mcode ? 'Ubuntu' : 'Chrome'}
-📱 *WhatsApp:* ${m?.isWABusiness ? 'Business' : 'Messenger'}
-🐈 *Bot:* ${gt}
-⭐ *Versión del bot:* \`${vs}\`
-💫 *Versión sub bot:* \`${vsJB}\`\n
-> *¡Conviértete en sub-bot ahora!*
-wa.me/${path.basename(pathGataJadiBot)}?text=${usedPrefix + command}+code
+👤 *Usuario:* ${userName} ✅
+🔑 *Método de conexión:* ${mcode ? 'Código de 8 dígitos' : 'Código QR'} ✅
 `.trim()
 let ppch = await sock.profilePictureUrl(userJid, 'image').catch(_ => gataMenu)
 await sleep(3000)
@@ -272,8 +250,6 @@ m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
 > Si te llega un mensaje de *"sesión reemplazada"* realiza la indicación anterior.\n
 > Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
 
-*Política de uso:*
-github.com/GataNina-Li/GataBot-MD/blob/master/terms.md
 `}, { quoted: m }) : ''
 }}
 setInterval(async () => {
