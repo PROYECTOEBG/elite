@@ -133,33 +133,21 @@ if (qr && mcode) {
 let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
 secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
+console.log(chalk.bold.green(`Código generado: ${secret}`));
+
 if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
-txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 1
-}, { quoted: m })
+txtCode = await m.reply(`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`)
 } else {
-txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 1
-}, { quoted: m })
+txtCode = await m.reply(`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`)
 }} else {
-txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 1
-}, { quoted: m })
+txtCode = await m.reply(`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`)
 }
-console.log(chalk.bold.green(`Código generado: ${secret}`));
-if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
-const messageId = txtCode.key || txtCode.id
-setTimeout(() => { conn.sendMessage(m.chat, { delete: messageId })}, 30000)
+
+if (txtCode) {
+setTimeout(() => { 
+conn.sendMessage(m.chat, { delete: txtCode.key })
+}, 30000)
 }
 }
 
