@@ -1,11 +1,12 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
+import gataJadiBot from './GataJadiBot' // Asegúrate de que esta ruta sea correcta
 
-const restartSubBots = async (conn, notifyChat = null) => {
+const reiniciarSubBots = async () => {
     const subBotDir = path.resolve("./GataJadiBot")
     if (!fs.existsSync(subBotDir)) {
-        if (notifyChat) conn.sendMessage(notifyChat, { text: '❌ No se encontró la carpeta de sub-bots (GataJadiBot)' })
+        console.log('❌ No se encontró la carpeta de sub-bots (GataJadiBot)')
         return
     }
 
@@ -14,16 +15,8 @@ const restartSubBots = async (conn, notifyChat = null) => {
     )
 
     if (subBotFolders.length === 0) {
-        if (notifyChat) conn.sendMessage(notifyChat, { text: 'ℹ️ No hay sub-bots activos para reiniciar' })
+        console.log('ℹ️ No hay sub-bots activos para reiniciar')
         return
-    }
-
-    let key
-    if (notifyChat) {
-        const res = await conn.sendMessage(notifyChat, {
-            text: `🔄 Preparando reinicio de ${subBotFolders.length} sub-bots...`
-        })
-        key = res.key
     }
 
     let successCount = 0
@@ -70,44 +63,14 @@ const restartSubBots = async (conn, notifyChat = null) => {
 
             successCount++
 
-            if (notifyChat && key) {
-                await conn.sendMessage(notifyChat, {
-                    text: `🔄 Reiniciando sub-bots...\n✅ ${successCount} | ❌ ${failCount}`,
-                    edit: key
-                })
-            }
-
         } catch (error) {
             console.error(chalk.red(`[!] Error al reiniciar sub-bot (+${folder}):`), error)
             failCount++
         }
     }
 
-    if (notifyChat && key) {
-        await conn.sendMessage(notifyChat, {
-            text: `♻️ Reinicio de sub-bots completado:\n\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`,
-            edit: key
-        })
-    }
+    console.log(`♻️ Reinicio de sub-bots completado:\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`)
 }
 
-// Comando manual
-const handler = async (m, { conn, isROwner }) => {
-    if (!isROwner) return m.reply('⚠️ Este comando solo puede ser usado por el owner del bot')
-    await restartSubBots(conn, m.chat)
-}
-
-handler.help = ['restartsubbots']
-handler.tags = ['owner']
-handler.command = ['restartsubbots', 'reiniciarsubbots']
-handler.owner = true
-
-export default handler
-
-// Ejecución automática cada minuto
-setInterval(() => {
-    // Asegúrate de que `global.conn` esté definido correctamente
-    if (global.conn) {
-        restartSubBots(global.conn)
-    }
-}, 60 * 1000)
+// Ejecutar cada 1 minuto
+setInterval(reiniciarSubBots, 60 * 1000)
