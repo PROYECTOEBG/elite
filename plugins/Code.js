@@ -13,7 +13,7 @@ import { makeWASocket } from '../lib/simple.js';
 if (!(global.conns instanceof Array)) global.conns = [];
 let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROwner }) => {
 if (!global.db.data.settings[_conn.user.jid].jadibotmd && !isROwner) {
-conn.reply(m.chat, '🚩 Este Comando está deshabilitado por mi creador.', m, rcanal)
+conn.reply(m.chat, '🚩 Este Comando está deshabilitado por mi creador.', m)
 return
 }
 let parent = args[0] && args[0] == 'plz' ? _conn : await global.conn;
@@ -22,13 +22,13 @@ return conn.reply(m.chat, `「💭」Solo puedes usar este comando en el bot pri
 }
 async function serbot() {
 let authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8);
-if (!fs.existsSync("./GataJadiBot/" + authFolderB)) {
-fs.mkdirSync("./GataJadiBot/" + authFolderB, { recursive: true });
+if (!fs.existsSync("./GataJadibot/" + authFolderB)) {
+fs.mkdirSync("./GataJadibot/" + authFolderB, { recursive: true });
 }
 if (args[0]) {
-fs.writeFileSync(`GataJadiBot`, Buffer.from(args[0], 'base64').toString('utf-8'))
+fs.writeFileSync(`GataJadibot`, Buffer.from(args[0], 'base64').toString('utf-8'))
 }
-const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadiBot/${authFolderB}`);
+const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadibot/${authFolderB}`);
 const msgRetryCounterMap = (MessageRetryMap) => { };
 const msgRetryCounterCache = new NodeCache();
 const { version } = await fetchLatestBaileysVersion();
@@ -136,7 +136,7 @@ creloadHandler(false);
 }
 serbot();
 };
-handler.help = ['codes'];
+handler.help = ['code'];
 handler.tags = ['jadibot'];
 handler.command = ['codes'];
 // handler.register = true;
@@ -144,4 +144,3 @@ export default handler;
 function sleep(ms) {
 return new Promise(resolve => setTimeout(resolve, ms));
 }
-
