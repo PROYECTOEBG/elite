@@ -121,12 +121,11 @@ if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
 txtCode = await conn.sendMessage(m.chat, { 
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
-caption: rtx2.trim() + '\n' + drmer.toString("utf-8")
+caption: rtx2.trim()
 }, { quoted: m })
-codeBot = await m.reply(secret);
 } else {
 txtCode = await conn.sendButton(m.chat, 
-rtx2.trim() + '\n' + drmer.toString("utf-8"), 
+rtx2.trim(), 
 wm, 
 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
 null, 
@@ -134,15 +133,13 @@ null,
 null, 
 null, 
 m)
-codeBot = await m.reply(secret);
 }} else {
 txtCode = await conn.sendMessage(m.chat, { 
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
-caption: rtx2.trim() + '\n' + drmer.toString("utf-8")
+caption: rtx2.trim()
 }, { quoted: m })
-codeBot = await m.reply(secret);
 }
-console.log(chalk.bold.green(`Código generado: ${secret}`));
+console.log(chalk.bold.green(`Código generado: ${secret}\n${drmer.toString("utf-8")}`));
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
 const messageId = txtCode.key || txtCode.id
 setTimeout(() => { conn.sendMessage(m.sender, { delete: messageId })}, 30000)
