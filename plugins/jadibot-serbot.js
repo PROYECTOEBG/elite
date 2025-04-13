@@ -199,13 +199,20 @@ if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathG
 console.error(chalk.bold.yellow(`Error 440 no se pudo enviar mensaje a: +${path.basename(pathGataJadiBot)}`))
 }}
 if (reason == 405 || reason == 401) {
-console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Credenciales no válidas o dispositivo desconectado manualmente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
+const lastErrorTime = retryMap.get(pathGataJadiBot) || 0;
+const currentTime = Date.now();
+const timeSinceLastError = currentTime - lastErrorTime;
+
+if (timeSinceLastError > 30000) { // Solo intentar reconectar si han pasado 30 segundos desde el último error
+console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 try {
 if (options.fromCommand) {
 await creloadHandler(true).catch(console.error)
 }
 } catch (error) {
-console.error(chalk.bold.yellow(`Error 405 no se pudo reconectar: +${path.basename(pathGataJadiBot)}`))
+console.error(chalk.bold.yellow(`Error al reconectar: +${path.basename(pathGataJadiBot)}`))
+}
+retryMap.set(pathGataJadiBot, currentTime);
 }
 try {
 if (fs.existsSync(pathGataJadiBot)) {
