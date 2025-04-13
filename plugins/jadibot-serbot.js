@@ -135,35 +135,26 @@ secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
 if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
-txtCode = await conn.sendButton(m.chat, 
-`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`, 
-wm, 
-'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
-null, 
-[[`Copiar código`, secret]], 
-null, 
-null, 
-m)
+txtCode = await conn.sendMessage(m.chat, {
+text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
+buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
+footer: wm,
+headerType: 1
+}, { quoted: m })
 } else {
-txtCode = await conn.sendButton(m.chat, 
-`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`, 
-wm, 
-'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
-null, 
-[[`Copiar código`, secret]], 
-null, 
-null, 
-m)
+txtCode = await conn.sendMessage(m.chat, {
+text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
+buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
+footer: wm,
+headerType: 1
+}, { quoted: m })
 }} else {
-txtCode = await conn.sendButton(m.chat, 
-`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`, 
-wm, 
-'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
-null, 
-[[`Copiar código`, secret]], 
-null, 
-null, 
-m)
+txtCode = await conn.sendMessage(m.chat, {
+text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
+buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
+footer: wm,
+headerType: 1
+}, { quoted: m })
 }
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
