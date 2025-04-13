@@ -1,78 +1,39 @@
 import fs from 'fs'
 import path from 'path'
-import chalk from 'chalk'
-import GataJadiBot from './jadibot-serbot.js' // Ruta corregida
+import { fileURLToPath } from 'url'
 
-const reiniciarSubBots = async () => {
-    const subBotDir = path.resolve("./GataJadiBot")
-    if (!fs.existsSync(subBotDir)) {
-        console.log('❌ No se encontró la carpeta de sub-bots (GataJadiBot)')
-        return
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+async function reiniciarSubBots(m, responder) {
+  let carpetas = fs.readdirSync('./GataJadiBot')
+  if (!carpetas.length) {
+    if (responder) responder('*[❗] No hay sub-bots activos para reiniciar.*')
+    return
+  }
+
+  for (let carpeta of carpetas) {
+    try {
+      let rutaCreds = `./GataJadiBot/${carpeta}/creds.json`
+      if (!fs.existsSync(rutaCreds)) {
+        console.log(chalk.yellowBright(`Sub-bot (+${carpeta}) no tiene creds.json. Omitiendo...`))
+        continue
+      }
+
+      let ruta = path.resolve(`./GataJadiBot/${carpeta}`)
+      let comando = `node . --jadibot ${ruta}`
+      let proceso = require('child_process').exec(comando)
+
+      proceso.stdout.on('data', (data) => console.log(`[+] ${data}`))
+      proceso.stderr.on('data', (data) => console.error(`[-] ${data}`))
+
+      console.log(chalk.green(`$ Bot: +${carpeta} ~SUB BOT ${chalk.blueBright('[REINICIANDO]')}`))
+    } catch (e) {
+      console.log(`\n[!] Error al reiniciar sub-bot (+${carpeta}):`, e)
     }
+  }
 
-    const subBotFolders = fs.readdirSync(subBotDir).filter(folder =>
-        fs.statSync(path.join(subBotDir, folder)).isDirectory()
-    )
-
-    if (subBotFolders.length === 0) {
-        console.log('ℹ️ No hay sub-bots activos para reiniciar')
-        return
-    }
-
-    let successCount = 0
-    let failCount = 0
-
-    for (const folder of subBotFolders) {
-        const pathGataJadiBot = path.join(subBotDir, folder)
-        const credsPath = path.join(pathGataJadiBot, "creds.json")
-
-        if (!fs.existsSync(credsPath)) {
-            console.log(chalk.yellow(`[!] Sub-bot (+${folder}) sin credenciales. Omitiendo...`))
-            failCount++
-            continue
-        }
-
-        try {
-            const existingIndex = global.conns.findIndex(conn =>
-                conn.user?.jid?.includes(folder))
-
-            if (existingIndex !== -1) {
-                try {
-                    global.conns[existingIndex].ws.close()
-                } catch (e) {
-                    console.error(chalk.red(`Error al cerrar conexión (+${folder}):`), e)
-                }
-                global.conns.splice(existingIndex, 1)
-            }
-
-            console.log(chalk.bold.cyan(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[REINICIANDO]\n`))
-            console.log(chalk.gray('- [-> SUB-BOT -] ---'))
-
-            await GataJadiBot(
-                null, // m
-                {
-                    conn: global.conn,
-                    args: [],
-                    usedPrefix: '#',
-                    command: 'jadibot',
-                    isOwner: true, // Puedes ajustar esto según tu lógica
-                    pathGataJadiBot
-                }
-            )
-
-            console.log(chalk.bold.green(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[CONECTADO]\n`))
-            console.log(chalk.gray('- [-> SUB-BOT -] ---'))
-
-            successCount++
-
-        } catch (error) {
-            console.error(chalk.red(`[!] Error al reiniciar sub-bot (+${folder}):`), error)
-            failCount++
-        }
-    }
-
-    console.log(`♻️ Reinicio de sub-bots completado:\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`)
+  if (responder) responder('*✅ Todos los sub-bots activos han sido reiniciados.*')
 }
 
-// Ejecutar cada 1 minuto
-setInterval(reiniciarSubBots, 60 * 1000)
+export default reiniciarSubBots
