@@ -13,27 +13,28 @@ import { makeWASocket } from '../lib/simple.js';
 
 if (!(global.conns instanceof Array)) global.conns = [];
 
-let handler = async (m, { conn: _conn, args }) => {
+let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
+  let parent = args[0] && args[0] == 'plz' ? _conn : await global.conn;
 
   async function serbot() {
     let authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8);
     if (!fs.existsSync("./GataJadibot/" + authFolderB)) {
       fs.mkdirSync("./GataJadibot/" + authFolderB, { recursive: true });
     }
-
     if (args[0]) {
       fs.writeFileSync(`GataJadibot`, Buffer.from(args[0], 'base64').toString('utf-8'));
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState(`./GataJadibot/${authFolderB}`);
+    const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadibot/${authFolderB}`);
+    const msgRetryCounterMap = (MessageRetryMap) => { };
     const msgRetryCounterCache = new NodeCache();
     const { version } = await fetchLatestBaileysVersion();
     let phoneNumber = m.sender.split('@')[0];
-
     const methodCodeQR = process.argv.includes("qr");
     const methodCode = !!phoneNumber || process.argv.includes("code");
     const MethodMobile = process.argv.includes("mobile");
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    const question = (texto) => new Promise((resolver) => rl.question(texto, resolver));
 
     const connectionOptions = {
       logger: pino({ level: 'silent' }),
@@ -52,12 +53,13 @@ let handler = async (m, { conn: _conn, args }) => {
         return msg?.message || "";
       },
       msgRetryCounterCache,
-      msgRetryCounterMap: (MessageRetryMap) => {},
+      msgRetryCounterMap,
       defaultQueryTimeoutMs: undefined,
       version
     };
 
     let conn = makeWASocket(connectionOptions);
+
     if (methodCode && !conn.authState.creds.registered) {
       if (!phoneNumber) process.exit(0);
       let cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
@@ -68,8 +70,10 @@ let handler = async (m, { conn: _conn, args }) => {
         codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
 
         let txt = '🚀 S E R B O T - S U B B O T 🚀\n\n*Usa este Código para convertirte en un Sub Bot*\n\n🚀 Pasos:\n\n`🚀` : Haga click en los 3 puntos\n\n`🚀` : Toque dispositivos vinculados\n\n`🚀` : Selecciona Vincular con el número de teléfono\n\n`🚀` : Escriba el Código\n\n> *Nota:* Este Código solo funciona en el número que lo solicitó.';
-        await conn.sendMessage(m.chat, { text: txt }, { quoted: m });
-        await conn.sendMessage(m.chat, { text: codeBot }, { quoted: m });
+
+        await _conn.sendMessage(m.chat, { text: txt }, { quoted: m });
+        await _conn.sendMessage(m.chat, { text: codeBot }, { quoted: m });
+
         rl.close();
       }, 3000);
     }
@@ -80,15 +84,15 @@ let handler = async (m, { conn: _conn, args }) => {
     async function connectionUpdate(update) {
       const { connection, lastDisconnect, isNewLogin } = update;
       if (isNewLogin) conn.isInit = true;
-
       const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
+
       if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
         let i = global.conns.indexOf(conn);
         if (i < 0) return console.log(await creloadHandler(true).catch(console.error));
         delete global.conns[i];
         global.conns.splice(i, 1);
         if (code !== DisconnectReason.connectionClosed) {
-          conn.sendMessage(m.chat, { text: "🚩 Conexión perdida con el servidor." }, { quoted: m });
+          parent.sendMessage(m.chat, { text: "🚩 Conexión perdida con el servidor." }, { quoted: m });
         }
       }
 
@@ -96,16 +100,16 @@ let handler = async (m, { conn: _conn, args }) => {
       if (connection == 'open') {
         conn.isInit = true;
         global.conns.push(conn);
-        await conn.sendMessage(m.chat, { text: args[0] ? '🚀 Conectado con éxito al WhatsApp.' : '🚩 Vinculaste un Sub-Bot con éxito.' }, { quoted: m });
+        await parent.sendMessage(m.chat, { text: args[0] ? '🚀 Conectado con éxito al WhatsApp.' : '🚩 Vinculaste un Sub-Bot con éxito.' }, { quoted: m });
         await sleep(5000);
         if (args[0]) return;
-        await conn.sendMessage(conn.user.id, { text: '🚩 *Para volver a vincular un sub Bot use su token' });
+        await parent.sendMessage(conn.user.jid, { text: '🚩 *Para volver a vincular un sub Bot use su token' }, { quoted: m });
       }
     }
 
     setInterval(async () => {
       if (!conn.user) {
-        try { conn.ws.close(); } catch {}
+        try { conn.ws.close(); } catch { }
         conn.ev.removeAllListeners();
         let i = global.conns.indexOf(conn);
         if (i < 0) return;
@@ -124,7 +128,7 @@ let handler = async (m, { conn: _conn, args }) => {
       }
 
       if (restatConn) {
-        try { conn.ws.close(); } catch {}
+        try { conn.ws.close(); } catch { }
         conn.ev.removeAllListeners();
         conn = makeWASocket(connectionOptions);
         isInit = true;
@@ -145,6 +149,7 @@ let handler = async (m, { conn: _conn, args }) => {
       isInit = false;
       return true;
     };
+
     creloadHandler(false);
   }
 
