@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
-import GataJadiBot from './GataJadiBot' // Asegúrate de que esta ruta sea correcta
+import gataJadiBot from './jadibot-serbot.js' // Asegúrate de que esta ruta sea correcta
 
 const reiniciarSubBots = async () => {
     const subBotDir = path.resolve("./GataJadiBot")
