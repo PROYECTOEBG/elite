@@ -27,11 +27,27 @@ const __dirname = path.dirname(__filename)
 const gataJBOptions = {}
 const retryMap = new Map(); 
 const maxAttempts = 5;
+const cooldownMap = new Map();
+const COOLDOWN_TIME = 10000; // 10 segundos
+
 if (global.conns instanceof Array) console.log()
 else global.conns = []
 let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
 if (!global.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`${lenguajeGB['smsSoloOwnerJB']()}`)
 if (m.fromMe || conn.user.jid === m.sender) return
+
+// Verificar cooldown
+const now = Date.now();
+const lastUse = cooldownMap.get(m.sender) || 0;
+const remainingTime = COOLDOWN_TIME - (now - lastUse);
+
+if (remainingTime > 0) {
+return m.reply(`*⏳ Por favor espera ${Math.ceil(remainingTime / 1000)} segundos antes de usar el comando nuevamente.*`);
+}
+
+// Actualizar el tiempo del último uso
+cooldownMap.set(m.sender, now);
+
 //if (conn.user.jid !== global.conn.user.jid) return conn.reply(m.chat, `${lenguajeGB['smsJBPrincipal']()} wa.me/${global.conn.user.jid.split`@`[0]}&text=${usedPrefix + command}`, m) 
 let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
 let id = `${who.split`@`[0]}`  //conn.getName(who)
