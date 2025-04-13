@@ -135,24 +135,28 @@ secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 
+// Primero enviamos el mensaje básico
+await m.reply(`${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`);
+
+// Luego enviamos el botón
 if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
 txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
+text: `*Código:* ${secret}`,
 buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
 footer: wm,
 headerType: 1
 }, { quoted: m })
 } else {
 txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
+text: `*Código:* ${secret}`,
 buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
 footer: wm,
 headerType: 1
 }, { quoted: m })
 }} else {
 txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
+text: `*Código:* ${secret}`,
 buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
 footer: wm,
 headerType: 1
