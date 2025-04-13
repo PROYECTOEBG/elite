@@ -135,9 +135,9 @@ secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 
-txtCode = await m.reply({
-image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg' },
-caption: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`
+txtCode = await conn.sendMessage(m.chat, { 
+image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' }, 
+caption: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}` 
 })
 
 if (txtCode) {
