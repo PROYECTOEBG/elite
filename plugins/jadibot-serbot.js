@@ -115,7 +115,7 @@ sock.isInit = false
 let isInit = true
 let reconnectAttempts = 0;
 
-sock.connectionUpdate = async (update) => {
+const connectionUpdate = async (update) => {
 const { connection, lastDisconnect, isNewLogin, qr } = update;
 if (isNewLogin) sock.isInit = false;
 
@@ -180,7 +180,7 @@ console.log('Error al enviar mensaje de reconexión:', error);
 }
 };
 
-sock.ev.on('connection.update', sock.connectionUpdate);
+sock.ev.on('connection.update', connectionUpdate);
 
 const endSesion = async (loaded) => {
 if (!loaded) {
@@ -262,12 +262,11 @@ fs.rmdirSync(pathGataJadiBot, { recursive: true })
 }}
 
 if (global.db.data == null) loadDatabase()
-if (connection == `open`) {
+if (connection === 'open') {
 reconnectAttempts = 0; 
 if (!global.db.data?.users) loadDatabase()
-let userName, userJid 
-userName = sock.authState.creds.me.name || 'Anónimo'
-userJid = sock.authState.creds.me.jid || `${path.basename(pathGataJadiBot)}@s.whatsapp.net`
+let userName = sock.authState.creds.me.name || 'Anónimo'
+let userJid = sock.authState.creds.me.jid || `${path.basename(pathGataJadiBot)}@s.whatsapp.net`
 console.log(chalk.bold.cyanBright(`\n❒⸺⸺⸺⸺【• SUB-BOT •】⸺⸺⸺⸺❒\n│\n│ 🟢 ${userName} (+${path.basename(pathGataJadiBot)}) conectado exitosamente.\n│\n❒⸺⸺⸺【• CONECTADO •】⸺⸺⸺❒`))
 sock.isInit = true
 global.conns.push(sock)
@@ -314,14 +313,16 @@ m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
 }}
 setInterval(async () => {
 if (!sock.user) {
-try { sock.ws.close() } catch (e) {      
-//console.log(await creloadHandler(true).catch(console.error))
+try { 
+sock.ws.close();
+} catch (e) {
+console.log(e);
 }
-sock.ev.removeAllListeners()
-let i = global.conns.indexOf(sock)		
-if (i < 0) return
-delete global.conns[i]
-global.conns.splice(i, 1)
+sock.ev.removeAllListeners();
+let i = global.conns.indexOf(sock);
+if (i < 0) return;
+delete global.conns[i];
+global.conns.splice(i, 1);
 }}, 60000)
 
 let handler = await import('../handler.js')
