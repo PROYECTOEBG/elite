@@ -166,6 +166,7 @@ null,
 m)
 }
 console.log(chalk.bold.green(`Código generado: ${secret}`));
+codeBot = await m.reply(secret);
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
 const messageId = txtCode.key || txtCode.id
 setTimeout(() => { conn.sendMessage(m.chat, { delete: messageId })}, 30000)
