@@ -1,48 +1,35 @@
-const handler = async (m, { conn, isROwner, text }) => {
-  if (!process.send) throw '❌ Este comando solo funciona con: node index.js';
+import { watchFile, unwatchFile } from 'fs'
 
-  // Mensaje de confirmación
-  const { key } = await conn.sendMessage(m.chat, { text: `⚡ *Reinicio Automático de SubBots* ⚡\n\nSe reiniciarán los SubBots (GataJadiBot) cada 1 minuto.` }, { quoted: m });
-  
-  // Iniciar el reinicio automático
-  startAutoRestart(conn, m.chat, key);
-};
+// Función para reiniciar los SubBots (GataJadiBot)
+const restartSubBots = async () => {
+  try {
+    console.log('🔄 *Reiniciando SubBots (GataJadiBot)...*');
+    
+    // Aquí va la lógica para reiniciar los SubBots
+    // Si usas PM2, puedes descomentar esto:
+    // const { exec } = require('child_process');
+    // exec('pm2 restart GataJadiBot', (error) => {
+    //   if (error) console.error('❌ Error al reiniciar:', error);
+    //   else console.log('✅ SubBots reiniciados correctamente');
+    // });
 
-// Función para reinicio automático cada 1 minuto
-function startAutoRestart(conn, chatId, originalMsgKey) {
-  let intervalId = setInterval(async () => {
-    try {
-      // Mensaje de estado antes del reinicio
-      await conn.sendMessage(chatId, { text: `🔄 *Reiniciando SubBots (GataJadiBot)...*`, edit: originalMsgKey });
-      
-      // Forzar el reinicio (simulado con process.exit, pero deberías usar un método específico para SubBots)
-      process.exit(0); // Esto reiniciará el proceso actual (ajusta según tu sistema de SubBots)
-      
-    } catch (error) {
-      console.error('Error en el reinicio automático:', error);
-      await conn.sendMessage(chatId, { text: `❌ *Error al reiniciar SubBots*`, edit: originalMsgKey });
-    }
-  }, 60 * 1000); // 60,000 ms = 1 minuto
-
-  // Guardar el intervalo para posible limpieza
-  global.subBotsRestartInterval = intervalId;
-}
-
-// Comando para detener el reinicio automático (opcional)
-const stopHandler = async (m, { conn }) => {
-  if (global.subBotsRestartInterval) {
-    clearInterval(global.subBotsRestartInterval);
-    await conn.sendMessage(m.chat, { text: `✋ *Reinicio automático detenido*` });
-  } else {
-    await conn.sendMessage(m.chat, { text: `⚠️ *No hay reinicio automático en curso*` });
+    // Si no usas PM2, simplemente cierra el proceso (simulación)
+    process.exit(0); // Esto reiniciará el proceso actual (ajusta según tu sistema)
+    
+  } catch (error) {
+    console.error('❌ Error en el reinicio automático:', error);
   }
 };
 
-handler.help = ['autorestart'];
-handler.tags = ['owner'];
-handler.command = ['autorestart', 'autoreinicio'];
-handler.owner = true;
+// Configurar el intervalo de reinicio (60 segundos = 1 minuto)
+let restartInterval = setInterval(restartSubBots, 60 * 1000);
 
-export default handler;
+// Opcional: Detener el reinicio si se edita el archivo (para desarrollo)
+watchFile(import.meta.url, () => {
+  unwatchFile(import.meta.url);
+  clearInterval(restartInterval);
+  console.log('✋ Reinicio automático detenido (archivo modificado)');
+});
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// Mensaje de inicio
+console.log('⚡ *Plugin de Reinicio Automático Activado* ⚡\nSe reiniciarán los SubBots cada 1 minuto.');
