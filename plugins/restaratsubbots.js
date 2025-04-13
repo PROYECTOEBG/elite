@@ -1,47 +1,58 @@
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import chalk from 'chalk'
-import { exec } from 'child_process'
+import fs from 'fs';
+import path from 'path';
+import { exec } from 'child_process';
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const handler = async (m, { conn, isROwner, text }) => {
+    const datas = global;
 
-async function reiniciarSubBots(m = null, responder = null) {
-  let carpetas = fs.readdirSync('./GataJadiBot')
-  if (!carpetas.length) {
-    if (responder) responder('*[❗] No hay sub-bots activos para reiniciar.*')
-    return
-  }
+    if (!process.send) throw 'Dont: node main.js\nDo: node index.js';
 
-  for (let carpeta of carpetas) {
-    try {
-      let rutaCreds = `./GataJadiBot/${carpeta}/creds.json`
-      if (!fs.existsSync(rutaCreds)) {
-        console.log(chalk.yellowBright(`Sub-bot (+${carpeta}) no tiene creds.json. Omitiendo...`))
-        continue
-      }
+    const { key } = await conn.sendMessage(m.chat, { text: `🚀🚀` }, { quoted: m });
+    await delay(1000 * 1);
+    await conn.sendMessage(m.chat, { text: `🚀🚀🚀🚀`, edit: key });
+    await delay(1000 * 1);
+    await conn.sendMessage(m.chat, { text: `🚀🚀🚀🚀🚀🚀`, edit: key });
+    await conn.sendMessage(m.chat, { text: `𝙍𝙚𝙞𝙣𝙞𝙘𝙞𝙖𝙧 | 𝙍𝙚𝙨𝙩𝙖𝙧𝙩`, edit: key });
 
-      let ruta = path.resolve(`./GataJadiBot/${carpeta}`)
-      let comando = `node . --jadibot ${ruta}`
-      let proceso = exec(comando)
+    // Llamamos a la función para reiniciar los subbots
+    restartSubbots();
 
-      proceso.stdout.on('data', (data) => console.log(`[+] ${data}`))
-      proceso.stderr.on('data', (data) => console.error(`[-] ${data}`))
+    // Función para reiniciar los subbots
+    const restartSubbots = () => {
+        const subbotsDir = path.join(__dirname, 'GataJadiBot');  // Ruta de la carpeta de subbots
+        fs.readdir(subbotsDir, (err, files) => {
+            if (err) {
+                console.error('Error leyendo la carpeta de subbots:', err);
+                return;
+            }
 
-      console.log(chalk.green(`$ Bot: +${carpeta} ~SUB BOT ${chalk.blueBright('[REINICIANDO]')}`))
-    } catch (e) {
-      console.log(`\n[!] Error al reiniciar sub-bot (+${carpeta}):`, e)
-    }
-  }
+            // Filtrar solo las carpetas (si los subbots están organizados como carpetas)
+            const subbots = files.filter(file => fs.statSync(path.join(subbotsDir, file)).isDirectory());
 
-  if (responder) responder('*✅ Todos los sub-bots activos han sido reiniciados.*')
-}
+            // Reiniciar cada subbot encontrado
+            subbots.forEach(subbot => {
+                exec(`pm2 restart ${subbot}`, (error, stdout, stderr) => {
+                    if (error) {
+                        console.error(`Error reiniciando ${subbot}: ${error.message}`);
+                        return;
+                    }
+                    if (stderr) {
+                        console.error(`stderr: ${stderr}`);
+                        return;
+                    }
+                    console.log(`stdout de ${subbot}: ${stdout}`);
+                });
+            });
+        });
+    };
+};
 
-// Repetir cada 1 minuto (60000 ms)
-setInterval(() => {
-  console.log(chalk.cyan('[AUTO] Reiniciando sub-bots cada 1 minuto...'))
-  reiniciarSubBots()
-}, 60 * 1000)
+// Función de espera
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export default reiniciarSubBots
+handler.help = ['restart'];
+handler.tags = ['owner'];
+handler.command = ['restartt', 'reiniciar'];
+handler.owner = true;
+
+export default handler;
