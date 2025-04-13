@@ -2,28 +2,30 @@ import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
 
-const handler = async (m, { conn, isROwner }) => {
-    if (!isROwner) return m.reply('⚠️ Este comando solo puede ser usado por el owner del bot')
-    
+const restartSubBots = async (conn, notifyChat = null) => {
     const subBotDir = path.resolve("./GataJadiBot")
     if (!fs.existsSync(subBotDir)) {
-        return m.reply('❌ No se encontró la carpeta de sub-bots (GataJadiBot)')
+        if (notifyChat) conn.sendMessage(notifyChat, { text: '❌ No se encontró la carpeta de sub-bots (GataJadiBot)' })
+        return
     }
 
-    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
+    const subBotFolders = fs.readdirSync(subBotDir).filter(folder =>
         fs.statSync(path.join(subBotDir, folder)).isDirectory()
     )
 
     if (subBotFolders.length === 0) {
-        return m.reply('ℹ️ No hay sub-bots activos para reiniciar')
+        if (notifyChat) conn.sendMessage(notifyChat, { text: 'ℹ️ No hay sub-bots activos para reiniciar' })
+        return
     }
 
-    // Notificación de inicio
-    const { key } = await conn.sendMessage(m.chat, { 
-        text: `🔄 Preparando reinicio de ${subBotFolders.length} sub-bots...` 
-    }, { quoted: m })
+    let key
+    if (notifyChat) {
+        const res = await conn.sendMessage(notifyChat, {
+            text: `🔄 Preparando reinicio de ${subBotFolders.length} sub-bots...`
+        })
+        key = res.key
+    }
 
-    // Contador de sub-bots reiniciados
     let successCount = 0
     let failCount = 0
 
@@ -38,10 +40,9 @@ const handler = async (m, { conn, isROwner }) => {
         }
 
         try {
-            // 1. Buscar y cerrar conexión existente
-            const existingIndex = global.conns.findIndex(conn => 
+            const existingIndex = global.conns.findIndex(conn =>
                 conn.user?.jid?.includes(folder))
-            
+
             if (existingIndex !== -1) {
                 try {
                     global.conns[existingIndex].ws.close()
@@ -51,11 +52,9 @@ const handler = async (m, { conn, isROwner }) => {
                 global.conns.splice(existingIndex, 1)
             }
 
-            // 2. Mostrar en consola
             console.log(chalk.bold.cyan(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[REINICIANDO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
 
-            // 3. Crear nueva conexión
             await gataJadiBot({
                 pathGataJadiBot,
                 m: null,
@@ -68,14 +67,15 @@ const handler = async (m, { conn, isROwner }) => {
 
             console.log(chalk.bold.green(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[CONECTADO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
-            
+
             successCount++
-            
-            // Actualizar mensaje de progreso
-            await conn.sendMessage(m.chat, { 
-                text: `🔄 Reiniciando sub-bots...\n✅ ${successCount} | ❌ ${failCount}`, 
-                edit: key 
-            })
+
+            if (notifyChat && key) {
+                await conn.sendMessage(notifyChat, {
+                    text: `🔄 Reiniciando sub-bots...\n✅ ${successCount} | ❌ ${failCount}`,
+                    edit: key
+                })
+            }
 
         } catch (error) {
             console.error(chalk.red(`[!] Error al reiniciar sub-bot (+${folder}):`), error)
@@ -83,19 +83,31 @@ const handler = async (m, { conn, isROwner }) => {
         }
     }
 
-    // Resultado final
-    await conn.sendMessage(m.chat, { 
-        text: `♻️ Reinicio de sub-bots completado:\n\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`,
-        edit: key 
-    })
+    if (notifyChat && key) {
+        await conn.sendMessage(notifyChat, {
+            text: `♻️ Reinicio de sub-bots completado:\n\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`,
+            edit: key
+        })
+    }
+}
+
+// Comando manual
+const handler = async (m, { conn, isROwner }) => {
+    if (!isROwner) return m.reply('⚠️ Este comando solo puede ser usado por el owner del bot')
+    await restartSubBots(conn, m.chat)
 }
 
 handler.help = ['restartsubbots']
 handler.tags = ['owner']
-handler.command = ['restartsubbots', 'reiniciarsubbots'] 
+handler.command = ['restartsubbots', 'reiniciarsubbots']
 handler.owner = true
 
 export default handler
 
-// Función de delay para las animaciones
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+// Ejecución automática cada minuto
+setInterval(() => {
+    // Asegúrate de que `global.conn` esté definido correctamente
+    if (global.conn) {
+        restartSubBots(global.conn)
+    }
+}, 60 * 1000)
