@@ -1,4 +1,4 @@
-/*const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 import fs from 'fs';
 import path from 'path';
 
@@ -30,4 +30,3 @@ setInterval(() => {
 }, 60 * 1000);
 
 export default function () {}
-*/
