@@ -135,32 +135,10 @@ secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 
-if (!m.isWABusiness) {
-if (/web|desktop|unknown/i.test(dispositivo)) {
-txtCode = await conn.sendMessage(m.chat, {
+txtCode = await m.reply({
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg' },
-caption: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 4
-}, { quoted: m })
-} else {
-txtCode = await conn.sendMessage(m.chat, {
-image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg' },
-caption: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 4
-}, { quoted: m })
-}} else {
-txtCode = await conn.sendMessage(m.chat, {
-image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg' },
-caption: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 4
-}, { quoted: m })
-}
+caption: `${rtx2.trim()}\n\n*Código:* ${secret}\n\n${drmer.toString("utf-8")}`
+})
 
 if (txtCode) {
 setTimeout(() => { 
