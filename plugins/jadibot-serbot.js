@@ -414,5 +414,32 @@ async function checkSubBots() {
         if (!subBot || !subBot.user) {
             console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
             const retries = retryMap.get(folder) || 0;
+            if (!subBot || !subBot.user) {
+            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
+            const retries = retryMap.get(folder) || 0;
             if (retries >= 5) {
-                console.
+                console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                retryMap.delete(folder);
+                continue;
+            }
+
+            try {
+                await gataJadiBot({
+                    pathGataJadiBot,
+                    m: null,
+                    conn: global.conn,
+                    args: [],
+                    usedPrefix: '#',
+                    command: 'jadibot',
+                    fromCommand: false
+                });
+                retryMap.delete(folder);
+            } catch (e) {
+                console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);
+                retryMap.set(folder, retries + 1);
+            }
+        }
+    }
+}
+
+setInterval(checkSubBots, 30000);
