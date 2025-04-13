@@ -5,7 +5,8 @@ import path from 'path';
 const SESSIONS_DIR = './GataJadiBot/';
 
 // Regex que detecta el mensaje de error en la consola
-const regex = /Cred\s+\(\+?(\d+)\)\s+no encontradas para\.json/i;
+// Regex que detecta el mensaje de error en la consola
+ const regex = /Sub-bot\s+\(\+?(\d+)\)\s+no tiene creds\.json/i;
 
 /**
  * Elimina automáticamente la carpeta del sub-bot si no tiene creds.json
