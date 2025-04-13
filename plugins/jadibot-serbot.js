@@ -115,75 +115,47 @@ sock.isInit = false
 let isInit = true
 let reconnectAttempts = 0;
 
-async function connectionUpdate(update) {
-const { connection, lastDisconnect, isNewLogin, qr } = update
-if (isNewLogin) sock.isInit = false
+sock.connectionUpdate = async (update) => {
+const { connection, lastDisconnect, isNewLogin, qr } = update;
+if (isNewLogin) sock.isInit = false;
+
 if (qr && !mcode) {
 if (m?.chat) {
-txtQR = await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: rtx.trim() + '\n' + drmer.toString("utf-8")}, { quoted: m})
-} else {
-return 
-}
+txtQR = await conn.sendMessage(m.chat, { 
+image: await qrcode.toBuffer(qr, { scale: 8 }), 
+caption: rtx.trim() + '\n' + drmer.toString("utf-8")
+}, { quoted: m });
+
 if (txtQR && txtQR.key) {
-setTimeout(() => { conn.sendMessage(m.sender, { delete: txtQR.key })}, 30000)
+setTimeout(() => { 
+conn.sendMessage(m.chat, { delete: txtQR.key });
+}, 30000);
 }
-return
-} 
+}
+return;
+}
+
 if (qr && mcode) {
-let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
-secret = secret.match(/.{1,4}/g)?.join("-")
-const dispositivo = await getDevice(m.key.id);
+let secret = await sock.requestPairingCode(m.sender.split('@')[0]);
+secret = secret.match(/.{1,4}/g)?.join("-") || '';
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 
-// Primero enviamos solo el código
 await m.reply(`*Código:* ${secret}`);
 
-// Luego enviamos el mensaje con botón
-if (!m.isWABusiness) {
-if (/web|desktop|unknown/i.test(dispositivo)) {
 txtCode = await conn.sendMessage(m.chat, {
 text: `${rtx2.trim()}\n\n${drmer.toString("utf-8")}`,
 buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
 footer: wm,
 headerType: 1
-}, { quoted: m })
-} else {
-txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 1
-}, { quoted: m })
-}} else {
-txtCode = await conn.sendMessage(m.chat, {
-text: `${rtx2.trim()}\n\n${drmer.toString("utf-8")}`,
-buttons: [{ buttonId: secret, buttonText: { displayText: 'Copiar código' }, type: 1 }],
-footer: wm,
-headerType: 1
-}, { quoted: m })
-}
+}, { quoted: m });
 
 if (txtCode) {
 setTimeout(() => { 
-conn.sendMessage(m.chat, { delete: txtCode.key })
-}, 30000)
+conn.sendMessage(m.chat, { delete: txtCode.key });
+}, 30000);
 }
 }
 
-const endSesion = async (loaded) => {
-if (!loaded) {
-try {
-sock.ws.close()
-} catch {
-}
-sock.ev.removeAllListeners()
-let i = global.conns.indexOf(sock)		
-if (i < 0) return 
-delete global.conns[i]
-global.conns.splice(i, 1)
-}}
-
-const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 if (connection === 'close') {
 const log = {
 level: 'error',
@@ -206,6 +178,24 @@ await conn.reply(m.chat, `_🔄 Intentando reconectar..._`);
 console.log('Error al enviar mensaje de reconexión:', error);
 }
 }
+};
+
+sock.ev.on('connection.update', sock.connectionUpdate);
+
+const endSesion = async (loaded) => {
+if (!loaded) {
+try {
+sock.ws.close()
+} catch {
+}
+sock.ev.removeAllListeners()
+let i = global.conns.indexOf(sock)		
+if (i < 0) return 
+delete global.conns[i]
+global.conns.splice(i, 1)
+}}
+
+const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 if (reason === 428) {
 if (reconnectAttempts < maxAttempts) {
 const delay = 1000 * Math.pow(2, reconnectAttempts); 
