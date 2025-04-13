@@ -1,44 +1,43 @@
 import fs from 'fs'
 import path from 'path'
 import chalk from 'chalk'
+import { makeWASocket } from '../lib/simple.js'
+import { useMultiFileAuthState, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } from (await import(global.baileys))
 
-const handler = async (m, { conn, isROwner }) => {
-    if (!isROwner) return m.reply('⚠️ Este comando solo puede ser usado por el owner del bot')
-    
-    const subBotDir = path.resolve("./GataJadiBot")
-    if (!fs.existsSync(subBotDir)) {
-        return m.reply('❌ No se encontró la carpeta de sub-bots (GataJadiBot)')
+// Configuración
+const SUBBOTS_DIR = "./GataJadiBot"
+const CHECK_INTERVAL = 60000 // 1 minuto
+let checkInterval = null
+
+// Función mejorada para reiniciar sub-bots
+async function restartAllSubBots() {
+    if (!fs.existsSync(SUBBOTS_DIR)) {
+        console.log(chalk.yellow('[!] No se encontró la carpeta de sub-bots (GataJadiBot)'))
+        return
     }
 
-    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
-        fs.statSync(path.join(subBotDir, folder)).isDirectory()
+    const subBotFolders = fs.readdirSync(SUBBOTS_DIR).filter(folder => 
+        fs.statSync(path.join(SUBBOTS_DIR, folder)).isDirectory()
     )
 
     if (subBotFolders.length === 0) {
-        return m.reply('ℹ️ No hay sub-bots activos para reiniciar')
+        console.log(chalk.yellow('[ℹ] No hay sub-bots activos para reiniciar'))
+        return
     }
 
-    // Notificación de inicio
-    const { key } = await conn.sendMessage(m.chat, { 
-        text: `🔄 Preparando reinicio de ${subBotFolders.length} sub-bots...` 
-    }, { quoted: m })
-
-    // Contador de sub-bots reiniciados
-    let successCount = 0
-    let failCount = 0
+    console.log(chalk.blue(`\n[⚡] Iniciando reinicio automático de ${subBotFolders.length} sub-bots...`))
 
     for (const folder of subBotFolders) {
-        const pathGataJadiBot = path.join(subBotDir, folder)
+        const pathGataJadiBot = path.join(SUBBOTS_DIR, folder)
         const credsPath = path.join(pathGataJadiBot, "creds.json")
 
         if (!fs.existsSync(credsPath)) {
             console.log(chalk.yellow(`[!] Sub-bot (+${folder}) sin credenciales. Omitiendo...`))
-            failCount++
             continue
         }
 
         try {
-            // 1. Buscar y cerrar conexión existente
+            // 1. Cerrar conexión existente
             const existingIndex = global.conns.findIndex(conn => 
                 conn.user?.jid?.includes(folder))
             
@@ -55,47 +54,74 @@ const handler = async (m, { conn, isROwner }) => {
             console.log(chalk.bold.cyan(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[REINICIANDO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
 
-            // 3. Crear nueva conexión
-            await gataJadiBot({
-                pathGataJadiBot,
-                m: null,
-                conn: global.conn,
-                args: [],
-                usedPrefix: '#',
-                command: 'jadibot',
-                fromCommand: false
+            // 3. Crear nueva conexión (usando la misma lógica que tu comando original)
+            const { version } = await fetchLatestBaileysVersion()
+            const { state, saveCreds } = await useMultiFileAuthState(pathGataJadiBot)
+
+            const sock = makeWASocket({
+                logger: pino({ level: "silent" }),
+                printQRInTerminal: false,
+                auth: {
+                    creds: state.creds,
+                    keys: makeCacheableSignalKeyStore(state.keys, pino({ level: 'silent' }))
+                },
+                browser: ['GataBot-MD (Sub Bot)', 'Chrome', '2.0.0'],
+                version: version,
+                generateHighQualityLinkPreview: true
             })
+
+            sock.ev.on('creds.update', saveCreds)
+            global.conns.push(sock)
 
             console.log(chalk.bold.green(`\n${chalk.green('$')} Bot: +${folder} ~${chalk.yellow('SUB BOT')} ${chalk.green('$')}[CONECTADO]\n`))
             console.log(chalk.gray('- [-> SUB-BOT -] ---'))
-            
-            successCount++
-            
-            // Actualizar mensaje de progreso
-            await conn.sendMessage(m.chat, { 
-                text: `🔄 Reiniciando sub-bots...\n✅ ${successCount} | ❌ ${failCount}`, 
-                edit: key 
-            })
 
         } catch (error) {
             console.error(chalk.red(`[!] Error al reiniciar sub-bot (+${folder}):`), error)
-            failCount++
         }
     }
-
-    // Resultado final
-    await conn.sendMessage(m.chat, { 
-        text: `♻️ Reinicio de sub-bots completado:\n\n✅ Éxitos: ${successCount}\n❌ Fallidos: ${failCount}`,
-        edit: key 
-    })
 }
 
-handler.help = ['restartsubbots']
-handler.tags = ['owner']
-handler.command = ['restartsubbots', 'reiniciarsubbots'] 
-handler.owner = true
+// Iniciar el reinicio automático
+function startAutoRestart() {
+    // Detener intervalo existente si hay
+    if (checkInterval) {
+        clearInterval(checkInterval)
+    }
+    
+    // Ejecutar inmediatamente el primer reinicio
+    restartAllSubBots().catch(console.error)
+    
+    // Configurar intervalo periódico
+    checkInterval = setInterval(() => {
+        console.log(chalk.magenta('\n[⏰] Ejecutando reinicio automático de sub-bots...'))
+        restartAllSubBots().catch(console.error)
+    }, CHECK_INTERVAL)
+    
+    console.log(chalk.green(`\n[✅] Sistema de reinicio automático activado (cada ${CHECK_INTERVAL/1000} segundos)`))
+}
 
-export default handler
+// Detener el reinicio automático (opcional)
+function stopAutoRestart() {
+    if (checkInterval) {
+        clearInterval(checkInterval)
+        checkInterval = null
+        console.log(chalk.yellow('\n[⚠] Sistema de reinicio automático detenido'))
+    }
+}
 
-// Función de delay para las animaciones
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+// Iniciar automáticamente al cargar el archivo
+startAutoRestart()
+
+// Manejar cierre del proceso
+process.on('SIGINT', () => {
+    stopAutoRestart()
+    process.exit(0)
+})
+
+// Exportar funciones para control manual si es necesario
+export default {
+    startAutoRestart,
+    stopAutoRestart,
+    restartAllSubBots
+}
