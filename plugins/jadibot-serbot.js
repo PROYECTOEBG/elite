@@ -14,10 +14,10 @@ import { makeWASocket } from '../lib/simple.js';
 import '../plugins/_content.js';
 import { fileURLToPath } from 'url';
 
-// Configuración de reinicio automático mejorada
+// Configuración de reinicio automático
 const AUTO_RESTART_INTERVAL = 60000; // 1 minuto en ms
 let restartTimer = null;
-let restartInProgress = false;
+let isRestarting = false;
 
 let crm1 = "Y2QgcGx1Z2lucy";
 let crm2 = "A7IG1kNXN1b";
@@ -33,71 +33,55 @@ const __dirname = path.dirname(__filename);
 const gataJBOptions = {};
 const retryMap = new Map();
 const maxAttempts = 5;
-const connectionMap = new Map(); // Para rastrear el estado de conexión de los subbots
 
 if (global.conns instanceof Array) console.log();
 else global.conns = [];
 
-// Función de reinicio mejorada con manejo de errores y sincronización
-async function restartProcess() {
-    if (restartInProgress) {
-        console.log(chalk.yellow('Ya hay un reinicio en progreso, esperando...'));
-        return;
-    }
-    
-    restartInProgress = true;
+// Función mejorada de reinicio para todos los bots
+async function restartAllBots() {
+    if (isRestarting) return;
+    isRestarting = true;
+
     console.log(chalk.bold.yellowBright('\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡'));
-    console.log(chalk.bold.yellowBright('┆ Iniciando reinicio automático del sistema...'));
-    console.log(chalk.bold.yellowBright('╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n'));
+    console.log(chalk.bold.yellowBright('┆ 🔄 Iniciando reinicio automático de todos los bots...'));
+    console.log(chalk.bold.yellowBright('╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡'));
 
     try {
-        // Cerrar todas las conexiones de subbots de manera ordenada
+        // 1. Cerrar todas las conexiones de subbots
         if (global.conns && global.conns.length > 0) {
-            console.log(chalk.cyan(`Cerrando ${global.conns.length} conexiones de subbots...`));
+            console.log(chalk.yellow(`└─ Cerrando ${global.conns.length} subbots...`));
             
-            for (const conn of global.conns) {
+            await Promise.all(global.conns.map(async (conn, index) => {
                 try {
-                    if (conn.user) {
-                        console.log(chalk.cyan(`Desconectando subbot: +${conn.user.jid.split('@')[0]}`));
-                    }
-                    
-                    // Cerrar el WebSocket de manera segura
                     if (conn.ws && conn.ws.readyState !== ws.CLOSED) {
-                        await new Promise((resolve) => {
-                            conn.ws.close();
-                            conn.ws.once('close', resolve);
-                            // Timeout por si el evento 'close' nunca se dispara
-                            setTimeout(resolve, 3000);
-                        });
+                        conn.ws.close();
+                        console.log(chalk.yellow(`   ├─ Subbot ${index + 1} cerrado`));
                     }
-                    
-                    // Eliminar todos los listeners para evitar memory leaks
-                    if (conn.ev) conn.ev.removeAllListeners();
+                    conn.ev.removeAllListeners();
                 } catch (e) {
-                    console.error(chalk.red('Error al cerrar conexión:'), e);
+                    console.error(chalk.red(`   ├─ Error cerrando subbot ${index + 1}:`), e);
                 }
-            }
+            }));
             
-            // Resetear el array de conexiones
             global.conns = [];
-            console.log(chalk.green('Todas las conexiones de subbots cerradas correctamente'));
         }
 
+        // 2. Reiniciar el proceso principal
+        console.log(chalk.yellow('└─ Reiniciando proceso principal...'));
+        
         // Limpiar el temporizador de reinicio
         if (restartTimer) {
-            clearTimeout(restartTimer);
+            clearInterval(restartTimer);
             restartTimer = null;
         }
 
-        console.log(chalk.green('Sistema preparado para reiniciar...'));
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Esperar un segundo para asegurar que logs se muestren
-        
-        // Reiniciar el proceso
+        // Forzar el reinicio
         process.exit(0);
     } catch (e) {
-        console.error(chalk.red('Error crítico en el proceso de reinicio:'), e);
-        restartInProgress = false; // Desbloquear para permitir futuros intentos
+        console.error(chalk.red('└─ Error en el reinicio:'), e);
         process.exit(1);
+    } finally {
+        isRestarting = false;
     }
 }
 
@@ -105,20 +89,11 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
     if (!global.db.data.settings[conn.user.jid].jadibotmd) return m.reply(`${lenguajeGB['smsSoloOwnerJB']()}`);
     if (m.fromMe || conn.user.jid === m.sender) return;
 
-    // Comando para reinicio manual mejorado
+    // Comando para reinicio manual
     if (command === 'restart' || command === 'reiniciar') {
         if (!isOwner) return m.reply(lenguajeGB['smsOwner']());
-        await m.reply('🚀 Reiniciando el sistema, por favor espere...');
-        
-        // Guardar los datos importantes antes de reiniciar
-        try {
-            await global.db.write();
-            console.log(chalk.green('✓ Base de datos guardada antes del reinicio'));
-        } catch (err) {
-            console.error(chalk.red('Error al guardar la base de datos antes del reinicio:'), err);
-        }
-        
-        await restartProcess();
+        await m.reply('🔄 Reiniciando todos los bots...');
+        await restartAllBots();
         return;
     }
 
@@ -138,12 +113,11 @@ let handler = async (m, { conn, args, usedPrefix, command, isOwner }) => {
     gataJBOptions.command = command;
     gataJBOptions.fromCommand = true;
 
-    // Iniciar temporizador de reinicio si no existe y asegurar que solo se haga una vez
-    if (!restartTimer && process.send && !restartInProgress) {
-        console.log(chalk.cyan('Configurando temporizador de reinicio automático...'));
-        restartTimer = setTimeout(() => {
-            console.log(chalk.yellow('Temporizador de reinicio automático activado'));
-            restartProcess().catch(console.error);
+    // Iniciar temporizador de reinicio si no existe
+    if (!restartTimer && process.send) {
+        restartTimer = setInterval(async () => {
+            console.log(chalk.bold.magentaBright('\n[🔄] Ejecutando reinicio programado...'));
+            await restartAllBots();
         }, AUTO_RESTART_INTERVAL);
     }
 
@@ -197,47 +171,18 @@ export async function gataJadiBot(options) {
             msgRetryCache,
             browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['GataBot-MD (Sub Bot)', 'Chrome', '2.0.0'],
             version: version,
-            generateHighQualityLinkPreview: true,
-            keepAliveIntervalMs: 10000, // Mantener la conexión activa
-            connectTimeoutMs: 60000, // Aumentar timeout para conexión inicial
-            patchMessageBeforeSending: (message) => {
-                const requiresPatch = !!(
-                    message.buttonsMessage ||
-                    message.templateMessage ||
-                    message.listMessage
-                );
-                if (requiresPatch) {
-                    message = {
-                        viewOnceMessage: {
-                            message: {
-                                messageContextInfo: {
-                                    deviceListMetadataVersion: 2,
-                                    deviceListMetadata: {},
-                                },
-                                ...message,
-                            },
-                        },
-                    };
-                }
-                return message;
-            }
+            generateHighQualityLinkPreview: true
         };
 
         let sock = makeWASocket(connectionOptions);
         sock.isInit = false;
         let isInit = true;
         let reconnectAttempts = 0;
-        connectionMap.set(pathGataJadiBot, {
-            active: true,
-            lastAttempt: Date.now()
-        });
 
-        // Mejorar el manejo de actualizaciones de conexión
         async function connectionUpdate(update) {
             const { connection, lastDisconnect, isNewLogin, qr } = update;
             if (isNewLogin) sock.isInit = false;
             
-            // Mostrar el código QR si es necesario
             if (qr && !mcode) {
                 if (m?.chat) {
                     txtQR = await conn.sendMessage(m.chat, { image: await qrcode.toBuffer(qr, { scale: 8 }), caption: rtx.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m });
@@ -250,31 +195,25 @@ export async function gataJadiBot(options) {
                 return;
             }
 
-            // Mostrar el código para emparejar si se está usando mcode
             if (qr && mcode) {
-                try {
-                    let secret = await sock.requestPairingCode((m.sender.split`@`[0]));
-                    secret = secret.match(/.{1,4}/g)?.join("-");
-                    const dispositivo = await getDevice(m.key.id);
-                    
-                    if (!m.isWABusiness) {
-                        if (/web|desktop|unknown/i.test(dispositivo)) {
-                            txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m });
-                            codeBot = await m.reply(secret);
-                        } else {
-                            txtCode = await conn.sendButton(m.chat, rtx2.trim() + '\n' + drmer.toString("utf-8"), wm + `\n*Código:* ${secret}`, 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', null, [[`Copiar código`, secret]], null, null, m);
-                        }
-                    } else {
+                let secret = await sock.requestPairingCode((m.sender.split`@`[0]));
+                secret = secret.match(/.{1,4}/g)?.join("-");
+                const dispositivo = await getDevice(m.key.id);
+                
+                if (!m.isWABusiness) {
+                    if (/web|desktop|unknown/i.test(dispositivo)) {
                         txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m });
                         codeBot = await m.reply(secret);
+                    } else {
+                        txtCode = await conn.sendButton(m.chat, rtx2.trim() + '\n' + drmer.toString("utf-8"), wm + `\n*Código:* ${secret}`, 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', null, [[`Copiar código`, secret]], null, null, m);
                     }
-                    console.log(chalk.greenBright("Código de emparejamiento:"), secret);
-                } catch (e) {
-                    console.error("Error al generar código de emparejamiento:", e);
+                } else {
+                    txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m });
+                    codeBot = await m.reply(secret);
                 }
+                console.log(secret);
             }
 
-            // Limpiar mensajes temporales
             if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
                 const messageId = txtCode.key || txtCode.id;
                 setTimeout(() => { conn.sendMessage(m.sender, { delete: messageId }) }, 30000);
@@ -284,107 +223,64 @@ export async function gataJadiBot(options) {
                 setTimeout(() => { conn.sendMessage(m.sender, { delete: codeBot.key }) }, 30000);
             }
 
-            // Manejo mejorado de errores de conexión
             const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
             
             if (connection === 'close') {
-                const botId = path.basename(pathGataJadiBot);
-                console.log(chalk.yellow(`Conexión cerrada para +${botId}. Razón: ${reason || 'Desconocida'}`));
-                
-                // Manejo de errores específicos con estrategias adaptadas
                 if (reason === 428) {
                     if (reconnectAttempts < maxAttempts) {
-                        const delay = 1000 * Math.pow(2, reconnectAttempts); // Backoff exponencial
-                        console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${botId}) fue cerrada inesperadamente. Intentando reconectar en ${delay / 1000} segundos... (Intento ${reconnectAttempts + 1}/${maxAttempts})\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                        await sleep(delay);
+                        const delay = 1000 * Math.pow(2, reconnectAttempts);
+                        console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue cerrada inesperadamente. Intentando reconectar en ${delay / 1000} segundos... (Intento ${reconnectAttempts + 1}/${maxAttempts})\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                        await sleep(1000);
                         reconnectAttempts++;
                         await creloadHandler(true).catch(console.error);
                     } else {
-                        console.log(chalk.redBright(`Sub-bot (+${botId}) agotó intentos de reconexión. Intentando más tarde...`));
-                        connectionMap.set(pathGataJadiBot, {
-                            active: false,
-                            lastAttempt: Date.now(),
-                            error: "Intentos agotados"
-                        });
-                        // Programar un nuevo intento después de un tiempo
-                        setTimeout(() => {
-                            reconnectAttempts = 0;
-                            creloadHandler(true).catch(console.error);
-                        }, 300000); // 5 minutos
+                        console.log(chalk.redBright(`Sub-bot (+${path.basename(pathGataJadiBot)}) agotó intentos de reconexión. Intentando más tarde...`));
                     }
-                } else if (reason === 408) {
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${botId}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                    await sleep(3000); // Esperar un poco antes de reconectar
+                }
+
+                if (reason === 408) {
+                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
                     await creloadHandler(true).catch(console.error);
-                } else if (reason === 440) {
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${botId}) fue reemplazada por otra sesión activa.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                }
+
+                if (reason === 440) {
+                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue reemplazada por otra sesión activa.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
                     try {
-                        if (options.fromCommand) {
-                            m?.chat ? await conn.sendMessage(`${botId}@s.whatsapp.net`, { 
-                                text: '*HEMOS DETECTADO UNA NUEVA SESIÓN, BORRE LA NUEVA SESIÓN PARA CONTINUAR*\n\n> *SI HAY ALGÚN PROBLEMA VUELVA A CONECTARSE*' 
-                            }, { quoted: m || null }) : "";
-                        }
-                        // Marcar como inactivo pero no borrar credenciales
-                        connectionMap.set(pathGataJadiBot, {
-                            active: false,
-                            lastAttempt: Date.now(),
-                            error: "Multisesión"
-                        });
+                        if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathGataJadiBot)}@s.whatsapp.net`, { text: '*HEMOS DETECTADO UNA NUEVA SESIÓN, BORRE LA NUEVA SESIÓN PARA CONTINUAR*\n\n> *SI HAY ALGÚN PROBLEMA VUELVA A CONECTARSE*' }, { quoted: m || null }) : "";
                     } catch (error) {
-                        console.error(chalk.bold.yellow(`Error 440 no se pudo enviar mensaje a: +${botId}`));
+                        console.error(chalk.bold.yellow(`Error 440 no se pudo enviar mensaje a: +${path.basename(pathGataJadiBot)}`));
                     }
-                } else if (reason == 405 || reason == 401) {
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${botId}) fue cerrada. Credenciales no válidas o dispositivo desconectado manualmente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                }
+
+                if (reason == 405 || reason == 401) {
+                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Credenciales no válidas o dispositivo desconectado manualmente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
                     try {
-                        if (options.fromCommand) {
-                            m?.chat ? await conn.sendMessage(`${botId}@s.whatsapp.net`, { 
-                                text: '*🟢 SESIÓN PENDIENTE*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT, USANDO EL COMANDO:* /jadibot' 
-                            }, { quoted: m || null }) : "";
-                        }
-                        // Limpiar directorio y marcar como inactivo
-                        fs.rmdirSync(pathGataJadiBot, { recursive: true });
-                        connectionMap.delete(pathGataJadiBot);
+                        if (options.fromCommand) m?.chat ? await conn.sendMessage(`${path.basename(pathGataJadiBot)}@s.whatsapp.net`, { text: '*🟢 SESIÓN PENDIENTE*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT, USANDO EL COMANDO:* /jadibot' }, { quoted: m || null }) : "";
                     } catch (error) {
-                        console.error(chalk.bold.yellow(`Error 405 no se pudo enviar mensaje a: +${botId}`));
+                        console.error(chalk.bold.yellow(`Error 405 no se pudo enviar mensaje a: +${path.basename(pathGataJadiBot)}`));
                     }
-                } else if (reason === 500) {
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Conexión perdida en la sesión (+${botId}). Borrando datos...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                    fs.rmdirSync(pathGataJadiBot, { recursive: true });
+                }
+
+                if (reason === 500) {
+                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Conexión perdida en la sesión (+${path.basename(pathGataJadiBot)}). Borrando datos...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
 
                     if (options.fromCommand) {
-                        m?.chat ? await conn.sendMessage(m.chat, { 
-                            text: '*CONEXIÓN PÉRDIDA*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT*' 
-                        }, { quoted: m || null }) : "";
+                        m?.chat ? await conn.sendMessage(m.chat, { text: '*CONEXIÓN PÉRDIDA*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT*' }, { quoted: m || null }) : "";
                     }
-                    
-                    // Para error 500, programar un intento de reconexión después de un tiempo
-                    connectionMap.set(pathGataJadiBot, {
-                        active: false,
-                        lastAttempt: Date.now(),
-                        error: "Error interno"
-                    });
-                    setTimeout(() => {
-                        reconnectAttempts = 0;
-                        creloadHandler(true).catch(console.error);
-                    }, 60000); // 1 minuto
-                } else if (reason === 515) {
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Reinicio automático para la sesión (+${botId}).\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                    // Reinicio rápido para código 515
-                    await sleep(1000);
+                }
+
+                if (reason === 515) {
+                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Reinicio automático para la sesión (+${path.basename(pathGataJadiBot)}).\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
                     await creloadHandler(true).catch(console.error);
-                } else if (reason === 403) {
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sesión cerrada o cuenta en soporte para la sesión (+${botId}).\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                    // Eliminar credenciales para error 403
+                }
+
+                if (reason === 403) {
+                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sesión cerrada o cuenta en soporte para la sesión (+${path.basename(pathGataJadiBot)}).\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
                     fs.rmdirSync(pathGataJadiBot, { recursive: true });
-                    connectionMap.delete(pathGataJadiBot);
-                } else if (!reason) {
-                    // Sin razón específica, probablemente un error de red o timeout
-                    console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${botId}) se cerró sin razón específica. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                    await sleep(5000); // Esperar más tiempo para problemas de red
-                    await creloadHandler(true).catch(console.error);
                 }
             }
 
-            // Manejo de conexión exitosa
             if (connection == `open`) {
                 reconnectAttempts = 0;
                 if (!global.db.data?.users) loadDatabase();
@@ -395,105 +291,160 @@ export async function gataJadiBot(options) {
                 console.log(chalk.bold.cyanBright(`\n❒⸺⸺⸺⸺【• SUB-BOT •】⸺⸺⸺⸺❒\n│\n│ 🟢 ${userName} (+${path.basename(pathGataJadiBot)}) conectado exitosamente.\n│\n❒⸺⸺⸺【• CONECTADO •】⸺⸺⸺❒`));
                 
                 sock.isInit = true;
-                
-                // Asegurarse de que el socket se agregue solo una vez
-                const existingIndex = global.conns.findIndex(c => 
-                    c.user?.jid === sock.user?.jid || 
-                    (c.authState?.creds?.me?.id === sock.authState?.creds?.me?.id));
-                
-                if (existingIndex >= 0) {
-                    global.conns[existingIndex] = sock;
-                } else {
-                    global.conns.push(sock);
-                }
-
-                // Actualizar estado en el mapa de conexiones
-                connectionMap.set(pathGataJadiBot, {
-                    active: true,
-                    lastAttempt: Date.now(),
-                    userName: userName,
-                    userJid: userJid
-                });
+                global.conns.push(sock);
 
                 let user = global.db.data?.users[`${path.basename(pathGataJadiBot)}@s.whatsapp.net`];
-                
-                // Notificar al usuario que la conexión fue exitosa
-                if (m?.chat) {
-                    try {
-                        await conn.sendMessage(m.chat, { 
-                            text: args[0] ? `${lenguajeGB['smsJBCargando'](usedPrefix)}` : `${lenguajeGB['smsJBConexionTrue2']()}` + ` ${usedPrefix + command}` 
-                        }, { quoted: m });
-                    } catch (notifyError) {
-                        console.error("Error al notificar conexión exitosa:", notifyError);
-                    }
-                }
+                m?.chat ? await conn.sendMessage(m.chat, { text: args[0] ? `${lenguajeGB['smsJBCargando'](usedPrefix)}` : `${lenguajeGB['smsJBConexionTrue2']()}` + ` ${usedPrefix + command}` }, { quoted: m }) : '';
                 
                 let chtxt = `👤 *Usuario:* ${userName}`.trim();
                 let ppch = await sock.profilePictureUrl(userJid, 'image').catch(_ => gataMenu);
                 
-                // Enviar notificación general
-                try {
-                    await sleep(3000);
-                    await global.conn.sendMessage(ch.ch1, { text: chtxt, contextInfo: {
-                        externalAdReply: {
-                            title: "【 🔔 Notificación General 🔔 】",
-                            body: '🙀 ¡Nuevo sub-bot encontrado!',
-                            thumbnailUrl: ppch,
-                            sourceUrl: accountsgb,
-                            mediaType: 1,
-                            showAdAttribution: false,
-                            renderLargerThumbnail: false
-                        }
-                    }}, { quoted: null });
-                } catch (notifError) {
-                    console.error("Error al enviar notificación general:", notifError);
-                }
-                
-                try {
-                    // Unirse a canales
-                    await sleep(3000);
-                    await joinChannels(sock);
-                } catch (joinError) {
-                    console.error("Error al unirse a canales:", joinError);
-                }
-                
-                // Confirmación final al usuario
-                if (m?.chat) {
-                    try {
-                        await conn.sendMessage(m.chat, { 
-                            text: `✅ *Sub-bot ${userName} conectado correctamente!*` 
-                        }, { quoted: m });
-                    } catch (finalError) {
-                        console.error("Error al enviar confirmación final:", finalError);
+                await sleep(3000);
+                await global.conn.sendMessage(ch.ch1, { text: chtxt, contextInfo: {
+                    externalAdReply: {
+                        title: "【 🔔 Notificación General 🔔 】",
+                        body: '🙀 ¡Nuevo sub-bot encontrado!',
+                        thumbnailUrl: ppch,
+                        sourceUrl: accountsgb,
+                        mediaType: 1,
+                        showAdAttribution: false,
+                        renderLargerThumbnail: false
                     }
-                }
+                }}, { quoted: null });
+                
+                await sleep(3000);
+                await joinChannels(sock);
+                m?.chat ? await conn.sendMessage(m.chat, { text: `hola` }, { quoted: m }) : '';
             }
         }
 
-        // Vigilancia de conexiones y limpieza mejorada
-        const cleanupInterval = setInterval(async () => {
+        setInterval(async () => {
             if (!sock.user) {
-                try { 
-                    sock.ws.close(); 
-                } catch (e) {
-                    console.log("Error al cerrar WS durante limpieza:", e.message);
-                }
-                
-                try {
-                    sock.ev.removeAllListeners();
-                } catch (e) {
-                    console.log("Error al eliminar listeners durante limpieza:", e.message);
-                }
-                
+                try { sock.ws.close(); } catch (e) {}
+                sock.ev.removeAllListeners();
                 let i = global.conns.indexOf(sock);
                 if (i < 0) return;
                 delete global.conns[i];
                 global.conns.splice(i, 1);
-                
-                console.log(chalk.yellow(`Socket sin usuario eliminado de conexiones globales`));
-                
-                clearInterval(cleanupInterval);
             }
-        }, 30000);
+        }, 60000);
 
         let handler = await import('../handler.js');
+        let creloadHandler = async function (restatConn) {
+            try {
+                const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error);
+                if (Object.keys(Handler || {}).length) handler = Handler;
+            } catch (e) {
+                console.error('Nuevo error: ', e);
+            }
+
+            if (restatConn) {
+                const oldChats = sock.chats;
+                try { sock.ws.close(); } catch { }
+                sock.ev.removeAllListeners();
+                sock = makeWASocket(connectionOptions, { chats: oldChats });
+                isInit = true;
+            }
+
+            if (!isInit) {
+                sock.ev.off('messages.upsert', sock.handler);
+                sock.ev.off('group-participants.update', sock.participantsUpdate);
+                sock.ev.off('groups.update', sock.groupsUpdate);
+                sock.ev.off('message.delete', sock.onDelete);
+                sock.ev.off('call', sock.onCall);
+                sock.ev.off('connection.update', sock.connectionUpdate);
+                sock.ev.off('creds.update', sock.credsUpdate);
+            }
+
+            sock.welcome = lenguajeGB['smsWelcome']();
+            sock.bye = lenguajeGB['smsBye']();
+            sock.spromote = lenguajeGB['smsSpromote']();
+            sock.sdemote = lenguajeGB['smsSdemote']();
+            sock.sDesc = lenguajeGB['smsSdesc']();
+            sock.sSubject = lenguajeGB['smsSsubject']();
+            sock.sIcon = lenguajeGB['smsSicon']();
+            sock.sRevoke = lenguajeGB['smsSrevoke']();
+
+            sock.handler = handler.handler.bind(sock);
+            sock.participantsUpdate = handler.participantsUpdate.bind(sock);
+            sock.groupsUpdate = handler.groupsUpdate.bind(sock);
+            sock.onDelete = handler.deleteUpdate.bind(sock);
+            sock.onCall = handler.callUpdate.bind(sock);
+            sock.connectionUpdate = connectionUpdate.bind(sock);
+            sock.credsUpdate = saveCreds.bind(sock, true);
+
+            sock.ev.on('messages.upsert', sock.handler);
+            sock.ev.on('group-participants.update', sock.participantsUpdate);
+            sock.ev.on('groups.update', sock.groupsUpdate);
+            sock.ev.on('message.delete', sock.onDelete);
+            sock.ev.on('call', sock.onCall);
+            sock.ev.on('connection.update', sock.connectionUpdate);
+            sock.ev.on('creds.update', sock.credsUpdate);
+            
+            isInit = false;
+            return true;
+        };
+
+        creloadHandler(false);
+    });
+}
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function joinChannels(conn) {
+    for (const channelId of Object.values(global.ch)) {
+        await conn.newsletterFollow(channelId).catch(() => {});
+    }
+}
+
+async function checkSubBots() {
+    const subBotDir = path.resolve("./GataJadiBot");
+    if (!fs.existsSync(subBotDir)) return;
+    
+    const subBotFolders = fs.readdirSync(subBotDir).filter(folder => 
+        fs.statSync(path.join(subBotDir, folder)).isDirectory()
+    );
+
+    for (const folder of subBotFolders) {
+        const pathGataJadiBot = path.join(subBotDir, folder);
+        const credsPath = path.join(pathGataJadiBot, "creds.json");
+        const subBot = global.conns.find(conn => 
+            conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);
+
+        if (!fs.existsSync(credsPath)) {
+            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+            continue;
+        }
+
+        if (!subBot || !subBot.user) {
+            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado o fue añadido recientemente. Intentando activarlo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+            const retries = retryMap.get(folder) || 0;
+            
+            if (retries >= 5) {
+                console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                continue;
+            }
+
+            try {
+                await gataJadiBot({
+                    pathGataJadiBot,
+                    m: null,
+                    conn: global.conn,
+                    args: [],
+                    usedPrefix: '#',
+                    command: 'jadibot',
+                    fromCommand: false
+                });
+                retryMap.delete(folder);
+            } catch (e) {
+                console.error(chalk.redBright(`Error al activar sub-bot (+${folder}):`), e);
+                retryMap.set(folder, retries + 1);
+            }
+        }
+    }
+}
+
+setInterval(checkSubBots, 30000);
