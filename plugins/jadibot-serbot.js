@@ -123,7 +123,7 @@ txtCode = await conn.sendMessage(m.chat, {
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
 caption: rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret 
 }, { quoted: m })
-codeBot = await m.reply(secret);
+codeBot = await m.reply(`*INSTRUCCIONES:*\n\n1. Abre WhatsApp en tu teléfono\n2. Ve a Ajustes > Dispositivos vinculados > Vincular un dispositivo\n3. Ingresa el código: ${secret}\n\n*El código expirará en 30 segundos*`);
 } else {
 txtCode = await conn.sendButton(m.chat, 
 rtx2.trim() + '\n' + drmer.toString("utf-8"), 
@@ -134,13 +134,13 @@ null,
 null, 
 null, 
 m)
-codeBot = await m.reply(secret);
+codeBot = await m.reply(`*INSTRUCCIONES:*\n\n1. Abre WhatsApp en tu teléfono\n2. Ve a Ajustes > Dispositivos vinculados > Vincular un dispositivo\n3. Ingresa el código: ${secret}\n\n*El código expirará en 30 segundos*`);
 }} else {
 txtCode = await conn.sendMessage(m.chat, { 
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
 caption: rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret 
 }, { quoted: m })
-codeBot = await m.reply(secret);
+codeBot = await m.reply(`*INSTRUCCIONES:*\n\n1. Abre WhatsApp en tu teléfono\n2. Ve a Ajustes > Dispositivos vinculados > Vincular un dispositivo\n3. Ingresa el código: ${secret}\n\n*El código expirará en 30 segundos*`);
 }
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
