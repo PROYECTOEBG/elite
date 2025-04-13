@@ -18,14 +18,14 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command }) => {
 
   async function serbot() {
     let authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8);
-    if (!fs.existsSync("./GataJadibot/" + authFolderB)) {
-      fs.mkdirSync("./GataJadibot/" + authFolderB, { recursive: true });
+    if (!fs.existsSync("./GataJadiBot/" + authFolderB)) {
+      fs.mkdirSync("./GataJadiBot/" + authFolderB, { recursive: true });
     }
     if (args[0]) {
-      fs.writeFileSync(`GataJadibot`, Buffer.from(args[0], 'base64').toString('utf-8'));
+      fs.writeFileSync(`GataJadiBot`, Buffer.from(args[0], 'base64').toString('utf-8'));
     }
 
-    const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadibot/${authFolderB}`);
+    const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadiBot/${authFolderB}`);
     const msgRetryCounterMap = (MessageRetryMap) => { };
     const msgRetryCounterCache = new NodeCache();
     const { version } = await fetchLatestBaileysVersion();
