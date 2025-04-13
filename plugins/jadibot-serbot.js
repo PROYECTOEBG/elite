@@ -191,9 +191,11 @@ console.error(chalk.bold.yellow(`Error 440 no se pudo enviar mensaje a: +${path.
 if (reason == 405 || reason == 401) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Credenciales no válidas o dispositivo desconectado manualmente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 try {
-if (options.fromCommand) m?.chat ? await conn.sendMessage(m.chat, {text : '*🟢 SESIÓN PENDIENTE*\n\n> *INTENTÉ MANUALMENTE VOLVER A SER SUB-BOT, USANDO EL COMANDOS:* /jadibot' }, { quoted: m }) : ""
+if (options.fromCommand) {
+await creloadHandler(true).catch(console.error)
+}
 } catch (error) {
-console.error(chalk.bold.yellow(`Error 405 no se pudo enviar mensaje a: +${path.basename(pathGataJadiBot)}`))
+console.error(chalk.bold.yellow(`Error 405 no se pudo reconectar: +${path.basename(pathGataJadiBot)}`))
 }
 fs.rmdirSync(pathGataJadiBot, { recursive: true })
 }
