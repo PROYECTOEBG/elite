@@ -13,33 +13,28 @@ import { makeWASocket } from '../lib/simple.js';
 
 if (!(global.conns instanceof Array)) global.conns = [];
 
-let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROwner }) => {
-  if (!global.db.data.settings[_conn.user.jid].jadibotmd && !isROwner) {
-    conn.reply(m.chat, '🚩 Este Comando está deshabilitado por mi creador.', m)
-    return
-  }
-
-  let parent = args[0] && args[0] == 'plz' ? _conn : await global.conn;
+let handler = async (m, { conn: _conn, args }) => {
 
   async function serbot() {
     let authFolderB = crypto.randomBytes(10).toString('hex').slice(0, 8);
     if (!fs.existsSync("./GataJadibot/" + authFolderB)) {
       fs.mkdirSync("./GataJadibot/" + authFolderB, { recursive: true });
     }
+
     if (args[0]) {
-      fs.writeFileSync(`GataJadibot`, Buffer.from(args[0], 'base64').toString('utf-8'))
+      fs.writeFileSync(`GataJadibot`, Buffer.from(args[0], 'base64').toString('utf-8'));
     }
 
-    const { state, saveState, saveCreds } = await useMultiFileAuthState(`./GataJadibot/${authFolderB}`);
-    const msgRetryCounterMap = (MessageRetryMap) => { };
+    const { state, saveCreds } = await useMultiFileAuthState(`./GataJadibot/${authFolderB}`);
     const msgRetryCounterCache = new NodeCache();
     const { version } = await fetchLatestBaileysVersion();
     let phoneNumber = m.sender.split('@')[0];
+
     const methodCodeQR = process.argv.includes("qr");
     const methodCode = !!phoneNumber || process.argv.includes("code");
     const MethodMobile = process.argv.includes("mobile");
     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    const question = (texto) => new Promise((resolver) => rl.question(texto, resolver));
+
     const connectionOptions = {
       logger: pino({ level: 'silent' }),
       printQRInTerminal: false,
@@ -57,27 +52,24 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
         return msg?.message || "";
       },
       msgRetryCounterCache,
-      msgRetryCounterMap,
+      msgRetryCounterMap: (MessageRetryMap) => {},
       defaultQueryTimeoutMs: undefined,
       version
     };
 
     let conn = makeWASocket(connectionOptions);
-
     if (methodCode && !conn.authState.creds.registered) {
-      if (!phoneNumber) {
-        process.exit(0);
-      }
+      if (!phoneNumber) process.exit(0);
       let cleanedNumber = phoneNumber.replace(/[^0-9]/g, '');
-      if (!Object.keys(PHONENUMBER_MCC).some(v => cleanedNumber.startsWith(v))) {
-        process.exit(0);
-      }
+      if (!Object.keys(PHONENUMBER_MCC).some(v => cleanedNumber.startsWith(v))) process.exit(0);
+
       setTimeout(async () => {
         let codeBot = await conn.requestPairingCode(cleanedNumber);
         codeBot = codeBot?.match(/.{1,4}/g)?.join("-") || codeBot;
-        let txt = '🚀 S E R B O T - S U B B O T 🚀\n\n*Usa este Código para convertirte en un Sub Bot*\n\n🚀 Pasos:\n\n`🚀` : Haga click en los 3 puntos\n\n`🚀` : Toque dispositivos vinculados\n\n`🚀` : Selecciona Vincular con el número de teléfono\n\n`🚀` : Escriba el Codigo\n\n> *Nota:* Este Código solo funciona en el número que lo solicito.';
-        await parent.reply(m.chat, txt, m);
-        await parent.reply(m.chat, codeBot, m);
+
+        let txt = '🚀 S E R B O T - S U B B O T 🚀\n\n*Usa este Código para convertirte en un Sub Bot*\n\n🚀 Pasos:\n\n`🚀` : Haga click en los 3 puntos\n\n`🚀` : Toque dispositivos vinculados\n\n`🚀` : Selecciona Vincular con el número de teléfono\n\n`🚀` : Escriba el Código\n\n> *Nota:* Este Código solo funciona en el número que lo solicitó.';
+        await conn.sendMessage(m.chat, { text: txt }, { quoted: m });
+        await conn.sendMessage(m.chat, { text: codeBot }, { quoted: m });
         rl.close();
       }, 3000);
     }
@@ -86,8 +78,9 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
     let isInit = true;
 
     async function connectionUpdate(update) {
-      const { connection, lastDisconnect, isNewLogin, qr } = update;
+      const { connection, lastDisconnect, isNewLogin } = update;
       if (isNewLogin) conn.isInit = true;
+
       const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
       if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
         let i = global.conns.indexOf(conn);
@@ -95,25 +88,24 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
         delete global.conns[i];
         global.conns.splice(i, 1);
         if (code !== DisconnectReason.connectionClosed) {
-          parent.sendMessage(m.chat, { text: "🚩 Conexión perdida con el servidor." }, { quoted: m });
+          conn.sendMessage(m.chat, { text: "🚩 Conexión perdida con el servidor." }, { quoted: m });
         }
       }
 
       if (global.db.data == null) loadDatabase();
-
       if (connection == 'open') {
         conn.isInit = true;
         global.conns.push(conn);
-        await parent.reply(m.chat, args[0] ? '🚀 Conectado con éxito al WhatsApp.' : '🚩 Vinculaste un Sub-Bot con éxito.', m);
+        await conn.sendMessage(m.chat, { text: args[0] ? '🚀 Conectado con éxito al WhatsApp.' : '🚩 Vinculaste un Sub-Bot con éxito.' }, { quoted: m });
         await sleep(5000);
         if (args[0]) return;
-        await parentw.reply(conn.user.jid, `🚩 *Para volver a vincular un sub Bot use su token`, m)
+        await conn.sendMessage(conn.user.id, { text: '🚩 *Para volver a vincular un sub Bot use su token' });
       }
     }
 
     setInterval(async () => {
       if (!conn.user) {
-        try { conn.ws.close(); } catch { }
+        try { conn.ws.close(); } catch {}
         conn.ev.removeAllListeners();
         let i = global.conns.indexOf(conn);
         if (i < 0) return;
@@ -123,7 +115,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
     }, 60000);
 
     let handler = await import('../handler.js');
-
     let creloadHandler = async function (restatConn) {
       try {
         const Handler = await import(`../handler.js?update=${Date.now()}`).catch(console.error);
@@ -133,7 +124,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
       }
 
       if (restatConn) {
-        try { conn.ws.close(); } catch { }
+        try { conn.ws.close(); } catch {}
         conn.ev.removeAllListeners();
         conn = makeWASocket(connectionOptions);
         isInit = true;
@@ -154,7 +145,6 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
       isInit = false;
       return true;
     };
-
     creloadHandler(false);
   }
 
@@ -164,6 +154,7 @@ let handler = async (m, { conn: _conn, args, usedPrefix, command, isOwner, isROw
 handler.help = ['code'];
 handler.tags = ['jadibot'];
 handler.command = ['codes'];
+
 export default handler;
 
 function sleep(ms) {
