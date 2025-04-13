@@ -121,11 +121,11 @@ if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
 txtCode = await conn.sendMessage(m.chat, { 
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
-caption: rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret
+caption: rtx2.trim() + '\n' + drmer.toString("utf-8")
 }, { quoted: m })
 } else {
 txtCode = await conn.sendButton(m.chat, 
-rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret, 
+rtx2.trim() + '\n' + drmer.toString("utf-8"), 
 wm, 
 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
 null, 
@@ -136,7 +136,7 @@ m)
 }} else {
 txtCode = await conn.sendMessage(m.chat, { 
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
-caption: rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret
+caption: rtx2.trim() + '\n' + drmer.toString("utf-8")
 }, { quoted: m })
 }
 console.log(chalk.bold.green(`Código generado: ${secret}`));
