@@ -1,11 +1,13 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import chalk from 'chalk'
+import { exec } from 'child_process'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-async function reiniciarSubBots(m, responder) {
+async function reiniciarSubBots(m = null, responder = null) {
   let carpetas = fs.readdirSync('./GataJadiBot')
   if (!carpetas.length) {
     if (responder) responder('*[❗] No hay sub-bots activos para reiniciar.*')
@@ -22,7 +24,7 @@ async function reiniciarSubBots(m, responder) {
 
       let ruta = path.resolve(`./GataJadiBot/${carpeta}`)
       let comando = `node . --jadibot ${ruta}`
-      let proceso = require('child_process').exec(comando)
+      let proceso = exec(comando)
 
       proceso.stdout.on('data', (data) => console.log(`[+] ${data}`))
       proceso.stderr.on('data', (data) => console.error(`[-] ${data}`))
@@ -35,5 +37,11 @@ async function reiniciarSubBots(m, responder) {
 
   if (responder) responder('*✅ Todos los sub-bots activos han sido reiniciados.*')
 }
+
+// Repetir cada 1 minuto (60000 ms)
+setInterval(() => {
+  console.log(chalk.cyan('[AUTO] Reiniciando sub-bots cada 1 minuto...'))
+  reiniciarSubBots()
+}, 60 * 1000)
 
 export default reiniciarSubBots
