@@ -119,16 +119,30 @@ secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
 if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
-txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m })
+txtCode = await conn.sendMessage(m.chat, { 
+image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
+caption: rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret 
+}, { quoted: m })
 codeBot = await m.reply(secret);
 } else {
-txtCode = await conn.sendButton(m.chat, rtx2.trim() + '\n' + drmer.toString("utf-8"), wm + `\n*Código:* ${secret}`, 'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', null, [[`Copiar código`, secret]], null, null, m)
+txtCode = await conn.sendButton(m.chat, 
+rtx2.trim() + '\n' + drmer.toString("utf-8"), 
+wm + `\n*Código:* ${secret}`, 
+'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
+null, 
+[[`Copiar código`, secret]], 
+null, 
+null, 
+m)
+codeBot = await m.reply(secret);
 }} else {
-txtCode = await conn.sendMessage(m.chat, { image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, caption: rtx2.trim() + '\n' + drmer.toString("utf-8") }, { quoted: m })
+txtCode = await conn.sendMessage(m.chat, { 
+image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
+caption: rtx2.trim() + '\n' + drmer.toString("utf-8") + '\n\n*Código:* ' + secret 
+}, { quoted: m })
 codeBot = await m.reply(secret);
 }
-console.log(secret);
-}
+console.log(chalk.bold.green(`Código generado: ${secret}`));
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
 const messageId = txtCode.key || txtCode.id
 setTimeout(() => { conn.sendMessage(m.sender, { delete: messageId })}, 30000)
@@ -136,6 +150,8 @@ setTimeout(() => { conn.sendMessage(m.sender, { delete: messageId })}, 30000)
 if (codeBot && codeBot.key) {
 setTimeout(() => { conn.sendMessage(m.sender, { delete: codeBot.key })}, 30000)
 }
+}
+
 const endSesion = async (loaded) => {
 if (!loaded) {
 try {
