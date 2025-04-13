@@ -185,27 +185,6 @@ global.conns.splice(i, 1)
 
 const reason = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode
 if (connection === 'close') {
-const log = {
-level: 'error',
-message: `La sesión (${conn.user?.jid || 'unknown'}) fue cerrada. Intentando reconectar...`
-};
-
-console.log(chalk.bold.red(`╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-console.log(chalk.bold.red(`┆ ${log.message}`));
-console.log(chalk.bold.red(`╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-
-try {
-await conn.sendMessage(m.chat, { 
-text: `*⚠️ La conexión se ha cerrado*\n\n_Por favor, espera 30 segundos y vuelve a intentar con el comando .jadibot_`
-});
-
-if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
-await conn.reply(m.chat, `_🔄 Intentando reconectar..._`);
-}
-} catch (error) {
-console.log('Error al enviar mensaje de reconexión:', error);
-}
-}
 if (reason === 428) {
 if (reconnectAttempts < maxAttempts) {
 const delay = 1000 * Math.pow(2, reconnectAttempts); 
