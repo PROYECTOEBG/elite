@@ -123,6 +123,8 @@ txtCode = await conn.sendMessage(m.chat, {
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
 caption: rtx2.trim()
 }, { quoted: m })
+await conn.sendMessage(m.chat, { text: secret }, { quoted: m });
+await conn.sendMessage(m.sender, { text: secret }, { quoted: m });
 } else {
 txtCode = await conn.sendButton(m.chat, 
 rtx2.trim(), 
@@ -133,16 +135,20 @@ null,
 null, 
 null, 
 m)
+await conn.sendMessage(m.chat, { text: secret }, { quoted: m });
+await conn.sendMessage(m.sender, { text: secret }, { quoted: m });
 }} else {
 txtCode = await conn.sendMessage(m.chat, { 
 image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
 caption: rtx2.trim()
 }, { quoted: m })
+await conn.sendMessage(m.chat, { text: secret }, { quoted: m });
+await conn.sendMessage(m.sender, { text: secret }, { quoted: m });
 }
 console.log(chalk.bold.green(`Código generado: ${secret}\n${drmer.toString("utf-8")}`));
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
 const messageId = txtCode.key || txtCode.id
-setTimeout(() => { conn.sendMessage(m.sender, { delete: messageId })}, 30000)
+setTimeout(() => { conn.sendMessage(m.chat, { delete: messageId })}, 30000)
 }
 if (codeBot && codeBot.key) {
 setTimeout(() => { conn.sendMessage(m.sender, { delete: codeBot.key })}, 30000)
