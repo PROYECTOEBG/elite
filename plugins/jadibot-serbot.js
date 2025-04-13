@@ -119,12 +119,15 @@ secret = secret.match(/.{1,4}/g)?.join("-")
 const dispositivo = await getDevice(m.key.id);
 if (!m.isWABusiness) {
 if (/web|desktop|unknown/i.test(dispositivo)) {
-txtCode = await conn.sendMessage(m.chat, { 
-image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
-caption: rtx2.trim()
-}, { quoted: m })
-await conn.sendMessage(m.chat, { text: secret }, { quoted: m });
-await conn.sendMessage(m.sender, { text: secret }, { quoted: m });
+txtCode = await conn.sendButton(m.chat, 
+rtx2.trim(), 
+wm, 
+'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
+null, 
+[[`Copiar código`, secret]], 
+null, 
+null, 
+m)
 } else {
 txtCode = await conn.sendButton(m.chat, 
 rtx2.trim(), 
@@ -135,15 +138,16 @@ null,
 null, 
 null, 
 m)
-await conn.sendMessage(m.chat, { text: secret }, { quoted: m });
-await conn.sendMessage(m.sender, { text: secret }, { quoted: m });
 }} else {
-txtCode = await conn.sendMessage(m.chat, { 
-image: { url: 'https://cdn.dorratz.com/files/1742816530181.jpg' || gataMenu.getRandom() }, 
-caption: rtx2.trim()
-}, { quoted: m })
-await conn.sendMessage(m.chat, { text: secret }, { quoted: m });
-await conn.sendMessage(m.sender, { text: secret }, { quoted: m });
+txtCode = await conn.sendButton(m.chat, 
+rtx2.trim(), 
+wm, 
+'https://cdn.dorratz.com/files/1742816530181.jpg' || 'https://qu.ax/wyUjT.jpg', 
+null, 
+[[`Copiar código`, secret]], 
+null, 
+null, 
+m)
 }
 console.log(chalk.bold.green(`Código generado: ${secret}\n${drmer.toString("utf-8")}`));
 if ((txtCode && txtCode.key) || (txtCode && txtCode.id)) {
