@@ -360,46 +360,46 @@ async function checkSubBots() {
         fs.statSync(path.join(subBotDir, folder)).isDirectory()
     );
 
-    console.log(chalk.bold.cyanBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Iniciando verificación de sub-bots...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+    console.log(chalk.bold.cyanBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Iniciando reinicio forzado de sub-bots...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
 
+    // Primero desconectamos todos los sub-bots existentes
+    for (const conn of global.conns) {
+        if (conn && conn.ws) {
+            try {
+                console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Desconectando sub-bot (+${conn.user?.jid?.split('@')[0] || 'unknown'})...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+                conn.ws.close();
+                conn.ev.removeAllListeners();
+            } catch (e) {
+                console.error(chalk.redBright(`Error al desconectar sub-bot:`), e);
+            }
+        }
+    }
+    global.conns = [];
+
+    // Luego reconectamos todos los sub-bots
     for (const folder of subBotFolders) {
         const pathGataJadiBot = path.join(subBotDir, folder);
         const credsPath = path.join(pathGataJadiBot, "creds.json");
-        const subBot = global.conns.find(conn => 
-            conn.user?.jid?.includes(folder) || path.basename(pathGataJadiBot) === folder);
 
         if (!fs.existsSync(credsPath)) {
             console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
             continue;
         }
 
-        if (!subBot || !subBot.user) {
-            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no está conectado. Reiniciando...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-            const retries = retryMap.get(folder) || 0;
-            if (retries >= 5) {
-                console.log(chalk.redBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) alcanzó límite de reintentos.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                retryMap.delete(folder);
-                continue;
-            }
-
-            try {
-                await gataJadiBot({
-                    pathGataJadiBot,
-                    m: null,
-                    conn: global.conn,
-                    args: [],
-                    usedPrefix: '#',
-                    command: 'jadibot',
-                    fromCommand: false
-                });
-                console.log(chalk.bold.greenBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) reiniciado exitosamente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-                retryMap.delete(folder);
-            } catch (e) {
-                console.error(chalk.redBright(`Error al reiniciar sub-bot (+${folder}):`), e);
-                retryMap.set(folder, retries + 1);
-            }
-        } else {
-            console.log(chalk.bold.greenBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) está conectado correctamente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+        try {
+            console.log(chalk.bold.greenBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Reconectando sub-bot (+${folder})...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+            await gataJadiBot({
+                pathGataJadiBot,
+                m: null,
+                conn: global.conn,
+                args: [],
+                usedPrefix: '#',
+                command: 'jadibot',
+                fromCommand: false
+            });
+            console.log(chalk.bold.greenBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) reconectado exitosamente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
+        } catch (e) {
+            console.error(chalk.redBright(`Error al reconectar sub-bot (+${folder}):`), e);
         }
     }
 }
