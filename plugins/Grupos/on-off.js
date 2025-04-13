@@ -292,7 +292,22 @@ global.dfail('rowner', m, conn)
 throw false
 }
 bot.jadibotmd = isEnable
-break 
+if (isEnable) {
+global.db.data.settings[conn.user.jid].jadibotmd = true
+for (const connection of global.conns) {
+if (connection.user && connection.user.jid) {
+global.db.data.settings[connection.user.jid].jadibotmd = true
+}
+}
+} else {
+global.db.data.settings[conn.user.jid].jadibotmd = false
+for (const connection of global.conns) {
+if (connection.user && connection.user.jid) {
+global.db.data.settings[connection.user.jid].jadibotmd = false
+}
+}
+}
+break
     
 case 'restrict': case 'restringir':
 isAll = true
