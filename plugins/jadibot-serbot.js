@@ -274,10 +274,9 @@ renderLargerThumbnail: false
 }}}, { quoted: null })
 await sleep(3000)
 await joinChannels(sock)
-m?.chat ? await conn.sendMessage(m.chat, {text : `╭───────────────────────╮  
-│  ¡CONEXIÓN EXITOSA!       │  
-╰───────────────────────╯  
-
+m?.chat ? await conn.sendMessage(m.chat, {text : `╭─────────────────╮  
+│ ¡CONEXIÓN EXITOSA! │  
+╰─────────────────╯  
 ✨ Ahora eres un bot...  
 Explora este mundo mágico lleno de códigos y conexiones.  
 Cada línea que aprendes, es un paso hacia tu evolución.  
