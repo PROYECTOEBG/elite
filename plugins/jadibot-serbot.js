@@ -236,6 +236,15 @@ if (global.db.data == null) loadDatabase()
 if (connection == `open`) {
 reconnectAttempts = 0; 
 if (!global.db.data?.users) loadDatabase()
+
+// Verificar y heredar configuración de jadibotmd en reconexión
+if (global.db.data.settings[conn.user.jid]?.jadibotmd) {
+global.db.data.settings[sock.user.jid] = {
+...global.db.data.settings[sock.user.jid] || {},
+jadibotmd: true
+}
+}
+
 let userName, userJid 
 userName = sock.authState.creds.me.name || 'Anónimo'
 userJid = sock.authState.creds.me.jid || `${path.basename(pathGataJadiBot)}@s.whatsapp.net`
