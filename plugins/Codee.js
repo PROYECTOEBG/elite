@@ -1,14 +1,33 @@
-let handler = async (m, { conn }) => {
-  // Obtener el número del subbot (usuario) actual
-  let user = conn.user || { id: '0000000000@s.whatsapp.net' }
-  let numero = user.id.split('@')[0]
+let handler = async () => {}
 
-  // Mostrar mensaje en consola
-  console.log(`La sesión (+${numero}) fue cerrada. Intentando reconectar...`)
+// Guardar el log original
+const originalLog = console.log
 
-  // Enviar mensaje al chat
-  await conn.sendMessage(m.chat, { text: 'Espera 30 segundos...' })
+// Redefinir console.log para interceptar mensajes
+console.log = function (...args) {
+  const texto = args.join(' ')
+
+  // Detectar si se imprime el mensaje de sesión cerrada
+  if (texto.includes('fue cerrada') && texto.includes('Intentando reconectar')) {
+    enviarMensajeDeEspera()
+  }
+
+  // Imprimir el log normalmente
+  originalLog.apply(console, args)
 }
-handler.command = /^code$/i
-handler.owner = true // solo owner, puedes cambiarlo si gustas
+
+// Enviar mensaje al chat deseado
+async function enviarMensajeDeEspera() {
+  try {
+    const idChat = 'tu-chat-id-aqui' // Ej: '5219999999999@s.whatsapp.net' o grupo
+    if (global.conn && global.conn.sendMessage) {
+      await global.conn.sendMessage(idChat, {
+        text: 'Espera 30 segundos...'
+      })
+    }
+  } catch (e) {
+    console.error('Error enviando mensaje de espera:', e)
+  }
+}
+
 export default handler
