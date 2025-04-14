@@ -105,7 +105,7 @@ printQRInTerminal: false,
 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
 msgRetry,
 msgRetryCache,
-browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['GataBot-MD (Sub Bot)', 'Chrome','2.0.0'],
+browser: mcode ? ['EliteBotGlobal', 'EliteBotGlobal', 'EliteBotGlobal'] : ['EliteBotGlobal', 'EliteBotGlobal'],
 version: version,
 generateHighQualityLinkPreview: true
 };
@@ -202,7 +202,7 @@ if (timeSinceLastError > 30000) { // Solo intentar reconectar si han pasado 30 s
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 try {
 if (options.fromCommand && m?.chat) {
-await conn.sendMessage(m.chat, {text : '✦ ¡Hey! Tu límite de tiempo de vincular tu dispositivo ha caducado, por favor espera 5 segundos y vuelve a ejecutar el comando . 💫\n®EliteBotGlobal 2023' }, { quoted: m })
+await conn.sendMessage(m.chat, {text : '✦ ¡Hey! Tu límite de tiempo de vincular tu dispositivo ha caducado, por favor espera 15 segundos y vuelve a ejecutar el comando . 💫\n®EliteBotGlobal 2023' }, { quoted: m })
 await sleep(15000) // Esperar 15 segundos
 await creloadHandler(true).catch(console.error)
 }
