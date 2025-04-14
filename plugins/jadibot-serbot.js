@@ -182,7 +182,15 @@ await creloadHandler(true).catch(console.error)*/
 }
 if (reason === 408) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) se perdió o expiró. Razón: ${reason}. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
+try {
+if (options.fromCommand && m?.chat) {
+await conn.sendMessage(m.chat, {text : '*CONEXIÓN EXPIRADA*\n\n> *ESPERANDO 15 SEGUNDOS PARA RECONECTAR*' }, { quoted: m })
+await sleep(15000) // Esperar 15 segundos
 await creloadHandler(true).catch(console.error)
+}
+} catch (error) {
+console.error(chalk.bold.yellow(`Error al reconectar: +${path.basename(pathGataJadiBot)}`))
+}
 }
 if (reason === 440) {
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La conexión (+${path.basename(pathGataJadiBot)}) fue reemplazada por otra sesión activa.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
