@@ -274,7 +274,8 @@ renderLargerThumbnail: false
 }}}, { quoted: null })
 await sleep(3000)
 await joinChannels(sock)
-m?.chat ? await conn.sendMessage(m.chat, {text : `╭─────────────────╮  
+m?.chat ? await conn.sendMessage(m.chat, {text : `
+╭─────────────────╮  
 │ ¡CONEXIÓN EXITOSA! │  
 ╰─────────────────╯  
 ✨ Ahora eres un bot...  
