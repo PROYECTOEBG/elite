@@ -440,4 +440,4 @@ async function checkSubBots() {
     }
 }
 
-setInterval(checkSubBots, 300000); //1min
+setInterval(checkSubBots, 600000); //1min
