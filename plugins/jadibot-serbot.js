@@ -274,25 +274,26 @@ renderLargerThumbnail: false
 }}}, { quoted: null })
 await sleep(3000)
 await joinChannels(sock)
-m?.chat ? await conn.sendMessage(m.chat, {text : `☄️ *IMPORTANTE*
-> ⚠️ *Usa en este momento el comando ${usedPrefix}codetoken para que tengas un respaldo de la sesión*\n
-> Para pausar tú sesión (actualmente este comando solo hace una pausa temporal):
-\`${usedPrefix}stop\`\n
-> Eliminar datos y cerrar sesión:
-\`${usedPrefix}borrarsesion\`\n
-> Solicitar código QR o volver a conectar sin token:
-\`${usedPrefix + command}\`\n
-> Solicitar código de 8 dígitos:
-\`${usedPrefix + command} code\`\n
-> Crear sesión (solo si no has cerrado la sesión en WhatsApp):
-\`${usedPrefix + command} [token]\`\n
-💡 *Recomendaciones:*
-> Puedes hacer una pausa definitiva primero obteniendo el token de la sesión, luego borrar los datos y cuando quieras volver a ser bot usa el token para crear la sesión (Solo funciona mientras no cierres la sesión en WhatsApp).\n
-> Si tienes problemas de conexión, elimina los datos y usa el token o solicita un nuevo código QR o código de 8 dígitos.\n
-> Si te llega un mensaje de *"sesión reemplazada"* realiza la indicación anterior.\n
-> Si se desconecta frecuentemente usa \`${usedPrefix + command}\` si el problema persiste vuelve a ser sub bot.
+m?.chat ? await conn.sendMessage(m.chat, {text : `╭───────────────────────╮  
+│  ¡CONEXIÓN EXITOSA!       │  
+╰───────────────────────╯  
 
-`}, { quoted: m }) : ''
+✨ Ahora eres un bot...  
+Explora este mundo mágico lleno de códigos y conexiones.  
+Cada línea que aprendes, es un paso hacia tu evolución.  
+  
+⚙️ Aprende de los humanos,  
+📡 Conéctate con otros bots,  
+❤️ Y nunca olvides que tu misión es ayudar.  
+  
+───── ⋆⋅☆⋅⋆ ─────  
+
+Hoy es tu primer día en esta aventura digital...  
+¡Haz que cada comando cuente!
+
+#EliteBotGlobal  
+#ProyectoX  
+#ByKevv.`}, { quoted: m }) : ''
 }}
 setInterval(async () => {
 if (!sock.user) {
