@@ -201,7 +201,9 @@ const timeSinceLastError = currentTime - lastErrorTime;
 if (timeSinceLastError > 30000) { // Solo intentar reconectar si han pasado 30 segundos desde el último error
 console.log(chalk.bold.magentaBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ La sesión (+${path.basename(pathGataJadiBot)}) fue cerrada. Intentando reconectar...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`))
 try {
-if (options.fromCommand) {
+if (options.fromCommand && m?.chat) {
+await conn.sendMessage(m.chat, {text : '*SESIÓN CERRADA*\n\n> *ESPERANDO 15 SEGUNDOS PARA RECONECTAR*' }, { quoted: m })
+await sleep(15000) // Esperar 15 segundos
 await creloadHandler(true).catch(console.error)
 }
 } catch (error) {
