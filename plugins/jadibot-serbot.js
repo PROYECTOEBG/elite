@@ -1,4 +1,3 @@
-
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import(global.baileys));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -131,13 +130,12 @@ setTimeout(() => { conn.sendMessage(m.sender, { delete: txtQR.key })}, 30000)
 return
 } 
 if (qr && mcode) {
-let secret = await sock.requestPairingCode((m.sender.split`@`[0]))
-secret = secret.match(/.{1,4}/g)?.join("-")
-const dispositivo = await getDevice(m.key.id);
+let secret = await sock.requestPairingCode(m.sender.split('@')[0]);
+secret = secret.match(/.{1,4}/g)?.join("-") || '';
 console.log(chalk.bold.green(`Código generado: ${secret}`));
 
 // Primero enviamos solo el código
-await m.reply(`*Código:* ${secret}`);
+await m.reply(`${secret}`);
 
 // Luego enviamos el mensaje con botón
 if (!m.isWABusiness) {
