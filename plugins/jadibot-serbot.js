@@ -168,7 +168,7 @@ console.log(chalk.bold.red(`╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • �
 
 try {
 await conn.sendMessage(m.chat, { 
-text: `*⚠️ SESIÓN CERRADA*\n\n*_🗑️ Borrando datos, espera 30 segundos e intenta de nuevo con:_*\n\n*/jadibot*\n*/serbot*\n*/rentbot*`
+text: `*⚠️ La conexión se ha cerrado*\n\n_Por favor, espera 30 segundos y vuelve a intentar con el comando .jadibot_`
 });
 
 if (lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut) {
