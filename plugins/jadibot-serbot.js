@@ -105,7 +105,7 @@ printQRInTerminal: false,
 auth: { creds: state.creds, keys: makeCacheableSignalKeyStore(state.keys, pino({level: 'silent'})) },
 msgRetry,
 msgRetryCache,
-browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['GataBot-MD (Sub Bot)', 'Chrome','2.0.0'],
+browser: mcode ? ['Windows', 'Chrome', '110.0.5585.95'] : ['EliteBotGlobal', 'Chrome','2.0.0'],
 version: version,
 generateHighQualityLinkPreview: true
 };
@@ -274,9 +274,8 @@ renderLargerThumbnail: false
 }}}, { quoted: null })
 await sleep(3000)
 await joinChannels(sock)
-m?.chat ? await conn.sendMessage(m.chat, {text : `
-╭─────────────────╮  
-│ ¡CONEXIÓN EXITOSA! │  
+m?.chat ? await conn.sendMessage(m.chat, {text : `╭─────────────────╮  
+│ ¡CONEXIÓN EXITOSA!        │  
 ╰─────────────────╯  
 ✨ Ahora eres un bot...  
 Explora este mundo mágico lleno de códigos y conexiones.  
