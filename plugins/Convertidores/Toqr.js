@@ -19,7 +19,7 @@ let handler = async (m, { conn }) => {
     txt += `*» Enlace* : ${link}\n`;
     txt += `*» Tamaño* : ${formatBytes(media.length)}\n`;
     txt += `*» Expiración* : ${isTele ? 'No expira' : 'Desconocido'}\n\n`;
-    txt += `> *${dev}*`;
+    txt += ``;
     
     await conn.sendFile(m.chat, media, 'thumbnail.jpg', txt, m, fkontak);
     
