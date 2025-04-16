@@ -14,9 +14,9 @@ contextInfo: {
 externalAdReply: { 
 showAdAttribution: false, 
 title: m.pushName, 
-body: '🎲 Dado Aleatorio 🎲', 
+body: 'EliteBotGlobal', 
 mediaType: 2, 
-sourceUrl: 'https://github.com', 
+sourceUrl: '', 
 thumbnail: null
 }
 }}, { quoted: m })
