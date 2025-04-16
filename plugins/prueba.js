@@ -17,25 +17,9 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
     }
 
     const video = search.videos[0];
-    const { title, thumbnail, timestamp, views, ago, url } = video;
+    const { title, thumbnail, timestamp, views, ago, url, author } = video;
 
-    const infoMessage = `*乂 Y O U T U B E - D O W N L O A D 乂*\n\n*• Título:* ${title}\n*• Canal:* ${video.author.name}\n*• Duración:* ${timestamp}\n*• Vistas:* ${views}\n*• Publicado:* ${ago}\n*• URL:* ${url}\n\n*⏳ Descargando video...*`;
-
-    await conn.sendMessage(m.chat, {
-      image: { url: thumbnail },
-      caption: infoMessage,
-      contextInfo: {
-        externalAdReply: {
-          title: title,
-          body: "Elite Bot - YouTube Downloader",
-          thumbnailUrl: thumbnail,
-          mediaType: 1,
-          renderLargerThumbnail: true,
-          showAdAttribution: true,
-          sourceUrl: url
-        }
-      }
-    }, { quoted: m });
+    const infoMessage = `「✦」Descargando *<${title}>*\n\n> ✦ Canal » *${author.name}*\n> ✰ Vistas » *${views}*\n> ⴵ Duración » *${timestamp}*\n> ✐ Publicación » *${ago}*\n> 🜸 Link » ${url}`;
 
     try {
       // Intento 1: Usar ytdl-core
@@ -46,7 +30,18 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
           video: { url: format.url },
           fileName: `${title}.mp4`,
           mimetype: 'video/mp4',
-          caption: `*乂 Y O U T U B E - D O W N L O A D 乂*\n\n*• Título:* ${title}\n*• Calidad:* 360p\n\n*✅ Video descargado correctamente*`
+          caption: infoMessage,
+          contextInfo: {
+            externalAdReply: {
+              title: title,
+              body: "Elite Bot - YouTube Video",
+              thumbnailUrl: thumbnail,
+              mediaType: 1,
+              renderLargerThumbnail: true,
+              showAdAttribution: true,
+              sourceUrl: url
+            }
+          }
         }, { quoted: m });
         await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
         return;
@@ -63,7 +58,18 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
           video: { url: dl_url },
           fileName: `${title}.mp4`,
           mimetype: 'video/mp4',
-          caption: `*乂 Y O U T U B E - D O W N L O A D 乂*\n\n*• Título:* ${title}\n*• Tamaño:* ${size}\n\n*✅ Video descargado correctamente*`
+          caption: `${infoMessage}\n> ⚖️ Tamaño » *${size}*`,
+          contextInfo: {
+            externalAdReply: {
+              title: title,
+              body: "Elite Bot - YouTube Video",
+              thumbnailUrl: thumbnail,
+              mediaType: 1,
+              renderLargerThumbnail: true,
+              showAdAttribution: true,
+              sourceUrl: url
+            }
+          }
         }, { quoted: m });
         await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
         return;
@@ -80,7 +86,18 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
             video: { url: json.result.download.url },
             fileName: `${title}.mp4`,
             mimetype: 'video/mp4',
-            caption: `*乂 Y O U T U B E - D O W N L O A D 乂*\n\n*• Título:* ${title}\n\n*✅ Video descargado correctamente*`
+            caption: infoMessage,
+            contextInfo: {
+              externalAdReply: {
+                title: title,
+                body: "Elite Bot - YouTube Video",
+                thumbnailUrl: thumbnail,
+                mediaType: 1,
+                renderLargerThumbnail: true,
+                showAdAttribution: true,
+                sourceUrl: url
+              }
+            }
           }, { quoted: m });
           await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
           return;
@@ -105,4 +122,4 @@ const handler = async (m, { conn, text, usedPrefix, command }) => {
 handler.help = ['play2 <búsqueda>'];
 handler.tags = ['downloader'];
 handler.command = /^play3$/i;
-export default handler; 
+export default handler;
