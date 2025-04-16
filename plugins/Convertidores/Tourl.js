@@ -6,9 +6,9 @@ import { fileTypeFromBuffer } from "file-type";
 let handler = async (m, { conn }) => {
   let q = m.quoted ? m.quoted : m;
   let mime = (q.msg || q).mimetype || '';
-  if (!mime) return conn.reply(m.chat, `Por favor, responde a un archivo válido (imagen, video, etc.).`, m);
+  if (!mime) return conn.reply(m.chat, `*[❗] Por favor, responde a un archivo válido (imagen, video, etc.).*`, m);
   
-  await m.react(💯);
+  await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
   
   try {
     let media = await q.download();
@@ -19,18 +19,35 @@ let handler = async (m, { conn }) => {
     txt += `*» Enlace* : ${link}\n`;
     txt += `*» Tamaño* : ${formatBytes(media.length)}\n`;
     txt += `*» Expiración* : ${isTele ? 'No expira' : 'Desconocido'}\n\n`;
-    txt += ``;
+    txt += `> *${wm}*`;
     
-    await conn.sendFile(m.chat, media, 'thumbnail.jpg', txt, m, fkontak);
+    await conn.sendMessage(m.chat, {
+      text: txt,
+      contextInfo: {
+        externalAdReply: {
+          title: "Elite Bot - Catbox Uploader",
+          body: "¡Subida exitosa!",
+          thumbnailUrl: gataMenu,
+          mediaType: 1,
+          renderLargerThumbnail: true,
+          showAdAttribution: true,
+          sourceUrl: accountsgb
+        }
+      }
+    }, { quoted: m });
     
-    await m.react(✅);
-  } catch {
-    await m.react(🍁);
+    await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
+  } catch (error) {
+    console.error("Error:", error);
+    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
+    await conn.sendMessage(m.chat, {
+      text: `*[❌] Error al procesar tu solicitud:*\n${error.message || "Error desconocido"}`
+    });
   }
 };
 
-handler.help = ['tourl2'];
-handler.tags = ['transformador'];
+handler.help = ['tourl'];
+handler.tags = ['herramientas'];
 handler.command = ['catbox', 'tourl'];
 export default handler;
 
