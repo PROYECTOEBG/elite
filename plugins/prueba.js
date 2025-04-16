@@ -14,16 +14,16 @@ contextInfo: {
 externalAdReply: { 
 showAdAttribution: false, 
 title: m.pushName, 
-body: wm, 
+body: '🎲 Dado Aleatorio 🎲', 
 mediaType: 2, 
-sourceUrl: [nn, md, yt].getRandom(), 
-thumbnail: imagen4
+sourceUrl: 'https://github.com', 
+thumbnail: null
 }
 }}, { quoted: m })
 }
 
 handler.help = ['dados']
 handler.tags = ['juegos']
-handler.command = ['dado', 'dados2', 'dadu'] 
+handler.command = ['dado', 'dados', 'dadu'] 
 handler.register = true
 export default handler 
