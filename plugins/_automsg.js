@@ -9,7 +9,20 @@ const frasesPath = join(__dirname, '../src/frases.json')
 let frases = []
 try {
   if (fs.existsSync(frasesPath)) {
-    frases = JSON.parse(fs.readFileSync(frasesPath, 'utf8'))
+    const fileContent = fs.readFileSync(frasesPath, 'utf8')
+    if (!fileContent.trim()) {
+      // Si el archivo está vacío, crear frases por defecto
+      frases = [
+        "🌟 ¡Hola! Soy un bot activo",
+        "💫 Estoy aquí para ayudarte",
+        "✨ Disfruta de mis funciones",
+        "🎮 Juega con mis comandos",
+        "🤖 Soy tu asistente virtual"
+      ]
+      fs.writeFileSync(frasesPath, JSON.stringify(frases, null, 2))
+    } else {
+      frases = JSON.parse(fileContent)
+    }
   } else {
     // Frases por defecto si no existe el archivo
     frases = [
@@ -23,6 +36,14 @@ try {
   }
 } catch (error) {
   console.error('Error al cargar frases:', error)
+  // En caso de error, usar frases por defecto
+  frases = [
+    "🌟 ¡Hola! Soy un bot activo",
+    "💫 Estoy aquí para ayudarte",
+    "✨ Disfruta de mis funciones",
+    "🎮 Juega con mis comandos",
+    "🤖 Soy tu asistente virtual"
+  ]
 }
 
 // Función para enviar mensajes
@@ -46,17 +67,12 @@ const sendMessage = async (conn) => {
 }
 
 // Función para iniciar el envío automático
-const startAutoMessages = (conn) => {
+export const initAutoMessages = (conn) => {
   // Enviar mensaje inicial
   sendMessage(conn)
   
-  // Configurar intervalo para enviar mensajes cada 10 segundos
-  setInterval(() => sendMessage(conn), 10000)
-}
-
-// Exportar la función de inicio
-export const initAutoMessages = (conn) => {
-  startAutoMessages(conn)
+  // Configurar intervalo para enviar mensajes cada 30 segundos
+  setInterval(() => sendMessage(conn), 30000)
 }
 
 // Handler vacío ya que no necesitamos comandos
