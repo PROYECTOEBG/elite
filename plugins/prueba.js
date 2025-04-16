@@ -1,54 +1,37 @@
+import fetch from 'node-fetch'
 
-var handler = async (m, { conn, usedPrefix, command }) => {
-  conn.hdr = conn.hdr ? conn.hdr : {}
-  if (m.sender in conn.hdr)
-    throw '*⚠️ TODAVÍA HAY UN PROCESO QUE NO SE HA TERMINADO. ESPERE A QUE TERMINE*'
-  
-  let q = m.quoted ? m.quoted : m
-  let mime = (q.msg || q).mimetype || q.mediaType || ""
-  if (!mime)
-    throw `*⚠️ RESPONDE A UNA FOTO*`
-  if (!/image\/(jpe?g|png)/.test(mime))
-    throw `⚠️ *Formato ${mime} no soportado*`
-  else conn.hdr[m.sender] = true
-  
-  m.reply('*🚀 P R O C E S A N D O*')
-  
-  try {
-    let img = await q.download?.()
-    
-    // Convertir la imagen a base64
-    let base64Image = Buffer.from(img).toString('base64')
-    
-    // Hacer la petición a la API de Dorratz
-    let res = await fetch('https://api.dorratz.com/tools/text2img', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text: 'enhance this image',
-        image: base64Image
-      })
-    })
-
-    if (!res.ok) throw 'Error en la petición a la API'
-    
-    let buffer = await res.buffer()
-    await conn.sendFile(m.chat, buffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
-    
-  } catch (error) {
-    console.error('Error:', error)
-    m.reply('*⚠️ PROCESO FALLIDO ⚠️*\nIntenta con otra imagen')
-  } finally {
-    delete conn.hdr[m.sender]
-  }
+let handler = async (m, { conn }) => {
+    try {
+        const q = m.quoted || m
+        const mime = (q.msg || q).mimetype || q.mediaType || ''
+        
+        if (!mime) throw '*⚠️ RESPONDE A UNA IMAGEN*'
+        if (!/image\/(jpe?g|png)/.test(mime)) throw '*⚠️ SOLO IMÁGENES JPG O PNG*'
+        
+        m.reply('*🚀 PROCESANDO IMAGEN, ESPERE UN MOMENTO...*')
+        
+        const img = await q.download()
+        const form = new FormData()
+        form.append('file', img, 'image.jpg')
+        
+        const response = await fetch('https://api.dorratz.com/main/enhance', {
+            method: 'POST',
+            body: form
+        })
+        
+        if (!response.ok) throw '*⚠️ ERROR AL PROCESAR LA IMAGEN*'
+        
+        const imageBuffer = await response.buffer()
+        await conn.sendFile(m.chat, imageBuffer, 'HD.jpg', '*✅ IMAGEN MEJORADA CON ÉXITO*', m)
+        
+    } catch (e) {
+        console.error(e)
+        m.reply('*⚠️ OCURRIÓ UN ERROR, INTENTA CON OTRA IMAGEN*')
+    }
 }
 
 handler.help = ['hd']
-handler.tags = ['ai']
-handler.command = /^(hd2)$/i
-handler.register = false
-handler.limit = false
+handler.tags = ['tools']
+handler.command = /^(hd2|enhance)$/i
 
 export default handler
