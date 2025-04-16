@@ -1,6 +1,12 @@
 import FormData from 'form-data'
-import fetch from 'node-fetch'
-import { Readable } from 'stream'
+import axios from 'axios'
+import fs from 'fs'
+import { promisify } from 'util'
+import { join } from 'path'
+import { tmpdir } from 'os'
+
+const writeFile = promisify(fs.writeFile)
+const readFile = promisify(fs.readFile)
 
 var handler = async (m, { conn, usedPrefix, command }) => {
   conn.hdr = conn.hdr ? conn.hdr : {}
@@ -16,34 +22,38 @@ var handler = async (m, { conn, usedPrefix, command }) => {
   else conn.hdr[m.sender] = true
   
   m.reply('*🚀 P R O C E S A N D O*')
-  let img = await q.download?.()
   
   try {
-    const response = await fetch("https://api.replicate.com/v1/predictions", {
-      method: "POST",
+    let img = await q.download?.()
+    let tempFile = join(tmpdir(), 'image.jpg')
+    await writeFile(tempFile, img)
+
+    const form = new FormData()
+    form.append('image', fs.createReadStream(tempFile))
+
+    const response = await axios.post('https://api.deepai.org/api/torch-srgan', form, {
       headers: {
-        "Content-Type": "application/json",
-        Authorization: "Token REPLICATE_API_TOKEN", // Reemplazar con tu token
-      },
-      body: JSON.stringify({
-        version: "9283608cc6b7be6b65a8e44983db012355fde4132009bf99d976b2f0896856a3",
-        input: {
-          image: img.toString('base64')
-        }
-      })
+        ...form.getHeaders(),
+        'api-key': 'quickstart-QUdJIGlzIGNvbWluZy4uLi4K'
+      }
     })
-    
-    const result = await response.json()
-    if (result.output) {
-      const imageResponse = await fetch(result.output)
-      const imageBuffer = await imageResponse.buffer()
-      conn.sendFile(m.chat, imageBuffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
+
+    if (response.data && response.data.output_url) {
+      const imageResponse = await axios.get(response.data.output_url, { responseType: 'arraybuffer' })
+      const buffer = Buffer.from(imageResponse.data)
+      await conn.sendFile(m.chat, buffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
     } else {
-      throw new Error('No se pudo procesar la imagen')
+      throw new Error('No se pudo obtener la imagen procesada')
     }
-  } catch (err) {
-    console.error(err)
-    m.reply('*⚠️ PROCESO FALLIDO ⚠️*')
+
+    // Limpieza del archivo temporal
+    fs.unlink(tempFile, (err) => {
+      if (err) console.error('Error al eliminar archivo temporal:', err)
+    })
+
+  } catch (error) {
+    console.error('Error:', error)
+    m.reply('*⚠️ PROCESO FALLIDO ⚠️*\nIntenta con otra imagen')
   } finally {
     delete conn.hdr[m.sender]
   }
