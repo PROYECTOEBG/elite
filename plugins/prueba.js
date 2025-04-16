@@ -1,125 +1,63 @@
-import fetch from 'node-fetch';
-import yts from 'yt-search';
-import { youtubedl, youtubedlv2 } from '@bochilteam/scraper';
-import ytdl from 'ytdl-core';
+import FormData from "form-data"
+import Jimp from "jimp"
 
-const handler = async (m, { conn, text, usedPrefix, command }) => {
-  if (!text) {
-    return conn.reply(m.chat, `*[❗] Por favor, ingresa el nombre del video que deseas descargar.*\n\n*Ejemplo:*\n${usedPrefix + command} Bad Bunny - Monaco`, m);
-  }
+const handler = async (m, {conn, usedPrefix, command}) => {
+try {    
+let q = m.quoted ? m.quoted : m
+let mime = (q.msg || q).mimetype || q.mediaType || ""
 
-  try {
-    await conn.sendMessage(m.chat, { react: { text: "🕒", key: m.key } });
+if (!mime.startsWith('image')) return m.reply(`⚠️ 𝐑𝐞𝐬𝐩𝐨𝐧𝐝𝐞 𝐚 𝐮𝐧𝐚 𝐢𝐦𝐚𝐠𝐞𝐧!`) 
+await m.react('⌛')
 
-    const search = await yts(text);
-    if (!search.videos || search.videos.length === 0) {
-      return m.reply('*[❗] No se encontraron resultados para tu búsqueda.*');
+let img = await q.download?.()
+if (!img) return m.reply(`⚠️ No se pudo descargar la imagen. Por favor intenta nuevamente.`)
+let pr = await remini(img, "enhance")
+    
+if (!pr) return m.reply(`⚠️ Hubo un problema al procesar la imagen. Intenta nuevamente más tarde.`)
+await conn.sendFile(m.chat, pr, 'thumbnail.jpg', "¡Imagen procesada!", m, null, fake)
+await m.react('✅')
+} catch (e) {
+await m.react('❌')
+console.error(e)
+m.reply(`⚠️ Ocurrió un error: ${e.message}`)
+}}
+handler.help = ["hd"]
+handler.tags = ["tools"]
+handler.command = ["remini", "hd", "enhance"]
+export default handler
+
+async function remini(imageData, operation) {
+  return new Promise(async (resolve, reject) => {
+    const availableOperations = ["enhance", "recolor", "dehaze"]
+    if (!availableOperations.includes(operation)) {
+      operation = availableOperations[0]
     }
+    
+    const baseUrl = "https://inferenceengine.vyro.ai/" + operation + ".vyro"
+    const formData = new FormData()
+    formData.append("image", Buffer.from(imageData), {filename: "enhance_image_body.jpg", contentType: "image/jpeg"})
+    formData.append("model_version", 1, {"Content-Transfer-Encoding": "binary", contentType: "multipart/form-data; charset=utf-8"})
 
-    const video = search.videos[0];
-    const { title, thumbnail, timestamp, views, ago, url, author } = video;
-
-    const infoMessage = `「✦」Descargando *<${title}>*\n\n> ✦ Canal » *${author.name}*\n> ✰ Vistas » *${views}*\n> ⴵ Duración » *${timestamp}*\n> ✐ Publicación » *${ago}*\n> 🜸 Link » ${url}`;
-
-    try {
-      // Intento 1: Usar ytdl-core
-      try {
-        const info = await ytdl.getInfo(url);
-        const format = ytdl.chooseFormat(info.formats, { quality: '18' });
-        await conn.sendMessage(m.chat, {
-          video: { url: format.url },
-          fileName: `${title}.mp4`,
-          mimetype: 'video/mp4',
-          caption: infoMessage,
-          contextInfo: {
-            externalAdReply: {
-              title: title,
-              body: "Elite Bot - YouTube Video",
-              thumbnailUrl: thumbnail,
-              mediaType: 1,
-              renderLargerThumbnail: true,
-              showAdAttribution: true,
-              sourceUrl: url
-            }
-          }
-        }, { quoted: m });
-        await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
-        return;
-      } catch (e) {
-        console.log('Error con ytdl-core:', e);
+    formData.submit({
+      url: baseUrl,
+      host: "inferenceengine.vyro.ai",
+      path: "/" + operation,
+      protocol: "https:",
+      headers: {
+        "User-Agent": "okhttp/4.9.3",
+        "Connection": "Keep-Alive",
+        "Accept-Encoding": "gzip"
       }
-
-      // Intento 2: Usar @bochilteam/scraper
-      try {
-        const yt = await youtubedl(url).catch(async _ => await youtubedlv2(url));
-        const dl_url = await yt.video['360p'].download();
-        const size = await yt.video['360p'].fileSizeH;
-        await conn.sendMessage(m.chat, {
-          video: { url: dl_url },
-          fileName: `${title}.mp4`,
-          mimetype: 'video/mp4',
-          caption: `${infoMessage}\n> ⚖️ Tamaño » *${size}*`,
-          contextInfo: {
-            externalAdReply: {
-              title: title,
-              body: "Elite Bot - YouTube Video",
-              thumbnailUrl: thumbnail,
-              mediaType: 1,
-              renderLargerThumbnail: true,
-              showAdAttribution: true,
-              sourceUrl: url
-            }
-          }
-        }, { quoted: m });
-        await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
-        return;
-      } catch (e) {
-        console.log('Error con @bochilteam/scraper:', e);
+    }, function (err, res) {
+      if (err) {
+        reject(new Error(`Error en la solicitud a la API: ${err.message}`))
       }
-
-      // Intento 3: Usar API externa como respaldo
-      try {
-        const response = await fetch(`https://api.vreden.my.id/api/ytmp4?url=${url}`);
-        const json = await response.json();
-        if (json.result && json.result.download && json.result.download.url) {
-          await conn.sendMessage(m.chat, {
-            video: { url: json.result.download.url },
-            fileName: `${title}.mp4`,
-            mimetype: 'video/mp4',
-            caption: infoMessage,
-            contextInfo: {
-              externalAdReply: {
-                title: title,
-                body: "Elite Bot - YouTube Video",
-                thumbnailUrl: thumbnail,
-                mediaType: 1,
-                renderLargerThumbnail: true,
-                showAdAttribution: true,
-                sourceUrl: url
-              }
-            }
-          }, { quoted: m });
-          await conn.sendMessage(m.chat, { react: { text: "✅", key: m.key } });
-          return;
-        }
-      } catch (e) {
-        console.log('Error con API externa:', e);
-      }
-
-      throw new Error('No se pudo descargar el video con ninguno de los métodos disponibles');
-    } catch (error) {
-      console.error(error);
-      await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
-      return m.reply('*[❗] Error al descargar el video. Por favor, intenta nuevamente más tarde.*');
-    }
-  } catch (error) {
-    console.error(error);
-    await conn.sendMessage(m.chat, { react: { text: "❌", key: m.key } });
-    return m.reply('*[❗] Ocurrió un error inesperado. Por favor, intenta nuevamente.*');
-  }
-};
-
-handler.help = ['play2 <búsqueda>'];
-handler.tags = ['downloader'];
-handler.command = /^play3$/i;
-export default handler;
+      const chunks = []
+      res.on("data", function (chunk) { chunks.push(chunk) })
+      res.on("end", function () { resolve(Buffer.concat(chunks)) })
+      res.on("error", function (err) {
+        reject(new Error(`Error al recibir la respuesta: ${err.message}`))
+      })
+    })
+  })
+}
