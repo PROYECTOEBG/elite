@@ -27,7 +27,7 @@ import readline from 'readline'
 import NodeCache from 'node-cache' 
 import { gataJadiBot } from './plugins/jadibot-serbot.js';
 import pkg from 'google-libphonenumber'
-import { initAutoMessages } from './plugins/_automsg.js'
+
 const { PhoneNumberUtil } = pkg
 const phoneUtil = PhoneNumberUtil.getInstance()
 const { makeInMemoryStore, DisconnectReason, useMultiFileAuthState, MessageRetryMap, fetchLatestBaileysVersion, makeCacheableSignalKeyStore } = await import('@whiskeysockets/baileys')
