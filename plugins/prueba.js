@@ -1,12 +1,4 @@
-import FormData from 'form-data'
-import axios from 'axios'
-import fs from 'fs'
-import { promisify } from 'util'
-import { join } from 'path'
-import { tmpdir } from 'os'
-
-const writeFile = promisify(fs.writeFile)
-const readFile = promisify(fs.readFile)
+import sharp from 'sharp'
 
 var handler = async (m, { conn, usedPrefix, command }) => {
   conn.hdr = conn.hdr ? conn.hdr : {}
@@ -25,32 +17,23 @@ var handler = async (m, { conn, usedPrefix, command }) => {
   
   try {
     let img = await q.download?.()
-    let tempFile = join(tmpdir(), 'image.jpg')
-    await writeFile(tempFile, img)
+    
+    // Procesar la imagen con sharp
+    const processedBuffer = await sharp(img)
+      .resize(1920, 1080, { // Resolución Full HD
+        fit: 'inside',
+        withoutEnlargement: false
+      })
+      .sharpen()
+      .normalize() // Mejora el contraste
+      .jpeg({
+        quality: 90,
+        progressive: true
+      })
+      .toBuffer()
 
-    const form = new FormData()
-    form.append('image', fs.createReadStream(tempFile))
-
-    const response = await axios.post('https://api.deepai.org/api/torch-srgan', form, {
-      headers: {
-        ...form.getHeaders(),
-        'api-key': 'quickstart-QUdJIGlzIGNvbWluZy4uLi4K'
-      }
-    })
-
-    if (response.data && response.data.output_url) {
-      const imageResponse = await axios.get(response.data.output_url, { responseType: 'arraybuffer' })
-      const buffer = Buffer.from(imageResponse.data)
-      await conn.sendFile(m.chat, buffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
-    } else {
-      throw new Error('No se pudo obtener la imagen procesada')
-    }
-
-    // Limpieza del archivo temporal
-    fs.unlink(tempFile, (err) => {
-      if (err) console.error('Error al eliminar archivo temporal:', err)
-    })
-
+    await conn.sendFile(m.chat, processedBuffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
+    
   } catch (error) {
     console.error('Error:', error)
     m.reply('*⚠️ PROCESO FALLIDO ⚠️*\nIntenta con otra imagen')
