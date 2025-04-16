@@ -1,4 +1,3 @@
-
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import(global.baileys));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -147,9 +146,20 @@ headerType: 1
 }, { quoted: m });
 
 if (txtCode) {
-setTimeout(() => { 
+setTimeout(async () => { 
 conn.sendMessage(m.chat, { delete: txtCode.key })
-}, 30000)
+// Eliminar la carpeta si no se ha vinculado
+if (!sock.user) {
+try {
+if (fs.existsSync(pathGataJadiBot)) {
+fs.rmdirSync(pathGataJadiBot, { recursive: true });
+console.log(chalk.bold.red(`Carpeta eliminada por expiración del código: ${pathGataJadiBot}`));
+}
+} catch (e) {
+console.error(chalk.bold.yellow(`Error al eliminar carpeta: ${e.message}`));
+}
+}
+}, 60000) // 1 minuto
 }
 }
 
