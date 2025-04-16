@@ -1,4 +1,3 @@
-import sharp from 'sharp'
 
 var handler = async (m, { conn, usedPrefix, command }) => {
   conn.hdr = conn.hdr ? conn.hdr : {}
@@ -18,21 +17,25 @@ var handler = async (m, { conn, usedPrefix, command }) => {
   try {
     let img = await q.download?.()
     
-    // Procesar la imagen con sharp
-    const processedBuffer = await sharp(img)
-      .resize(1920, 1080, { // Resolución Full HD
-        fit: 'inside',
-        withoutEnlargement: false
+    // Convertir la imagen a base64
+    let base64Image = Buffer.from(img).toString('base64')
+    
+    // Hacer la petición a la API de Dorratz
+    let res = await fetch('https://api.dorratz.com/tools/text2img', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: 'enhance this image',
+        image: base64Image
       })
-      .sharpen()
-      .normalize() // Mejora el contraste
-      .jpeg({
-        quality: 90,
-        progressive: true
-      })
-      .toBuffer()
+    })
 
-    await conn.sendFile(m.chat, processedBuffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
+    if (!res.ok) throw 'Error en la petición a la API'
+    
+    let buffer = await res.buffer()
+    await conn.sendFile(m.chat, buffer, 'enhanced.jpg', '🧃 Toma tu foto en HD', m)
     
   } catch (error) {
     console.error('Error:', error)
