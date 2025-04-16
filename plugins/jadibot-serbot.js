@@ -1,3 +1,4 @@
+
 const { useMultiFileAuthState, DisconnectReason, makeCacheableSignalKeyStore, fetchLatestBaileysVersion} = (await import(global.baileys));
 import qrcode from "qrcode"
 import NodeCache from "node-cache"
@@ -412,19 +413,13 @@ async function checkSubBots() {
     }
     global.conns = [];
 
-    // Luego reconectamos todos los sub-bots y eliminamos carpetas sin creds.json
+    // Luego reconectamos todos los sub-bots
     for (const folder of subBotFolders) {
         const pathGataJadiBot = path.join(subBotDir, folder);
         const credsPath = path.join(pathGataJadiBot, "creds.json");
 
         if (!fs.existsSync(credsPath)) {
-            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Eliminando carpeta...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-            try {
-                fs.rmSync(pathGataJadiBot, { recursive: true, force: true });
-                console.log(chalk.bold.greenBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Carpeta del sub-bot (+${folder}) eliminada exitosamente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
-            } catch (e) {
-                console.error(chalk.redBright(`Error al eliminar la carpeta del sub-bot (+${folder}):`, e));
-            }
+            console.log(chalk.bold.yellowBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) no tiene creds.json. Omitiendo...\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
             continue;
         }
 
@@ -441,9 +436,9 @@ async function checkSubBots() {
             });
             console.log(chalk.bold.greenBright(`\n╭┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡\n┆ Sub-bot (+${folder}) reconectado exitosamente.\n╰┄┄┄┄┄┄┄┄┄┄┄┄┄┄ • • • ┄┄┄┄┄┄┄┄┄┄┄┄┄┄⟡`));
         } catch (e) {
-            console.error(chalk.redBright(`Error al reconectar sub-bot (+${folder}):`, e));
+            console.error(chalk.redBright(`Error al reconectar sub-bot (+${folder}):`), e);
         }
     }
 }
 
-setInterval(checkSubBots, 600000); //10min
+setInterval(checkSubBots, 600000); //1min
