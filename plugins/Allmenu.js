@@ -1,78 +1,104 @@
-let inscritos = []
+import pkg from '@whiskeysockets/baileys';
+const { generateWAMessageFromContent, proto } = pkg;
 
-const handler = async (m, { conn, args, command, usedPrefix }) => {
-    if (!args[0]) {
-        const texto = `
-𝟒 𝐕𝐄𝐑𝐒𝐔𝐒 𝟒
+let listas = {
+  squad1: ['➢', '➢', '➢', '➢'],
+  squad2: ['➢', '➢', '➢', '➢'],
+  suplente: ['✔', '✔', '✔']
+};
 
-⏱ 𝐇𝐎𝐑𝐀𝐑𝐈𝐎                       •
-🇲🇽 𝐌𝐄𝐗𝐈𝐂𝐎 : 
-🇨🇴 𝐂𝐎𝐋𝐎𝐌𝐁𝐈𝐀 :                
+const handler = async (m, { conn }) => {
+  await enviarLista(conn, m.chat);
+};
 
-➥ 𝐌𝐎𝐃𝐀𝐋𝐈𝐃𝐀𝐃: 
-➥ 𝐉𝐔𝐆𝐀𝐃𝐎𝐑𝐄𝐒:
+handler.command = /^listaff$/i;
+export default handler;
 
-      𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
-    
-    👑 ┇ 
-    🥷🏻 ┇  
-    🥷🏻 ┇ 
-    🥷🏻 ┇  
-    
-    ʚ 𝐒𝐔𝐏𝐋𝐄𝐍𝐓𝐄𝐒:
-    🥷🏻 ┇ 
-    🥷🏻 ┇
+// Evento para manejar botones
+export async function before(m, { conn }) {
+  const btn = m?.message?.buttonsResponseMessage;
+  if (!btn) return;
 
-𝗣𝗔𝗥𝗧𝗜𝗖𝗜𝗣𝗔𝗡𝗧𝗘𝗦 𝗔𝗡𝗢𝗧𝗔𝗗𝗢𝗦:
-${inscritos.length === 0 ? 'Ninguno aún.' : inscritos.map((n, i) => `${i + 1}. ${n}`).join('\n')}
-        `.trim()
+  const id = btn.selectedButtonId;
+  const user = m.sender;
+  const username = '@' + user.split('@')[0];
 
-        const buttons = [
-            {
-                buttonId: `${usedPrefix}4vs4 anotar`,
-                buttonText: { displayText: "✏️ Anotarse" },
-                type: 1,
-            },
-            {
-                buttonId: `${usedPrefix}4vs4 limpiar`,
-                buttonText: { displayText: "🗑 Limpiar Lista" },
-                type: 1,
-            },
-        ]
+  if (id === 'limpiar') {
+    listas = {
+      squad1: ['➢', '➢', '➢', '➢'],
+      squad2: ['➢', '➢', '➢', '➢'],
+      suplente: ['✔', '✔', '✔']
+    };
+    return await conn.sendMessage(m.chat, {
+      text: `♻️ Listas reiniciadas por ${username}`,
+      mentions: [user]
+    });
+  }
 
-        await conn.sendMessage(
-            m.chat,
-            {
-                text: texto,
-                buttons,
-                viewOnce: true,
-            },
-            { quoted: m }
-        )
-        return
-    }
-
-    if (args[0].toLowerCase() === 'anotar') {
-        const nombre = m.pushName || 'Usuario'
-        if (inscritos.includes(nombre)) {
-            return m.reply('❗Ya estás anotado.')
-        }
-        inscritos.push(nombre)
-        await m.reply(`✅ *${nombre}* ha sido anotado.\nAhora hay *${inscritos.length}* participante(s).`)
-        return
-    }
-
-    if (args[0].toLowerCase() === 'limpiar') {
-        inscritos = []
-        await m.reply('🧹 Lista limpiada con éxito.')
-        return
-    }
+  const tipo = id;
+  const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
+  if (libre !== -1) {
+    listas[tipo][libre] = username;
+    await conn.sendMessage(m.chat, {
+      text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+      mentions: [user]
+    });
+    await enviarLista(conn, m.chat);
+  } else {
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ ${tipo} está llena`,
+      mentions: [user]
+    });
+  }
 }
 
-handler.command = /^4vs4ff$/i
-handler.help = ['4vs4']
-handler.tags = ['freefire']
-handler.group = true
-handler.admin = true
+async function enviarLista(conn, jid) {
+  const texto = 
+`*MODALIDAD:* CLK  
+*ROPA:* verde  
 
-export default handler
+*Escuadra 1:*  
+${listas.squad1.map(p => `➡ ${p}`).join('\n')}  
+
+*Escuadra 2:*  
+${listas.squad2.map(p => `➡ ${p}`).join('\n')}  
+
+*SUPLENTE:*  
+${listas.suplente.map(p => `➡ ${p}`).join('\n')}  
+
+*BOLLLOBOT / MELDEXZZ.*`;
+
+  const buttons = [
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 1", id: "squad1" })
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 2", id: "squad2" })
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({ display_text: "Suplente", id: "suplente" })
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({ display_text: "Limpiar lista", id: "limpiar" })
+    }
+  ];
+
+  const mensaje = generateWAMessageFromContent(jid, {
+    viewOnceMessage: {
+      message: {
+        messageContextInfo: { deviceListMetadata: {} },
+        interactiveMessage: proto.Message.InteractiveMessage.create({
+          body: { text: texto },
+          footer: { text: "Selecciona una opción:" },
+          nativeFlowMessage: { buttons }
+        })
+      }
+    }
+  }, {});
+
+  await conn.relayMessage(jid, mensaje.message, { messageId: mensaje.key.id });
+}
