@@ -1,41 +1,51 @@
 let handler = async (m, { conn }) => {
-    let listas = {
-        escuadra1: ['➢', '➢', '➢', '➢'],
-        escuadra2: ['➢', '➢', '➢', '➢'],
-        suplente: ['✓', '✓', '✓']
-    }
+    let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
+    let name = await conn.getName(who)
 
-    let texto = `EliteBot
+    let str = `EliteBot
 MODALIDAD: CLK
 ROPA: verde
 
 Escuadra 1:
-👤 ➢ ${listas.escuadra1[0]}
-👤 ➢ ${listas.escuadra1[1]}
-👤 ➢ ${listas.escuadra1[2]}
-👤 ➢ ${listas.escuadra1[3]}
+👤 ➢ 
+👤 ➢ 
+👤 ➢ 
+👤 ➢ 
 
 Escuadra 2:
-👤 ➢ ${listas.escuadra2[0]}
-👤 ➢ ${listas.escuadra2[1]}
-👤 ➢ ${listas.escuadra2[2]}
-👤 ➢ ${listas.escuadra2[3]}
+👤 ➢ 
+👤 ➢ 
+👤 ➢ 
+👤 ➢ 
 
 SUPLENTE:
-👤 ${listas.suplente[0]}
-👤 ${listas.suplente[1]}
-👤 ${listas.suplente[2]}
+👤 ✓ 
+👤 ✓ 
+👤 ✓ 
 
 BOLLLOBOT / MELDEXZZ.`
 
-    const buttons = [
-        ['Escuadra 1', '.escuadra1'],
-        ['Escuadra 2', '.escuadra2'],
-        ['Suplente', '.suplente'],
-        ['Limpiar lista', '.limpiarlista']
+    const sections = [
+        {
+            title: `Lista de Opciones`,
+            rows: [
+                {title: "Escuadra 1", rowId: ".escuadra1"},
+                {title: "Escuadra 2", rowId: ".escuadra2"},
+                {title: "Suplente", rowId: ".suplente"},
+                {title: "Limpiar lista", rowId: ".limpiarlista"}
+            ]
+        }
     ]
 
-    await conn.sendButton(m.chat, texto, 'Selecciona una opción:', buttons, m)
+    const listMessage = {
+        text: str,
+        footer: "Selecciona una opción:",
+        title: null,
+        buttonText: "Click Aquí",
+        sections
+    }
+
+    await conn.sendMessage(m.chat, listMessage)
 }
 
 handler.help = ['listaff']
