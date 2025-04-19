@@ -68,20 +68,19 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
-        const buttons = [
-            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ];
+        const templateButtons = [
+            {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'escuadra1'}},
+            {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'escuadra2'}},
+            {index: 3, urlButton: {displayText: 'Suplente', url: 'suplente'}}
+        ]
 
-        const buttonMessage = {
+        const templateMessage = {
             text: texto,
             footer: 'Selecciona una opción:',
-            buttons: buttons,
-            headerType: 1
-        };
+            templateButtons: templateButtons
+        }
 
-        await conn.sendMessage(m.chat, buttonMessage);
+        await conn.reply(m.chat, templateMessage, m);
         return;
     }
 
@@ -140,19 +139,20 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
-    const buttonMessage = {
-        text: texto,
-        footer: 'Selecciona una opción:',
-        buttons: [
-            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ],
-        headerType: 1,
-        mentions: [usuario]
-    };
+        const templateButtons = [
+            {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'escuadra1'}},
+            {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'escuadra2'}},
+            {index: 3, urlButton: {displayText: 'Suplente', url: 'suplente'}}
+        ]
 
-    await conn.sendMessage(m.chat, buttonMessage);
+        const templateMessage = {
+            text: texto,
+            footer: 'Selecciona una opción:',
+            templateButtons: templateButtons,
+            mentions: [usuario]
+        }
+
+        await conn.reply(m.chat, templateMessage, m);
 }
 
 // Manejo de respuestas a botones
@@ -209,19 +209,20 @@ export async function after(m, { conn }) {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
-        const buttonMessage = {
+        const templateButtons = [
+            {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'escuadra1'}},
+            {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'escuadra2'}},
+            {index: 3, urlButton: {displayText: 'Suplente', url: 'suplente'}}
+        ]
+
+        const templateMessage = {
             text: texto,
             footer: 'Selecciona una opción:',
-            buttons: [
-                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-            ],
-            headerType: 1,
+            templateButtons: templateButtons,
             mentions: [usuario]
-        };
+        }
 
-        await conn.sendMessage(m.chat, buttonMessage);
+        await conn.reply(m.chat, templateMessage, m);
     } catch (error) {
         console.error('Error en after:', error);
         await conn.reply(m.chat, '❌ Error al procesar tu selección', m);
