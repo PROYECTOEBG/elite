@@ -12,16 +12,16 @@ const handler = async (m, { conn }) => {
 };
 
 handler.command = /^listaff$/i;
+export default handler;
 
-handler.all = async function (m, { conn }) {
-  const nativeFlow = m.message?.nativeFlowResponseMessage;
-  if (!nativeFlow) return;
+// Evento para manejar botones
+export async function before(m, { conn }) {
+  const btn = m?.message?.buttonsResponseMessage;
+  if (!btn) return;
 
-  const id = nativeFlow.selectedButtonId;
-  const usuario = m.sender.split('@')[0];
-  const tag = m.sender;
-
-  if (!['squad1', 'squad2', 'suplente', 'limpiar'].includes(id)) return;
+  const id = btn.selectedButtonId;
+  const user = m.sender;
+  const username = '@' + user.split('@')[0];
 
   if (id === 'limpiar') {
     listas = {
@@ -30,39 +30,29 @@ handler.all = async function (m, { conn }) {
       suplente: ['✔', '✔', '✔']
     };
     return await conn.sendMessage(m.chat, {
-      text: `♻️ Listas reiniciadas por @${usuario}`,
-      mentions: [tag]
+      text: `♻️ Listas reiniciadas por ${username}`,
+      mentions: [user]
     });
   }
 
-  const yaRegistrado = Object.values(listas).some(lista =>
-    lista.includes(`@${usuario}`)
-  );
-
-  if (yaRegistrado) {
-    return await conn.sendMessage(m.chat, {
-      text: `⚠️ @${usuario}, ya estás en una lista.`,
-      mentions: [tag]
-    });
-  }
-
-  const libre = listas[id]?.findIndex(p => p === '➢' || p === '✔');
+  const tipo = id;
+  const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
   if (libre !== -1) {
-    listas[id][libre] = `@${usuario}`;
+    listas[tipo][libre] = username;
     await conn.sendMessage(m.chat, {
-      text: `✅ @${usuario} agregado a ${id === 'squad1' ? 'Escuadra 1' : id === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
-      mentions: [tag]
+      text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+      mentions: [user]
     });
     await enviarLista(conn, m.chat);
   } else {
     await conn.sendMessage(m.chat, {
-      text: `⚠️ ${id} está llena`,
-      mentions: [tag]
+      text: `⚠️ ${tipo} está llena`,
+      mentions: [user]
     });
   }
-};
+}
 
-async function enviarLista(conn, chatId) {
+async function enviarLista(conn, jid) {
   const texto = 
 `*MODALIDAD:* CLK  
 *ROPA:* verde  
@@ -81,35 +71,23 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
   const buttons = [
     {
       name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Escuadra 1",
-        id: "squad1"
-      })
+      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 1", id: "squad1" })
     },
     {
       name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Escuadra 2",
-        id: "squad2"
-      })
+      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 2", id: "squad2" })
     },
     {
       name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Suplente",
-        id: "suplente"
-      })
+      buttonParamsJson: JSON.stringify({ display_text: "Suplente", id: "suplente" })
     },
     {
       name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Limpiar lista",
-        id: "limpiar"
-      })
+      buttonParamsJson: JSON.stringify({ display_text: "Limpiar lista", id: "limpiar" })
     }
   ];
 
-  const msg = generateWAMessageFromContent(chatId, {
+  const mensaje = generateWAMessageFromContent(jid, {
     viewOnceMessage: {
       message: {
         messageContextInfo: { deviceListMetadata: {} },
@@ -122,7 +100,5 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
     }
   }, {});
 
-  await conn.relayMessage(chatId, msg.message, { messageId: msg.key.id });
+  await conn.relayMessage(jid, mensaje.message, { messageId: mensaje.key.id });
 }
-
-export default handler;
