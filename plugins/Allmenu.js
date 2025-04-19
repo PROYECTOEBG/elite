@@ -1,4 +1,3 @@
-
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
@@ -24,27 +23,32 @@ export async function before(m, { conn }) {
   const user = m.sender;
   const username = '@' + user.split('@')[0];
 
+  // Reaccionar al botón
+  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }});
+
   if (id === 'limpiar') {
     listas = {
       squad1: ['➢', '➢', '➢', '➢'],
       squad2: ['➢', '➢', '➢', '➢'],
       suplente: ['✔', '✔', '✔']
     };
-    return await conn.sendMessage(m.chat, {
+    await conn.sendMessage(m.chat, {
       text: `♻️ Listas reiniciadas por ${username}`,
       mentions: [user]
     });
+    return await enviarLista(conn, m.chat);
   }
 
   const tipo = id;
   const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
+  
   if (libre !== -1) {
     listas[tipo][libre] = username;
     await conn.sendMessage(m.chat, {
       text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
       mentions: [user]
     });
-    await enviarLista(conn, m.chat);
+    await enviarLista(conn, m.chat, [user]);
   } else {
     await conn.sendMessage(m.chat, {
       text: `⚠️ ${tipo} está llena`,
@@ -53,10 +57,19 @@ export async function before(m, { conn }) {
   }
 }
 
-async function enviarLista(conn, jid) {
+async function enviarLista(conn, jid, mentions = []) {
+  // Obtener todos los usuarios mencionados
+  const allMentions = [...new Set([
+    ...mentions,
+    ...listas.squad1.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
+    ...listas.squad2.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
+    ...listas.suplente.filter(p => p !== '✔').map(p => p.replace('@', '') + '@s.whatsapp.net')
+  ])];
+
   const texto = 
-`*MODALIDAD:* CLK  
-*ROPA:* verde  
+`*EliteBot*
+🎮 *MODALIDAD:* CLK  
+👕 *ROPA:* verde  
 
 *Escuadra 1:*  
 ${listas.squad1.map(p => `➡ ${p}`).join('\n')}  
@@ -91,7 +104,10 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
   const mensaje = generateWAMessageFromContent(jid, {
     viewOnceMessage: {
       message: {
-        messageContextInfo: { deviceListMetadata: {} },
+        messageContextInfo: { 
+          deviceListMetadata: {},
+          mentionedJid: allMentions
+        },
         interactiveMessage: proto.Message.InteractiveMessage.create({
           body: { text: texto },
           footer: { text: "Selecciona una opción:" },
