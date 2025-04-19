@@ -99,14 +99,11 @@ let handler = async (m, { conn, text, args }) => {
 
     const mensajeGuardado = mensajesGrupos.get(groupId);
     if (mensajeGuardado) {
-        await conn.sendMessage(m.chat, { 
-            text: `*${mensajeGuardado}*`,
-            contextInfo: {
-                mentionedJid: []
-            }
-        });
+        await mostrarLista(conn, m.chat, listas, mentions, mensajeGuardado);
+    } else {
+        await mostrarLista(conn, m.chat, listas, mentions);
     }
-    await mostrarLista(conn, m.chat, listas, mentions, nombreUsuario);
+    return;
 }
 
 // Función para mostrar la lista
