@@ -1,11 +1,11 @@
 import { listas } from './listaff.js'
 
-let handler = async (m, { conn, text, command }) => {
+let handler = async (m, { conn }) => {
     const usuario = m.sender.split('@s.whatsapp.net')[0]
     const tag = m.sender
-    const comando = (text || '').toLowerCase()
+    const msg = (m.text || '').toLowerCase().trim()
 
-    if (command == 'escuadra1' || command == 'escuadra 1') {
+    if (msg.startsWith('escuadra 1') || msg.startsWith('escuadra1')) {
         if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
             m.reply('Ya estás en una escuadra')
             return
@@ -24,7 +24,7 @@ let handler = async (m, { conn, text, command }) => {
         })
     }
     
-    else if (command == 'escuadra2' || command == 'escuadra 2') {
+    else if (msg.startsWith('escuadra 2') || msg.startsWith('escuadra2')) {
         if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
             m.reply('Ya estás en una escuadra')
             return
@@ -43,7 +43,7 @@ let handler = async (m, { conn, text, command }) => {
         })
     }
     
-    else if (command == 'suplente') {
+    else if (msg.startsWith('suplente')) {
         if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
             m.reply('Ya estás en una escuadra')
             return
@@ -62,7 +62,7 @@ let handler = async (m, { conn, text, command }) => {
         })
     }
     
-    else if (command == 'limpiarlista' || command == 'limpiar lista') {
+    else if (msg.startsWith('limpiar lista') || msg.startsWith('limpiarlista')) {
         listas.squad1 = ['➢', '➢', '➢', '➢']
         listas.squad2 = ['➢', '➢', '➢', '➢']
         listas.suplente = ['✔', '✔', '✔']
@@ -74,7 +74,9 @@ let handler = async (m, { conn, text, command }) => {
     }
 }
 
-handler.command = /^(escuadra1|escuadra 1|escuadra2|escuadra 2|suplente|limpiarlista|limpiar lista)$/i
+handler.customPrefix = /escuadra 1|escuadra1|escuadra 2|escuadra2|suplente|limpiar lista|limpiarlista/i
+handler.command = new RegExp
+handler.exp = 0
 handler.tags = ['main']
 
 export default handler
