@@ -1,55 +1,41 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-// Objeto para almacenar el estado de las listas
-let squadLists = {
-  squad1: ['@Bolillo', '➢', '➢', '➢'],
-  squad2: ['➢', '@Carito', '➢', '➢', '➢'],
-  suplente: ['➢', '➢', '➢']
+// Estado inicial de las listas (igual a tu imagen)
+let lists = {
+  squad1: ['EliteBot', 'Ñaña', 'Tú', 'dado ...'],
+  squad2: ['➢', '➢', '➢', '➢'],
+  suplente: ['✔', '✔', '✔']
 };
 
-var handler = async (m, { conn }) => {
-  await sendUpdatedList(conn, m.chat);
+const handler = async (m, { conn }) => {
+  await sendInteractiveList(conn, m.chat);
 };
 
-// Función mejorada para enviar la lista actualizada
-async function sendUpdatedList(conn, chatId, userId = null, squadType = null) {
-  // Actualizar la lista si se especifica
-  if (userId && squadType) {
-    const list = squadLists[squadType];
-    const emptyIndex = list.findIndex(item => item === '➢');
-    if (emptyIndex !== -1) {
-      list[emptyIndex] = `@${userId}`;
+async function sendInteractiveList(conn, chatId, updatedUser = null, listType = null) {
+  // Actualizar lista si se especifica
+  if (updatedUser && listType) {
+    const list = lists[listType];
+    const emptySpot = list.findIndex(item => item === '➢' || item === '✔');
+    if (emptySpot !== -1) {
+      list[emptySpot] = `@${updatedUser}`;
     }
   }
 
-  // Construir el texto actualizado
-  const listText = `*MODALIDAD:* CLK  
-*ROPA:* verde  
+  // Construir texto exacto como en tu imagen
+  const listText = `*MODALIDAD:* CLK\n*ROPA:* verde\n\n*Escuadra 1:*\n${lists.squad1.map(p => `➡ ${p}`).join('\n')}\n\n*Escuadra 2:*\n${lists.squad2.map(p => `➡ ${p}`).join('\n')}\n\n*SUPLENTE:*\n${lists.suplente.map(p => `➡ ${p}`).join('\n')}\n\n*BOLLLOBOT / MELDEXZZ.*`;
 
-*Escuadra 1:*  
-${squadLists.squad1.map(item => `➡ ${item}`).join('\n')}  
-
-*Escuadra 2:*  
-${squadLists.squad2.map(item => `➡ ${item}`).join('\n')}  
-
-*SUPLENTE:*  
-${squadLists.suplente.map(item => `➡ ${item}`).join('\n')}  
-
-*BOLLLOBOT / MELDEXZZ.*`;
-
-  // Crear el mensaje interactivo
   const msg = generateWAMessageFromContent(chatId, {
     viewOnceMessage: {
       message: {
-        messageContextInfo: { deviceListMetadata: {}, deviceListMetadataVersion: 2 },
+        messageContextInfo: { deviceListMetadata: {} },
         interactiveMessage: proto.Message.InteractiveMessage.create({
           body: { text: listText },
           footer: { text: "Selecciona una opción:" },
           nativeFlowMessage: {
             buttons: [
-              createButton('Escuadra 1', 'esc1'),
-              createButton('Escuadra 2', 'esc2'),
+              createButton('Escuadra 1', 'squad1'),
+              createButton('Escuadra 2', 'squad2'),
               createButton('Suplente', 'suplente'),
               createButton('Limpiar lista', 'limpiar', true)
             ]
@@ -62,7 +48,6 @@ ${squadLists.suplente.map(item => `➡ ${item}`).join('\n')}
   await conn.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id });
 }
 
-// Función auxiliar para crear botones
 function createButton(text, id, isDanger = false) {
   return {
     name: "quick_reply",
@@ -74,33 +59,25 @@ function createButton(text, id, isDanger = false) {
   };
 }
 
-// Manejador de interacciones mejorado
+// Manejador mejorado de interacciones
 export async function after(m, { conn }) {
   if (!m.message?.buttonsResponseMessage) return;
 
   const { selectedButtonId } = m.message.buttonsResponseMessage;
-  const userId = m.pushName || m.sender.split('@')[0];
+  const user = m.pushName || m.sender.split('@')[0];
 
   if (selectedButtonId === 'limpiar') {
-    squadLists = {
-      squad1: ['@Bolillo', '➢', '➢', '➢'],
-      squad2: ['➢', '@Carito', '➢', '➢', '➢'],
-      suplente: ['➢', '➢', '➢']
+    lists = {
+      squad1: ['EliteBot', 'Ñaña', 'Tú', 'dado ...'],
+      squad2: ['➢', '➢', '➢', '➢'],
+      suplente: ['✔', '✔', '✔']
     };
-    await conn.sendMessage(m.chat, { text: `*${userId}* ha limpiado la lista` }, { quoted: m });
+    await conn.sendMessage(m.chat, { text: `Listas reiniciadas por @${user}` }, { quoted: m });
   } else {
-    const squadType = {
-      'esc1': 'squad1',
-      'esc2': 'squad2',
-      'suplente': 'suplente'
-    }[selectedButtonId];
-
-    if (squadType) {
-      await sendUpdatedList(conn, m.chat, userId, squadType);
-      await conn.sendMessage(m.chat, { 
-        text: `*${userId}* ha sido agregado a *${squadType.replace('squad', 'Escuadra ')}*` 
-      }, { quoted: m });
-    }
+    await sendInteractiveList(conn, m.chat, user, selectedButtonId);
+    await conn.sendMessage(m.chat, { 
+      text: `@${user} seleccionó ${selectedButtonId.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}` 
+    }, { quoted: m });
   }
 }
 
