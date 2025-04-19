@@ -2,64 +2,86 @@ import { listas } from './listaff.js'
 
 // Función para unirse a escuadra 1
 let handler1 = async (m, { conn }) => {
-    let user = '@' + m.sender.split('@')[0]
+    const usuario = m.sender.split('@')[0];
+    const tag = m.sender;
     
-    if (listas.escuadra1.includes(user) || listas.escuadra2.includes(user) || listas.suplente.includes(user)) {
+    if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
         m.reply('Ya estás en una escuadra')
         return
     }
     
-    if (listas.escuadra1.length >= 4) {
+    const libre = listas.squad1.findIndex(p => p === '➢');
+    if (libre === -1) {
         m.reply('Escuadra 1 está llena')
         return
     }
     
-    listas.escuadra1.push(user)
-    m.reply('Te has unido a Escuadra 1')
+    listas.squad1[libre] = `@${usuario}`
+    await conn.sendMessage(m.chat, {
+        text: `✅ @${usuario} agregado a Escuadra 1`,
+        mentions: [tag]
+    })
 }
 
 // Función para unirse a escuadra 2
 let handler2 = async (m, { conn }) => {
-    let user = '@' + m.sender.split('@')[0]
+    const usuario = m.sender.split('@')[0];
+    const tag = m.sender;
     
-    if (listas.escuadra1.includes(user) || listas.escuadra2.includes(user) || listas.suplente.includes(user)) {
+    if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
         m.reply('Ya estás en una escuadra')
         return
     }
     
-    if (listas.escuadra2.length >= 4) {
+    const libre = listas.squad2.findIndex(p => p === '➢');
+    if (libre === -1) {
         m.reply('Escuadra 2 está llena')
         return
     }
     
-    listas.escuadra2.push(user)
-    m.reply('Te has unido a Escuadra 2')
+    listas.squad2[libre] = `@${usuario}`
+    await conn.sendMessage(m.chat, {
+        text: `✅ @${usuario} agregado a Escuadra 2`,
+        mentions: [tag]
+    })
 }
 
 // Función para unirse como suplente
 let handler3 = async (m, { conn }) => {
-    let user = '@' + m.sender.split('@')[0]
+    const usuario = m.sender.split('@')[0];
+    const tag = m.sender;
     
-    if (listas.escuadra1.includes(user) || listas.escuadra2.includes(user) || listas.suplente.includes(user)) {
+    if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
         m.reply('Ya estás en una escuadra')
         return
     }
     
-    if (listas.suplente.length >= 3) {
+    const libre = listas.suplente.findIndex(p => p === '✔');
+    if (libre === -1) {
         m.reply('Lista de suplentes llena')
         return
     }
     
-    listas.suplente.push(user)
-    m.reply('Te has unido como suplente')
+    listas.suplente[libre] = `@${usuario}`
+    await conn.sendMessage(m.chat, {
+        text: `✅ @${usuario} agregado como Suplente`,
+        mentions: [tag]
+    })
 }
 
 // Función para limpiar lista
 let handler4 = async (m, { conn }) => {
-    listas.escuadra1 = []
-    listas.escuadra2 = []
-    listas.suplente = []
-    m.reply('Se han limpiado todas las listas')
+    const usuario = m.sender.split('@')[0];
+    const tag = m.sender;
+    
+    listas.squad1 = ['➢', '➢', '➢', '➢']
+    listas.squad2 = ['➢', '➢', '➢', '➢']
+    listas.suplente = ['✔', '✔', '✔']
+    
+    await conn.sendMessage(m.chat, {
+        text: `♻️ Listas reiniciadas por @${usuario}`,
+        mentions: [tag]
+    })
 }
 
 handler1.command = /^escuadra1$/i
