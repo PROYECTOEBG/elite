@@ -11,13 +11,11 @@ const handler = async (m, { conn }) => {
   await sendListWithButtons(conn, m.chat);
 };
 
-async function sendListWithButtons(conn, chatId, userAdded = null, listType = null) {
+async function sendListWithButtons(conn, chatId, userAdded = null, listType = null, mentionJid = null, quoted = null) {
   if (userAdded && listType) {
     const list = lists[listType];
     const emptyIndex = list.findIndex(item => item === '➢' || item === '✔');
-    if (emptyIndex !== -1) {
-      list[emptyIndex] = `@${userAdded}`;
-    }
+    if (emptyIndex !== -1) list[emptyIndex] = `@${userAdded}`;
   }
 
   const listText = 
@@ -79,14 +77,23 @@ ${lists.suplente.map(p => `➡ ${p}`).join('\n')}
     }
   }, {});
 
-  await conn.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id });
+  await conn.relayMessage(chatId, msg.message, { messageId: msg.key.id });
+
+  // Si hay usuario para mencionar (en respuesta al botón)
+  if (mentionJid) {
+    await conn.sendMessage(chatId, {
+      text: `✅ @${userAdded} agregado a ${listType.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}`,
+      mentions: [mentionJid]
+    }, { quoted });
+  }
 }
 
 export async function after(m, { conn }) {
   if (!m.message?.buttonsResponseMessage) return;
 
   const { selectedButtonId } = m.message.buttonsResponseMessage;
-  const user = m.pushName || m.sender.split('@')[0];
+  const userJid = m.sender;
+  const user = m.pushName || userJid.split('@')[0];
 
   if (selectedButtonId === 'limpiar') {
     lists = {
@@ -96,14 +103,10 @@ export async function after(m, { conn }) {
     };
     await conn.sendMessage(m.chat, {
       text: `♻️ Listas reiniciadas por @${user}`,
-      mentions: [m.sender]
+      mentions: [userJid]
     }, { quoted: m });
   } else {
-    await sendListWithButtons(conn, m.chat, user, selectedButtonId);
-    await conn.sendMessage(m.chat, {
-      text: `✅ @${user} agregado a ${selectedButtonId.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}`,
-      mentions: [m.sender]
-    }, { quoted: m });
+    await sendListWithButtons(conn, m.chat, user, selectedButtonId, userJid, m);
   }
 }
 
