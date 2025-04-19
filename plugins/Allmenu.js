@@ -1,5 +1,4 @@
-import pkg from '@whiskeysockets/baileys';
-const { generateWAMessageFromContent, proto } = pkg;
+import { generateWAMessageFromContent, proto } from '@whiskeysockets/baileys';
 
 let listas = {
   squad1: ['➢', '➢', '➢', '➢'],
@@ -8,91 +7,13 @@ let listas = {
 };
 
 const handler = async (m, { conn }) => {
-  await enviarLista(conn, m.chat);
-};
+  const buttons = [
+    {buttonId: 'squad1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+    {buttonId: 'squad2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+    {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1},
+    {buttonId: 'limpiar', buttonText: {displayText: 'Limpiar lista'}, type: 1}
+  ];
 
-handler.command = /^listaff$/i;
-export default handler;
-
-export async function before(m, { conn }) {
-  if (!m.message) return;
-  
-  // Detectar el tipo de mensaje de botón
-  const button = m.message?.buttonsResponseMessage?.selectedButtonId ||
-                m.message?.templateButtonReplyMessage?.selectedId;
-  
-  if (!button) return;
-  
-  const user = m.sender;
-  const username = '@' + user.split('@')[0];
-
-  try {
-    // Reaccionar al mensaje
-    await reaccionar(conn, m.chat, m.key, '✅');
-
-    if (button === 'limpiar') {
-      listas = {
-        squad1: ['➢', '➢', '➢', '➢'],
-        squad2: ['➢', '➢', '➢', '➢'],
-        suplente: ['✔', '✔', '✔']
-      };
-      
-      await enviarMensaje(conn, m.chat, {
-        text: `♻️ Listas reiniciadas por ${username}`,
-        mentions: [user]
-      });
-      
-      return await enviarLista(conn, m.chat);
-    }
-
-    const tipo = button;
-    const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
-    
-    if (libre !== -1) {
-      listas[tipo][libre] = username;
-      
-      await enviarMensaje(conn, m.chat, {
-        text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
-        mentions: [user]
-      });
-      
-      await enviarLista(conn, m.chat);
-    } else {
-      await enviarMensaje(conn, m.chat, {
-        text: `⚠️ ${tipo} está llena`,
-        mentions: [user]
-      });
-    }
-  } catch (error) {
-    console.error('Error:', error);
-    await enviarMensaje(conn, m.chat, {
-      text: '❌ Ocurrió un error al procesar tu selección'
-    });
-  }
-}
-
-async function reaccionar(conn, chat, key, emoji) {
-  try {
-    await conn.sendMessage(chat, { 
-      react: { 
-        text: emoji, 
-        key: key 
-      } 
-    });
-  } catch (error) {
-    console.error('Error al reaccionar:', error);
-  }
-}
-
-async function enviarMensaje(conn, chat, options) {
-  try {
-    await conn.sendMessage(chat, options);
-  } catch (error) {
-    console.error('Error al enviar mensaje:', error);
-  }
-}
-
-async function enviarLista(conn, jid) {
   const texto = 
 `*EliteBot*
 🎮 *MODALIDAD:* CLK  
@@ -109,26 +30,82 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  const templateButtons = [
-    {index: 1, urlButton: {displayText: 'Escuadra 1', url: '#squad1'}},
-    {index: 2, urlButton: {displayText: 'Escuadra 2', url: '#squad2'}},
-    {index: 3, urlButton: {displayText: 'Suplente', url: '#suplente'}},
-    {index: 4, urlButton: {displayText: 'Limpiar lista', url: '#limpiar'}}
-  ];
-
-  const templateMessage = {
+  const buttonMessage = {
     text: texto,
     footer: 'Selecciona una opción:',
-    templateButtons: templateButtons
+    buttons: buttons,
+    headerType: 1
   };
 
   try {
-    await conn.sendMessage(jid, templateMessage);
+    await conn.sendMessage(m.chat, buttonMessage);
   } catch (error) {
-    console.error('Error al enviar lista:', error);
-    // Intento alternativo con formato más simple
-    await conn.sendMessage(jid, {
-      text: texto + '\n\nUsa los comandos:\n!squad1\n!squad2\n!suplente\n!limpiar'
+    console.error('Error al enviar mensaje:', error);
+    // Intento alternativo
+    await conn.sendMessage(m.chat, { text: texto });
+  }
+};
+
+handler.command = /^listaff$/i;
+export default handler;
+
+export async function before(m, { conn }) {
+  if (!m.message) return;
+  
+  const buttonId = m.message?.buttonsResponseMessage?.selectedButtonId;
+  if (!buttonId) return;
+  
+  const user = m.sender;
+  const username = '@' + user.split('@')[0];
+
+  try {
+    // Reaccionar al mensaje
+    await conn.sendMessage(m.chat, { 
+      react: { 
+        text: '✅', 
+        key: m.key 
+      } 
+    });
+
+    if (buttonId === 'limpiar') {
+      listas = {
+        squad1: ['➢', '➢', '➢', '➢'],
+        squad2: ['➢', '➢', '➢', '➢'],
+        suplente: ['✔', '✔', '✔']
+      };
+      
+      await conn.sendMessage(m.chat, {
+        text: `♻️ Listas reiniciadas por ${username}`,
+        mentions: [user]
+      });
+      
+      // Enviar lista actualizada
+      return handler({ chat: m.chat }, { conn });
+    }
+
+    const tipo = buttonId;
+    const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
+    
+    if (libre !== -1) {
+      listas[tipo][libre] = username;
+      
+      await conn.sendMessage(m.chat, {
+        text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+        mentions: [user]
+      });
+      
+      // Enviar lista actualizada
+      await handler({ chat: m.chat }, { conn });
+    } else {
+      await conn.sendMessage(m.chat, {
+        text: `⚠️ ${tipo} está llena`,
+        mentions: [user]
+      });
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    await conn.sendMessage(m.chat, {
+      text: '❌ Ocurrió un error al procesar tu selección'
     });
   }
 }
