@@ -16,48 +16,63 @@ export default handler;
 
 // Evento para manejar botones
 export async function before(m, { conn }) {
-  const btn = m?.message?.buttonsResponseMessage;
-  if (!btn) return;
+  // Verificar si es una respuesta de botón
+  const selectedButton = m.message?.templateButtonReplyMessage?.selectedId || 
+                        m.message?.buttonsResponseMessage?.selectedButtonId ||
+                        m.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
+                        
+  if (!selectedButton) return;
 
-  const id = btn.selectedButtonId;
   const user = m.sender;
   const username = '@' + user.split('@')[0];
 
-  // Reaccionar al botón
-  await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key }});
-
-  if (id === 'limpiar') {
-    listas = {
-      squad1: ['➢', '➢', '➢', '➢'],
-      squad2: ['➢', '➢', '➢', '➢'],
-      suplente: ['✔', '✔', '✔']
-    };
-    await conn.sendMessage(m.chat, {
-      text: `♻️ Listas reiniciadas por ${username}`,
-      mentions: [user]
+  try {
+    // Reaccionar al mensaje
+    await conn.sendMessage(m.chat, { 
+      react: { 
+        text: "✅", 
+        key: m.key 
+      }
     });
-    return await enviarLista(conn, m.chat);
-  }
 
-  const tipo = id;
-  const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
-  if (libre !== -1) {
-    listas[tipo][libre] = username;
+    if (selectedButton === 'limpiar') {
+      listas = {
+        squad1: ['➢', '➢', '➢', '➢'],
+        squad2: ['➢', '➢', '➢', '➢'],
+        suplente: ['✔', '✔', '✔']
+      };
+      await conn.sendMessage(m.chat, {
+        text: `♻️ Listas reiniciadas por ${username}`,
+        mentions: [user]
+      });
+      return await enviarLista(conn, m.chat);
+    }
+
+    const tipo = selectedButton;
+    const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
+    
+    if (libre !== -1) {
+      listas[tipo][libre] = username;
+      await conn.sendMessage(m.chat, {
+        text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+        mentions: [user]
+      });
+      await enviarLista(conn, m.chat, [user]);
+    } else {
+      await conn.sendMessage(m.chat, {
+        text: `⚠️ ${tipo} está llena`,
+        mentions: [user]
+      });
+    }
+  } catch (error) {
+    console.error('Error en el manejo de botones:', error);
     await conn.sendMessage(m.chat, {
-      text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
-      mentions: [user]
-    });
-    await enviarLista(conn, m.chat, [user]);
-  } else {
-    await conn.sendMessage(m.chat, {
-      text: `⚠️ ${tipo} está llena`,
-      mentions: [user]
+      text: '❌ Ocurrió un error al procesar tu selección'
     });
   }
 }
 
 async function enviarLista(conn, jid, mentions = []) {
-  // Obtener todos los usuarios mencionados de las listas
   const allMentions = [...new Set([
     ...mentions,
     ...listas.squad1.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
@@ -66,7 +81,8 @@ async function enviarLista(conn, jid, mentions = []) {
   ])];
 
   const texto = 
-`🎮 *MODALIDAD:* CLK  
+`*EliteBot*
+🎮 *MODALIDAD:* CLK  
 👕 *ROPA:* verde  
 
 *Escuadra 1:*  
@@ -81,39 +97,19 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 *BOLLLOBOT / MELDEXZZ.*`;
 
   const buttons = [
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 1", id: "squad1" })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 2", id: "squad2" })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Suplente", id: "suplente" })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Limpiar lista", id: "limpiar" })
-    }
+    { buttonId: 'squad1', buttonText: { displayText: 'Escuadra 1' }, type: 1 },
+    { buttonId: 'squad2', buttonText: { displayText: 'Escuadra 2' }, type: 1 },
+    { buttonId: 'suplente', buttonText: { displayText: 'Suplente' }, type: 1 },
+    { buttonId: 'limpiar', buttonText: { displayText: 'Limpiar lista' }, type: 1 }
   ];
 
-  const mensaje = generateWAMessageFromContent(jid, {
-    viewOnceMessage: {
-      message: {
-        messageContextInfo: { 
-          deviceListMetadata: {},
-          mentionedJid: allMentions
-        },
-        interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: { text: texto },
-          footer: { text: "Selecciona una opción:" },
-          nativeFlowMessage: { buttons }
-        })
-      }
-    }
-  }, {});
+  const buttonMessage = {
+    text: texto,
+    footer: 'Selecciona una opción:',
+    buttons: buttons,
+    headerType: 1,
+    mentions: allMentions
+  };
 
-  await conn.relayMessage(jid, mensaje.message, { messageId: mensaje.key.id });
+  await conn.sendMessage(jid, buttonMessage);
 }
