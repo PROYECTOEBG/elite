@@ -109,7 +109,6 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
 🗣️ 𝗜𝗡𝗗𝗜𝗖𝗔𝗖𝗜𝗢𝗡𝗘𝗦 :
 » Reglas y color se avisa al llenar este listado.
 
-
 ╭──────⚔──────╮
           8 𝗩𝗘𝗥𝗦𝗨𝗦 8
 ╰──────⚔──────╯
