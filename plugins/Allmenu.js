@@ -1,6 +1,7 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
+// Estado global de las listas
 let listas = {
   squad1: ['➢', '➢', '➢', '➢'],
   squad2: ['➢', '➢', '➢', '➢'],
@@ -8,46 +9,57 @@ let listas = {
 };
 
 const handler = async (m, { conn }) => {
-  // Verificar si el mensaje es "escuadra 1"
-  const msgText = m.text?.toLowerCase()?.trim();
-  
-  if (msgText === 'escuadra 1') {
-    const nombre = m.pushName || 'Usuario';
-    const usuario = m.sender.split('@')[0];
-    const tag = m.sender;
+  try {
+    const msgText = (m.text || '').toLowerCase().trim();
     
-    // Buscar espacio libre en Escuadra 1
-    const libre = listas.squad1.findIndex(p => p === '➢');
-    
-    if (libre !== -1) {
-      listas.squad1[libre] = `@${usuario}`;
-      await conn.sendMessage(m.chat, {
-        text: `✅ @${usuario} agregado a Escuadra 1`,
-        mentions: [tag]
-      });
-      await enviarLista(conn, m.chat);
-    } else {
-      await conn.sendMessage(m.chat, {
-        text: '⚠️ La Escuadra 1 está llena',
-        mentions: [tag]
-      });
+    // Manejo del comando "escuadra 1"
+    if (msgText === 'escuadra 1') {
+      await handleSquadRequest(conn, m, 'squad1');
+      return;
     }
-    return; // Importante para no ejecutar el resto
+    
+    // Mostrar lista normal si no es un comando específico
+    await enviarLista(conn, m.chat);
+  } catch (error) {
+    console.error('Error en handler:', error);
+    await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al procesar tu solicitud' });
   }
-  
-  // Si no es "escuadra 1", mostrar lista normal
-  await enviarLista(conn, m.chat);
 };
 
-// Resto del código se mantiene igual...
-async function enviarLista(conn, chatId, usuario = null, tipo = null, tag = null) {
-  if (usuario && tipo) {
-    const lista = listas[tipo];
-    const libre = lista.findIndex(p => p === '➢' || p === '✔');
-    if (libre !== -1) lista[libre] = `@${usuario}`;
+// Función para manejar solicitudes de escuadra
+async function handleSquadRequest(conn, m, squadType) {
+  const usuario = m.sender.split('@')[0];
+  const tag = m.sender;
+  const squadName = squadType === 'squad1' ? 'Escuadra 1' : squadType === 'squad2' ? 'Escuadra 2' : 'Suplente';
+  
+  // Buscar espacio libre
+  const libre = listas[squadType].findIndex(p => p === '➢' || p === '✔');
+  
+  if (libre !== -1) {
+    listas[squadType][libre] = `@${usuario}`;
+    await conn.sendMessage(m.chat, {
+      text: `✅ @${usuario} agregado a ${squadName}`,
+      mentions: [tag]
+    });
+    await enviarLista(conn, m.chat);
+  } else {
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ ${squadName} está llena`,
+      mentions: [tag]
+    });
   }
+}
 
-  const texto = 
+// Función para enviar la lista interactiva
+async function enviarLista(conn, chatId, usuario = null, tipo = null, tag = null) {
+  try {
+    // Actualizar lista si se proporciona usuario
+    if (usuario && tipo) {
+      const libre = listas[tipo].findIndex(p => p === '➢' || p === '✔');
+      if (libre !== -1) listas[tipo][libre] = `@${usuario}`;
+    }
+
+    const texto = 
 `*MODALIDAD:* CLK  
 *ROPA:* verde  
 
@@ -62,80 +74,91 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  const buttons = [
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Escuadra 1",
-        id: "squad1"
-      })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Escuadra 2",
-        id: "squad2"
-      })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Suplente",
-        id: "suplente"
-      })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Limpiar lista",
-        id: "limpiar"
-      })
-    }
-  ];
-
-  const mensaje = generateWAMessageFromContent(chatId, {
-    viewOnceMessage: {
-      message: {
-        messageContextInfo: { deviceListMetadata: {} },
-        interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: { text: texto },
-          footer: { text: "Selecciona una opción:" },
-          nativeFlowMessage: { buttons }
+    const buttons = [
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Escuadra 1",
+          id: "squad1"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Escuadra 2",
+          id: "squad2"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Suplente",
+          id: "suplente"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Limpiar lista",
+          id: "limpiar"
         })
       }
+    ];
+
+    const mensaje = generateWAMessageFromContent(chatId, {
+      viewOnceMessage: {
+        message: {
+          messageContextInfo: { deviceListMetadata: {} },
+          interactiveMessage: proto.Message.InteractiveMessage.create({
+            body: { text: texto },
+            footer: { text: "Selecciona una opción:" },
+            nativeFlowMessage: { buttons }
+          })
+        }
+      }
+    }, {});
+
+    await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
+
+    // Confirmación adicional si se agregó usuario
+    if (usuario && tag) {
+      await conn.sendMessage(chatId, {
+        text: `✅ @${usuario} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+        mentions: [tag]
+      });
     }
-  }, {});
-
-  await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
-
-  if (usuario && tag) {
-    await conn.sendMessage(chatId, {
-      text: `✅ @${usuario} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
-      mentions: [tag]
-    });
+  } catch (error) {
+    console.error('Error en enviarLista:', error);
+    throw error;
   }
 }
 
+// Manejo de respuestas a botones
 export async function after(m, { conn }) {
-  const button = m?.message?.buttonsResponseMessage;
-  if (!button) return;
+  try {
+    const button = m?.message?.buttonsResponseMessage;
+    if (!button) return;
 
-  const id = button.selectedButtonId;
-  const nombre = m.pushName || 'Usuario';
-  const numero = m.sender.split('@')[0];
+    const id = button.selectedButtonId;
+    const numero = m.sender.split('@')[0];
+    const tag = m.sender;
 
-  if (id === 'limpiar') {
-    listas = {
-      squad1: ['➢', '➢', '➢', '➢'],
-      squad2: ['➢', '➢', '➢', '➢'],
-      suplente: ['✔', '✔', '✔']
-    };
-    await conn.sendMessage(m.chat, {
-      text: `♻️ Listas reiniciadas por @${numero}`,
-      mentions: [m.sender]
-    }, { quoted: m });
-  } else {
-    await enviarLista(conn, m.chat, numero, id, m.sender);
+    if (id === 'limpiar') {
+      listas = {
+        squad1: ['➢', '➢', '➢', '➢'],
+        squad2: ['➢', '➢', '➢', '➢'],
+        suplente: ['✔', '✔', '✔']
+      };
+      await conn.sendMessage(m.chat, {
+        text: `♻️ Listas reiniciadas por @${numero}`,
+        mentions: [tag]
+      }, { quoted: m });
+    } else {
+      await handleSquadRequest(conn, m, id);
+    }
+  } catch (error) {
+    console.error('Error en after:', error);
+    await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
   }
 }
 
