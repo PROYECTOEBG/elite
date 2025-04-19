@@ -35,12 +35,7 @@ let handler = async (m, { conn, text, args }) => {
     if (msgText.toLowerCase().startsWith('.listaff')) {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
-            await conn.sendMessage(m.chat, { 
-                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
-
-𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
-.listaff Actívense para la ranked 🎮` 
-            });
+            await conn.reply(m.chat, `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮`, m);
             return;
         }
         reiniciarListas(groupId);
@@ -73,15 +68,20 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
-        await conn.sendMessage(m.chat, {
+        const buttons = [
+            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+        ];
+
+        const buttonMessage = {
             text: texto,
-            buttons: [
-                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-            ],
+            footer: 'Selecciona una opción:',
+            buttons: buttons,
             headerType: 1
-        });
+        };
+
+        await conn.sendMessage(m.chat, buttonMessage);
         return;
     }
 
@@ -140,8 +140,9 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
-    await conn.sendMessage(m.chat, {
+    const buttonMessage = {
         text: texto,
+        footer: 'Selecciona una opción:',
         buttons: [
             {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
             {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
@@ -149,7 +150,9 @@ let handler = async (m, { conn, text, args }) => {
         ],
         headerType: 1,
         mentions: [usuario]
-    });
+    };
+
+    await conn.sendMessage(m.chat, buttonMessage);
 }
 
 // Manejo de respuestas a botones
@@ -206,8 +209,9 @@ export async function after(m, { conn }) {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
-        await conn.sendMessage(m.chat, {
+        const buttonMessage = {
             text: texto,
+            footer: 'Selecciona una opción:',
             buttons: [
                 {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
                 {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
@@ -215,10 +219,12 @@ export async function after(m, { conn }) {
             ],
             headerType: 1,
             mentions: [usuario]
-        });
+        };
+
+        await conn.sendMessage(m.chat, buttonMessage);
     } catch (error) {
         console.error('Error en after:', error);
-        await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
+        await conn.reply(m.chat, '❌ Error al procesar tu selección', m);
     }
 }
 
