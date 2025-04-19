@@ -27,22 +27,22 @@ BOLLLOBOT / MELDEXZZ.`;
 
         const buttons = [
             {
-                buttonId: '.escuadra1',
+                buttonId: 'escuadra1',
                 buttonText: { displayText: 'Escuadra 1' },
                 type: 1
             },
             {
-                buttonId: '.escuadra2',
+                buttonId: 'escuadra2',
                 buttonText: { displayText: 'Escuadra 2' },
                 type: 1
             },
             {
-                buttonId: '.suplente',
+                buttonId: 'suplente',
                 buttonText: { displayText: 'Suplente' },
                 type: 1
             },
             {
-                buttonId: '.limpiarlista',
+                buttonId: 'limpiarlista',
                 buttonText: { displayText: 'Limpiar lista' },
                 type: 1
             }
@@ -66,4 +66,4 @@ handler.help = ['listaff']
 handler.tags = ['main']
 handler.command = /^listaff$/i
 
-export default handler 
+export default handler
