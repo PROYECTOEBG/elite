@@ -1,50 +1,50 @@
 let handler = async (m, { conn, args, usedPrefix, command }) => {
-    let text = `
-EliteBot
-MODALIDAD: CLK
-ROPA: verde
+    let texto = `
+*╭━━━━━━━━━━━━━━━━━━━╮*
+┃ EliteBot
+┃ MODALIDAD: CLK
+┃ ROPA: verde
+*╰━━━━━━━━━━━━━━━━━━━╯*
 
-Escuadra 1:
-👤 ➤
-👤 ➤
-👤 ➤
-👤 ➤
-
-Escuadra 2:
+*Escuadra 1:*
 👤 ➤
 👤 ➤
 👤 ➤
 👤 ➤
 
-SUPLENTE:
+*Escuadra 2:*
+👤 ➤
+👤 ➤
+👤 ➤
+👤 ➤
+
+*SUPLENTE:*
 👤
 👤
 👤
 
-BOLLLOBOT / MELDEXZZ.
-Selecciona una opción:`
+*BOLLLOBOT / MELDEXZZ.*`
 
-    const buttons = [
-        ['Escuadra 1', '.escuadra1'],
-        ['Escuadra 2', '.escuadra2'],
-        ['Suplente', '.suplente'],
-        ['Limpiar lista', '.limpiarlista']
+    const templateButtons = [
+        {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'https://wa.me/' + conn.user.jid.split('@')[0] + '?text=.escuadra1'}},
+        {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'https://wa.me/' + conn.user.jid.split('@')[0] + '?text=.escuadra2'}},
+        {index: 3, quickReplyButton: {displayText: 'Suplente', id: '.suplente'}},
+        {index: 4, quickReplyButton: {displayText: 'Limpiar lista', id: '.limpiarlista'}}
     ]
 
-    await conn.sendMessage(m.chat, { 
-        text: text,
+    let templateMessage = {
+        image: { url: 'https://i.ibb.co/K9JYWBg/avatar-contact.png' },  // Puedes cambiar esta URL por la imagen que desees
+        caption: texto,
         footer: 'EliteBot',
-        buttons: buttons.map(([text, command]) => ({
-            buttonText: { displayText: text },
-            buttonId: command,
-            type: 1
-        })),
-        headerType: 1
-    }, { quoted: m })
+        templateButtons: templateButtons,
+        viewOnce: true
+    }
+
+    await conn.sendMessage(m.chat, templateMessage)
 }
 
 handler.help = ['listaff']
 handler.tags = ['main']
 handler.command = /^(listaff)$/i
 
-export default handler 
+export default handler
