@@ -36,10 +36,7 @@ let handler = async (m, { conn, text, args }) => {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
             await conn.sendMessage(m.chat, { 
-                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
-
-𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
-.listaff Actívense para la ranked 🎮` 
+                text: `🕓 𝗜𝗡𝗚𝗥𝗘𝗦𝗔 𝗨𝗡 𝗛𝗢𝗥𝗔𝗥𝗜𝗢.\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.8vs8 4pm🇪🇨/3pm🇲🇽` 
             });
             return;
         }
