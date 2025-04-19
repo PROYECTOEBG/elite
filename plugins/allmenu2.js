@@ -1,15 +1,6 @@
-Voy a modificar el archivo para eliminar el botón "Limpiar lista":
-
-```javascript:plugins/escuadra.js
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
-
-// Estado global de las listas
-const listas = {
-  squad1: ['➢', '➢', '➢', '➢'],
-  squad2: ['➢', '➢', '➢', '➢'],
-  suplente: ['✓', '✓', '✓']
-};
+import { listas } from './listaff.js';
 
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
@@ -31,7 +22,7 @@ let handler = async (m, { conn }) => {
     }
     
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
-    const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✓' : '➢'));
+    const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
         listas[squadType][libre] = `@${usuario}`;
     }
@@ -105,7 +96,7 @@ export async function after(m, { conn }) {
 
         const squadType = id === 'escuadra1' ? 'squad1' : 
                         id === 'escuadra2' ? 'squad2' : 'suplente';
-        const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✓' : '➢'));
+        const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
         
         if (libre !== -1) {
             listas[squadType][libre] = `@${numero}`;
@@ -132,18 +123,4 @@ handler.customPrefix = /^(escuadra [12]|suplente)$/i
 handler.command = new RegExp
 handler.group = true
 
-export default handler
-```
-¡Listo! He eliminado el botón "Limpiar lista" y toda su funcionalidad relacionada. Ahora el comando solo muestra tres botones:
-
-1. "Escuadra 1"
-2. "Escuadra 2"
-3. "Suplente"
-
-El resto de la funcionalidad sigue igual:
-- Puedes escribir "escuadra 1", "escuadra 2" o "suplente" para unirte
-- Los botones te permiten cambiar entre escuadras
-- Se mantiene la lista actualizada
-- Se muestran mensajes de confirmación cuando te unes o cuando una escuadra está llena
-
-¿Quieres que haga algún otro ajuste al comando?
+export default handler 
