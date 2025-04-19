@@ -84,20 +84,20 @@ let handler4 = async (m, { conn }) => {
     })
 }
 
-handler1.command = /^escuadra1$/i
-handler1.help = ['escuadra1']
+handler1.command = /^(escuadra 1|escuadra1)$/i
+handler1.help = ['escuadra 1']
 handler1.tags = ['main']
 
-handler2.command = /^escuadra2$/i
-handler2.help = ['escuadra2']
+handler2.command = /^(escuadra 2|escuadra2)$/i
+handler2.help = ['escuadra 2']
 handler2.tags = ['main']
 
 handler3.command = /^suplente$/i
 handler3.help = ['suplente']
 handler3.tags = ['main']
 
-handler4.command = /^limpiarlista$/i
-handler4.help = ['limpiarlista']
+handler4.command = /^(limpiar lista|limpiarlista)$/i
+handler4.help = ['limpiar lista']
 handler4.tags = ['main']
 
 export { handler1, handler2, handler3, handler4 }
