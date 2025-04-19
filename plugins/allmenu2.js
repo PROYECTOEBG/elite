@@ -1,46 +1,41 @@
 let handler = async (m, { conn }) => {
-    const sections = [
-        {
-            title: "BOLLLOBOT / MELDEXZZ.",
-            rows: [
-                {title: "Escuadra 1", rowId: "escuadra1", description: "Unirse a Escuadra 1"},
-                {title: "Escuadra 2", rowId: "escuadra2", description: "Unirse a Escuadra 2"},
-                {title: "Suplente", rowId: "suplente", description: "Unirse como Suplente"},
-                {title: "Limpiar lista", rowId: "limpiarlista", description: "Reiniciar todas las listas"}
-            ]
-        }
-    ]
-
-    const listMessage = {
-        text: `EliteBot
+    let texto = `EliteBot
 MODALIDAD: CLK
 ROPA: verde
 
 Escuadra 1:
-👤 ➢ ➢
-👤 ➢ ➢
-👤 ➢ ➢
-👤 ➢ ➢
+👤 ➢
+👤 ➢
+👤 ➢
+👤 ➢
 
 Escuadra 2:
-👤 ➢ ➢
-👤 ➢ ➢
-👤 ➢ ➢
-👤 ➢ ➢
+👤 ➢
+👤 ➢
+👤 ➢
+👤 ➢
 
 SUPLENTE:
-👤 ✓
-👤 ✓
-👤 ✓
+👤
+👤
+👤
 
-BOLLLOBOT / MELDEXZZ.`,
-        footer: "Selecciona una opción:",
-        title: null,
-        buttonText: "Click Aquí",
-        sections
+BOLLLOBOT / MELDEXZZ.`
+
+    const templateButtons = [
+        {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra1'}},
+        {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra2'}},
+        {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}},
+        {index: 4, quickReplyButton: {displayText: 'Limpiar lista', id: 'limpiarlista'}}
+    ]
+
+    const templateMessage = {
+        text: texto,
+        footer: 'Selecciona una opción:',
+        templateButtons: templateButtons
     }
 
-    await conn.sendMessage(m.chat, listMessage)
+    await conn.sendMessage(m.chat, templateMessage)
 }
 
 handler.command = ['listaff']
