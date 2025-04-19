@@ -1,13 +1,4 @@
-import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
-
-let handler = async (m, { conn }) => {
-    const rows = [
-        {title: 'Escuadra 1', description: "Seleccionar Escuadra 1", rowId: '.escuadra1'},
-        {title: 'Escuadra 2', description: "Seleccionar Escuadra 2", rowId: '.escuadra2'},
-        {title: 'Suplente', description: "Seleccionar Suplente", rowId: '.suplente'},
-        {title: 'Limpiar lista', description: "Limpiar todas las listas", rowId: '.limpiarlista'},
-    ]
-    
+let handler = async (m, { conn, usedPrefix }) => {
     const listMessage = {
         text: `EliteBot
 MODALIDAD: CLK
@@ -31,19 +22,35 @@ SUPLENTE:
 👤
 
 BOLLLOBOT / MELDEXZZ.`,
-        footer: null,
+        footer: "© BOLLLOBOT / MELDEXZZ",
         title: "EliteBot",
-        buttonText: "Selecciona una opción",
+        buttonText: "Click Aquí",
         sections: [
             {
-                title: "BOLLLOBOT / MELDEXZZ",
-                rows: rows
+                "title": "Selecciona una opción",
+                "rows": [
+                    {
+                        "title": "Escuadra 1",
+                        "rowId": `${usedPrefix}escuadra1`
+                    },
+                    {
+                        "title": "Escuadra 2",
+                        "rowId": `${usedPrefix}escuadra2`
+                    },
+                    {
+                        "title": "Suplente",
+                        "rowId": `${usedPrefix}suplente`
+                    },
+                    {
+                        "title": "Limpiar lista",
+                        "rowId": `${usedPrefix}limpiarlista`
+                    }
+                ]
             }
         ]
     }
-
-    let message = await generateWAMessageFromContent(m.chat, { listMessage }, { quoted: m })
-    await conn.relayMessage(m.chat, message.message, { messageId: message.key.id })
+    
+    await conn.sendMessage(m.chat, listMessage)
 }
 
 handler.help = ['listaff']
