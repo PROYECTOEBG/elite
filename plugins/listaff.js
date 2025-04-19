@@ -1,8 +1,9 @@
 import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
 
+// Estado global para las listas
 export const listas = {
     escuadra1: [],
-    escuadra2: [], 
+    escuadra2: [],
     suplente: []
 }
 
@@ -36,42 +37,21 @@ let handler = async (m, { conn }) => {
         msg += `_No hay suplentes_\n`
     }
 
-    const template = generateWAMessageFromContent(m.chat, {
-        templateMessage: {
-            hydratedTemplate: {
-                hydratedContentText: msg,
-                hydratedFooterText: '\nSelecciona una opción:',
-                hydratedButtons: [
-                    {
-                        quickReplyButton: {
-                            displayText: 'Escuadra 1',
-                            id: '.escuadra1'
-                        }
-                    },
-                    {
-                        quickReplyButton: {
-                            displayText: 'Escuadra 2',
-                            id: '.escuadra2'
-                        }
-                    },
-                    {
-                        quickReplyButton: {
-                            displayText: 'Suplente',
-                            id: '.suplente'
-                        }
-                    },
-                    {
-                        quickReplyButton: {
-                            displayText: 'Limpiar Lista',
-                            id: '.limpiarlista'
-                        }
-                    }
-                ]
-            }
-        }
-    }, { quoted: m })
+    const buttons = [
+        { buttonId: '.escuadra1', buttonText: { displayText: '⚔️ Escuadra 1' }, type: 1 },
+        { buttonId: '.escuadra2', buttonText: { displayText: '⚔️ Escuadra 2' }, type: 1 },
+        { buttonId: '.suplente', buttonText: { displayText: '🔄 Suplente' }, type: 1 },
+        { buttonId: '.limpiarlista', buttonText: { displayText: '🗑️ Limpiar Lista' }, type: 1 }
+    ]
 
-    await conn.relayMessage(m.chat, template.message, { messageId: template.key.id })
+    const buttonMessage = {
+        text: msg,
+        footer: '\nSelecciona una opción:',
+        buttons: buttons,
+        headerType: 1
+    }
+
+    await conn.sendMessage(m.chat, buttonMessage)
 }
 
 handler.help = ['listaff']
