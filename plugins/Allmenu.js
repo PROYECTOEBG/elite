@@ -1,107 +1,61 @@
-// plugins/listaff.js
-import fetch from 'node-fetch';
-import { MessageType } from '@whiskeysockets/baileys';
+import pkg from '@whiskeysockets/baileys';
+const { generateWAMessageFromContent, proto } = pkg;
 
-let handler = async (m, { conn, usedPrefix }) => {
-    let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
+// Estado global simplificado
+let squad1 = ['➢', '➢', '➢', '➢'];
 
-    const buttons = [
-        { buttonId: `${usedPrefix}listaff 1`, buttonText: { displayText: 'Escuadra 1' }, type: 1 },
-        { buttonId: `${usedPrefix}listaff 2`, buttonText: { displayText: 'Escuadra 2' }, type: 1 }
-    ];
-
-    const escuadra1 = `╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
-│👑 ➤ ${global.db.data.users[m.sender]?.escuadra1 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[m.sender]?.escuadra2 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[m.sender]?.escuadra3 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[m.sender]?.escuadra4 || 'Vacante'}
-╰─────────────╯`;
-
-    const escuadra2 = `╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
-│👑 ➤ ${global.db.data.users[m.sender]?.escuadra5 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[m.sender]?.escuadra6 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[m.sender]?.escuadra7 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[m.sender]?.escuadra8 || 'Vacante'}
-╰─────────────╯`;
-
-    const buttonMessage = {
-        contentText: `${escuadra1}\n\n${escuadra2}`,
-        footerText: 'Presiona el botón para unirte a una escuadra',
-        buttons: buttons,
-        headerType: 1
-    };
-
-    const message = {
-        buttonsMessage: buttonMessage
-    };
-
-    await conn.sendMessage(m.chat, message, { quoted: fkontak });
-}
-
-// En handler.js (en la función before)
-export async function before(m, { conn, usedPrefix, text, participants }) {
-    if (m.messageButtonResponse) {
-        const buttonId = m.messageButtonResponse.selectedButtonId;
-        if (buttonId.startsWith(`${usedPrefix}listaff`)) {
-            const escuadra = buttonId.split(' ')[1];
-            const user = m.sender;
-            const userName = conn.getName(user);
-            
-            if (escuadra === '1') {
-                global.db.data.users[user] = {
-                    escuadra1: userName,
-                    escuadra2: 'Vacante',
-                    escuadra3: 'Vacante',
-                    escuadra4: 'Vacante'
-                };
-            } else {
-                global.db.data.users[user] = {
-                    escuadra5: userName,
-                    escuadra6: 'Vacante',
-                    escuadra7: 'Vacante',
-                    escuadra8: 'Vacante'
-                };
-            }
-
-            const escuadra1 = `╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
-│👑 ➤ ${global.db.data.users[user]?.escuadra1 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[user]?.escuadra2 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[user]?.escuadra3 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[user]?.escuadra4 || 'Vacante'}
-╰─────────────╯`;
-
-            const escuadra2 = `╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
-│👑 ➤ ${global.db.data.users[user]?.escuadra5 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[user]?.escuadra6 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[user]?.escuadra7 || 'Vacante'}
-│🥷🏻 ➤ ${global.db.data.users[user]?.escuadra8 || 'Vacante'}
-╰─────────────╯`;
-
-            const buttonMessage = {
-                contentText: `${escuadra1}\n\n${escuadra2}`,
-                footerText: 'Presiona el botón para unirte a una escuadra',
-                buttons: buttons,
-                headerType: 1
-            };
-
-            const message = {
-                buttonsMessage: buttonMessage
-            };
-
-            await conn.sendMessage(m.chat, message);
-            return true;
-        }
+const handler = async (m, { conn }) => {
+  const msgText = (m.text || '').toLowerCase().trim();
+  const user = m.sender.split('@')[0];
+  
+  // Comando básico para escuadra 1
+  if (msgText === 'escuadra 1') {
+    const emptySlot = squad1.findIndex(slot => slot === '➢');
+    
+    if (emptySlot !== -1) {
+      squad1[emptySlot] = `@${user}`;
+      
+      // Enviar confirmación directa
+      await conn.sendMessage(m.chat, {
+        text: `✅ @${user} agregado a Escuadra 1 (posición ${emptySlot + 1})`,
+        mentions: [m.sender]
+      });
+      
+      // Mostrar lista actualizada
+      await showUpdatedList(conn, m.chat);
+    } else {
+      await conn.sendMessage(m.chat, {
+        text: '⚠️ Escuadra 1 está llena',
+        mentions: [m.sender]
+      });
     }
-    return true;
+    return;
+  }
+  
+  // Mostrar lista por defecto
+  await showUpdatedList(conn, m.chat);
+};
+
+// Función simplificada para mostrar lista
+async function showUpdatedList(conn, chatId) {
+  const listText = `*ESCUADRA 1:*\n${squad1.map((p, i) => `${i+1}. ${p}`).join('\n')}`;
+  
+  await conn.sendMessage(chatId, {
+    text: listText,
+    footer: 'Escribe "escuadra 1" para unirte',
+    mentions: []
+  });
 }
 
-handler.command = ['listaff']
-handler.group = true
-handler.botAdmin = true
-handler.admin = true
+// Manejo de botones (versión mínima)
+export async function after(m, { conn }) {
+  const button = m?.message?.buttonsResponseMessage;
+  if (button && button.selectedButtonId === 'reset') {
+    squad1 = ['➢', '➢', '➢', '➢'];
+    await conn.sendMessage(m.chat, { text: '♻️ Lista reiniciada' });
+    await showUpdatedList(conn, m.chat);
+  }
+}
 
-export default handler
+handler.command = /^listaff$/i;
+export default handler;
