@@ -7,19 +7,21 @@ let listas = {
   suplente: ['✔', '✔', '✔']
 };
 
-const handler = async (m, { conn, command }) => {
+const handler = async (m, { conn }) => {
   await enviarLista(conn, m.chat);
 };
 
 handler.command = /^listaff$/i;
 
-handler.before = async function (m, { conn }) {
-  const button = m?.message?.buttonsResponseMessage;
-  if (!button) return;
+handler.all = async function (m, { conn }) {
+  const nativeFlow = m.message?.nativeFlowResponseMessage;
+  if (!nativeFlow) return;
 
-  const id = button.selectedButtonId;
+  const id = nativeFlow.selectedButtonId;
   const usuario = m.sender.split('@')[0];
   const tag = m.sender;
+
+  if (!['squad1', 'squad2', 'suplente', 'limpiar'].includes(id)) return;
 
   if (id === 'limpiar') {
     listas = {
