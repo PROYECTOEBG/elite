@@ -26,14 +26,14 @@ const reiniciarListas = (groupId) => {
     });
 };
 
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, text, args }) => {
     const msgText = m.text;
     const groupId = m.chat;
     let listas = getListasGrupo(groupId);
     
     // Manejar el comando .listaff
     if (msgText.toLowerCase().startsWith('.listaff')) {
-        const mensaje = msgText.slice(8).trim(); // Remover '.listaff' del mensaje
+        const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
             await conn.sendMessage(m.chat, { 
                 text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
@@ -46,6 +46,11 @@ let handler = async (m, { conn }) => {
         reiniciarListas(groupId);
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
+        
+        // Enviar mensaje directo primero
+        await conn.sendMessage(m.chat, { text: mensaje });
+        
+        // Luego mostrar la lista
         await mostrarLista(conn, m.chat, listas, [], mensaje);
         return;
     }
@@ -101,15 +106,7 @@ let handler = async (m, { conn }) => {
 
 // Función para mostrar la lista
 async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
-    let textoCompleto = '';
-    
-    // Agregar el mensaje si existe
-    if (mensaje && mensaje.trim() !== '') {
-        textoCompleto += `*${mensaje}*\n\n`;
-    }
-    
-    // Agregar el resto del contenido
-    textoCompleto += `╭─────────────╮
+    const texto = `╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -165,7 +162,7 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
                     mentionedJid: mentions
                 },
                 interactiveMessage: proto.Message.InteractiveMessage.create({
-                    body: { text: textoCompleto },
+                    body: { text: texto },
                     footer: { text: "Selecciona una opción:" },
                     nativeFlowMessage: { buttons }
                 })
@@ -216,7 +213,10 @@ export async function after(m, { conn }) {
         
         // Actualizar la lista después de cada acción
         const mensajeGuardado = mensajesGrupos.get(groupId) || '';
-        await mostrarLista(conn, m.chat, listas, [tag], mensajeGuardado);
+        if (mensajeGuardado) {
+            await conn.sendMessage(m.chat, { text: mensajeGuardado });
+        }
+        await mostrarLista(conn, m.chat, listas, [tag]);
     } catch (error) {
         console.error('Error en after:', error);
         await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
@@ -227,4 +227,4 @@ handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
 handler.command = new RegExp
 handler.group = true
 
-export default handler 
+export default handler
