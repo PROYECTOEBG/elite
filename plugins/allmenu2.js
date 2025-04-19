@@ -1,11 +1,9 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-// Estado global de las listas por grupo
 let listasGrupos = new Map();
 let mensajesGrupos = new Map();
 
-// Función para obtener o crear las listas de un grupo
 const getListasGrupo = (groupId) => {
     if (!listasGrupos.has(groupId)) {
         listasGrupos.set(groupId, {
@@ -17,7 +15,6 @@ const getListasGrupo = (groupId) => {
     return listasGrupos.get(groupId);
 };
 
-// Función para reiniciar las listas de un grupo específico
 const reiniciarListas = (groupId) => {
     listasGrupos.set(groupId, {
         squad1: ['➤', '➤', '➤', '➤'],
@@ -31,11 +28,10 @@ let handler = async (m, { conn, text, args }) => {
     const groupId = m.chat;
     let listas = getListasGrupo(groupId);
     
-    // Manejar el comando .listaff
     if (msgText.toLowerCase().startsWith('.listaff')) {
-        const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
+        const mensaje = msgText.substring(8).trim();
         if (!mensaje) {
-            await conn.sendMessage(m.chat, { text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮` }, { quoted: m });
+            await m.reply(`❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮`);
             return;
         }
         reiniciarListas(groupId);
@@ -69,14 +65,18 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-        await conn.sendMessage(m.chat, { 
+        const message = {
             text: texto,
-            templateButtons: [
-                {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
-                {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
-                {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
-            ]
-        }, { quoted: m });
+            footer: '𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟',
+            buttons: [
+                {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+                {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+            ],
+            headerType: 1
+        }
+
+        await conn.sendMessage(m.chat, message, { quoted: m });
         return;
     }
 
@@ -95,7 +95,6 @@ let handler = async (m, { conn, text, args }) => {
         squadType = 'suplente';
     }
     
-    // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
         const index = listas[key].findIndex(p => p.includes(usuario));
         if (index !== -1) {
@@ -103,7 +102,6 @@ let handler = async (m, { conn, text, args }) => {
         }
     });
     
-    // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === '➤');
     if (libre !== -1) {
         listas[squadType][libre] = `@${usuario.split('@')[0]}`;
@@ -138,14 +136,18 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-    await conn.sendMessage(m.chat, { 
+    const message = {
         text: texto,
-        templateButtons: [
-            {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
-            {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
-            {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
-        ]
-    }, { quoted: m });
+        footer: '𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟',
+        buttons: [
+            {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+            {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+        ],
+        headerType: 1
+    }
+
+    await conn.sendMessage(m.chat, message, { quoted: m });
 }
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
