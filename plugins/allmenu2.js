@@ -69,17 +69,17 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-        const templateMessage = {
-            text: texto,
-            footer: '𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟',
-            templateButtons: [
-                {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
-                {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
-                {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
-            ]
-        }
+        const buttons = [
+            {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+            {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+        ]
 
-        await conn.sendMessage(m.chat, templateMessage)
+        await conn.sendMessage(m.chat, {
+            text: texto,
+            buttons: buttons,
+            headerType: 1
+        })
         return;
     }
 
@@ -141,17 +141,17 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-    const templateMessage = {
-        text: texto,
-        footer: '𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟',
-        templateButtons: [
-            {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
-            {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
-            {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
-        ]
-    }
+    const buttons = [
+        {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+        {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+        {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+    ]
 
-    await conn.sendMessage(m.chat, templateMessage)
+    await conn.sendMessage(m.chat, {
+        text: texto,
+        buttons: buttons,
+        headerType: 1
+    })
 }
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
