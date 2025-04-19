@@ -108,8 +108,11 @@ let handler = async (m, { conn, text, args }) => {
 
 // Función para mostrar la lista
 async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = '') {
-    const texto = `${mensajeUsuario ? `*${mensajeUsuario}*\n\n` : ''}
-    ╭─────────────╮
+    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''}
+╭──────⚔──────╮
+          8 𝗩𝗘𝗥𝗦𝗨𝗦 8
+╰──────⚔──────╯
+╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -130,8 +133,7 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
 │🥷🏻 ${listas.suplente[2]}
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
-𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟`;
 
     const buttons = [
         {
