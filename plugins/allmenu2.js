@@ -31,15 +31,15 @@ let handler = async (m, { conn, text, args }) => {
     const groupId = m.chat;
     let listas = getListasGrupo(groupId);
     
-    // Manejar el comando .listaff
-    if (msgText.toLowerCase().startsWith('.listaff')) {
-        const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
+    // Manejar el comando .8vs8
+    if (msgText.toLowerCase().startsWith('.8vs8')) {
+        const mensaje = msgText.substring(6).trim(); // Remover '.8vs8' del mensaje
         if (!mensaje) {
             await conn.sendMessage(m.chat, { 
                 text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
 
 𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
-.listaff Actívense para la ranked 🎮` 
+.8vs8 Actívense para la ranked 🎮` 
             });
             return;
         }
@@ -225,7 +225,7 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
+handler.customPrefix = /^(escuadra [12]|suplente|\.8vs8.*)$/i
 handler.command = new RegExp
 handler.group = true
 
