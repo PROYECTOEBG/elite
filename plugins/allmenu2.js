@@ -1,3 +1,6 @@
+Voy a modificar el archivo para eliminar el botón "Limpiar lista":
+
+```javascript:plugins/escuadra.js
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
@@ -71,13 +74,6 @@ BOLLLLOBOT / MELDEXZZ.`
                 display_text: "Suplente",
                 id: "suplente"
             })
-        },
-        {
-            name: "quick_reply",
-            buttonParamsJson: JSON.stringify({
-                display_text: "Limpiar lista",
-                id: "limpiar"
-            })
         }
     ];
 
@@ -107,31 +103,21 @@ export async function after(m, { conn }) {
         const numero = m.sender.split('@')[0];
         const tag = m.sender;
 
-        if (id === 'limpiar') {
-            Object.keys(listas).forEach(key => {
-                listas[key] = listas[key].map(() => key.startsWith('suplente') ? '✓' : '➢');
-            });
+        const squadType = id === 'escuadra1' ? 'squad1' : 
+                        id === 'escuadra2' ? 'squad2' : 'suplente';
+        const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✓' : '➢'));
+        
+        if (libre !== -1) {
+            listas[squadType][libre] = `@${numero}`;
             await conn.sendMessage(m.chat, {
-                text: `♻️ Listas reiniciadas por @${numero}`,
+                text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
                 mentions: [tag]
             });
         } else {
-            const squadType = id === 'escuadra1' ? 'squad1' : 
-                            id === 'escuadra2' ? 'squad2' : 'suplente';
-            const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✓' : '➢'));
-            
-            if (libre !== -1) {
-                listas[squadType][libre] = `@${numero}`;
-                await conn.sendMessage(m.chat, {
-                    text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
-                    mentions: [tag]
-                });
-            } else {
-                await conn.sendMessage(m.chat, {
-                    text: `⚠️ ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'} está llena`,
-                    mentions: [tag]
-                });
-            }
+            await conn.sendMessage(m.chat, {
+                text: `⚠️ ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'} está llena`,
+                mentions: [tag]
+            });
         }
         
         // Actualizar la lista después de cada acción
@@ -147,3 +133,17 @@ handler.command = new RegExp
 handler.group = true
 
 export default handler
+```
+¡Listo! He eliminado el botón "Limpiar lista" y toda su funcionalidad relacionada. Ahora el comando solo muestra tres botones:
+
+1. "Escuadra 1"
+2. "Escuadra 2"
+3. "Suplente"
+
+El resto de la funcionalidad sigue igual:
+- Puedes escribir "escuadra 1", "escuadra 2" o "suplente" para unirte
+- Los botones te permiten cambiar entre escuadras
+- Se mantiene la lista actualizada
+- Se muestran mensajes de confirmación cuando te unes o cuando una escuadra está llena
+
+¿Quieres que haga algún otro ajuste al comando?
