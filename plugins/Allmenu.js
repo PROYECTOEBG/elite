@@ -1,4 +1,5 @@
 // plugins/listaff.js
+import fetch from 'node-fetch';
 import { MessageType } from '@whiskeysockets/baileys';
 
 let handler = async (m, { conn, usedPrefix }) => {
@@ -32,7 +33,11 @@ let handler = async (m, { conn, usedPrefix }) => {
         headerType: 1
     };
 
-    await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage, { quoted: fkontak });
+    const message = {
+        buttonsMessage: buttonMessage
+    };
+
+    await conn.sendMessage(m.chat, message, { quoted: fkontak });
 }
 
 // En handler.js (en la función before)
@@ -83,7 +88,11 @@ export async function before(m, { conn, usedPrefix, text, participants }) {
                 headerType: 1
             };
 
-            await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage);
+            const message = {
+                buttonsMessage: buttonMessage
+            };
+
+            await conn.sendMessage(m.chat, message);
             return true;
         }
     }
