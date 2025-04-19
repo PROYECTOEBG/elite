@@ -10,19 +10,31 @@ const listas = {
 
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
-    if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2') return
+    if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2' && msgText !== 'suplente') return
     
     const usuario = m.sender.split('@')[0];
-    const squadType = msgText === 'escuadra 1' ? 'squad1' : 'squad2';
+    let squadType;
+    let titulo;
     
-    // Agregar automáticamente al usuario a la escuadra correspondiente
-    const libre = listas[squadType].findIndex(p => p === '➢');
+    if (msgText === 'escuadra 1') {
+        squadType = 'squad1';
+        titulo = 'Escuadra 1';
+    } else if (msgText === 'escuadra 2') {
+        squadType = 'squad2';
+        titulo = 'Escuadra 2';
+    } else {
+        squadType = 'suplente';
+        titulo = 'Suplente';
+    }
+    
+    // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
+    const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✓' : '➢'));
     if (libre !== -1) {
         listas[squadType][libre] = `@${usuario}`;
     }
 
     const texto = `Tú
-${msgText === 'escuadra 1' ? 'Escuadra 1' : 'Escuadra 2'}
+${titulo}
 
 MODALIDAD: CLK
 ROPA: verde
@@ -106,17 +118,17 @@ export async function after(m, { conn }) {
         } else {
             const squadType = id === 'escuadra1' ? 'squad1' : 
                             id === 'escuadra2' ? 'squad2' : 'suplente';
-            const libre = listas[squadType].findIndex(p => p === '➢' || p === '✓');
+            const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✓' : '➢'));
             
             if (libre !== -1) {
                 listas[squadType][libre] = `@${numero}`;
                 await conn.sendMessage(m.chat, {
-                    text: `✅ @${numero} agregado a ${id}`,
+                    text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
                     mentions: [tag]
                 });
             } else {
                 await conn.sendMessage(m.chat, {
-                    text: `⚠️ ${id} está llena`,
+                    text: `⚠️ ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'} está llena`,
                     mentions: [tag]
                 });
             }
@@ -130,7 +142,7 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^escuadra [12]$/i
+handler.customPrefix = /^(escuadra [12]|suplente)$/i
 handler.command = new RegExp
 handler.group = true
 
