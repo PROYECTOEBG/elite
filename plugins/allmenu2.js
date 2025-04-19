@@ -68,12 +68,11 @@ let handler = async (m, { conn, text, args }) => {
         const message = {
             text: texto,
             footer: '𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟',
-            buttons: [
-                {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-                {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-            ],
-            headerType: 1
+            templateButtons: [
+                {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
+                {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
+                {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
+            ]
         }
 
         await conn.sendMessage(m.chat, message);
@@ -139,12 +138,11 @@ let handler = async (m, { conn, text, args }) => {
     const message = {
         text: texto,
         footer: '𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟',
-        buttons: [
-            {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ],
-        headerType: 1
+        templateButtons: [
+            {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
+            {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
+            {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
+        ]
     }
 
     await conn.sendMessage(m.chat, message);
