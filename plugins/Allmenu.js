@@ -1,16 +1,17 @@
 let handler = async (m, { conn }) => {
-  const buttons = [
-    [{ buttonId: 'btn_1', buttonText: { displayText: 'Botón 1' }, type: 1 }],
-    [{ buttonId: 'btn_2', buttonText: { displayText: 'Botón 2' }, type: 1 }],
-    [{ buttonId: 'btn_3', buttonText: { displayText: 'Botón 3' }, type: 1 }],
+  let templateButtons = [
+    { index: 1, quickReplyButton: { displayText: "Botón 1", id: "boton_1" }},
+    { index: 2, quickReplyButton: { displayText: "Botón 2", id: "boton_2" }},
+    { index: 3, quickReplyButton: { displayText: "Botón 3", id: "boton_3" }},
   ];
 
-  await conn.sendMessage(m.chat, {
-    text: '*Probando botones...*',
-    footer: 'Responde tocando un botón.',
-    buttons: buttons,
-    mentions: [m.sender]
-  }, { quoted: m });
+  const buttonMessage = {
+    text: "Probando botones clásicos...",
+    footer: "¿Funcionan estos?",
+    templateButtons: templateButtons
+  };
+
+  await conn.sendMessage(m.chat, buttonMessage, { quoted: m });
 };
 
 handler.command = /^\\.probando$/i;
