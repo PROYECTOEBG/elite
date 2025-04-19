@@ -9,24 +9,34 @@ let listas = {
 
 const handler = async (m, { conn }) => {
   // Verificar si el mensaje es "escuadra 1"
-  if (m.text && m.text.toLowerCase() === 'escuadra 1') {
+  const msgText = m.text?.toLowerCase()?.trim();
+  
+  if (msgText === 'escuadra 1') {
     const nombre = m.pushName || 'Usuario';
-    const numero = m.sender.split('@')[0];
+    const usuario = m.sender.split('@')[0];
+    const tag = m.sender;
     
     // Buscar espacio libre en Escuadra 1
     const libre = listas.squad1.findIndex(p => p === '➢');
+    
     if (libre !== -1) {
-      listas.squad1[libre] = `@${numero}`;
-      await enviarLista(conn, m.chat, numero, 'squad1', m.sender);
+      listas.squad1[libre] = `@${usuario}`;
+      await conn.sendMessage(m.chat, {
+        text: `✅ @${usuario} agregado a Escuadra 1`,
+        mentions: [tag]
+      });
+      await enviarLista(conn, m.chat);
     } else {
       await conn.sendMessage(m.chat, {
         text: '⚠️ La Escuadra 1 está llena',
-        mentions: [m.sender]
-      }, { quoted: m });
+        mentions: [tag]
+      });
     }
-  } else {
-    await enviarLista(conn, m.chat);
+    return; // Importante para no ejecutar el resto
   }
+  
+  // Si no es "escuadra 1", mostrar lista normal
+  await enviarLista(conn, m.chat);
 };
 
 // Resto del código se mantiene igual...
