@@ -1,66 +1,15 @@
-let handler = async (m, { conn, command }) => {
-    // Obtener el usuario que envió el comando
-    const usuario = m.sender.split('@')[0];
-    const tag = m.sender;
+import pkg from '@whiskeysockets/baileys';
+const { generateWAMessageFromContent, proto } = pkg;
 
-    // Referencia a las listas del plugin listaff
-    let listas;
+// Estado global de las listas (exportado para compartir)
+export let listas = {
+    escuadra1: ['➢', '➢', '➢', '➢'],
+    escuadra2: ['➢', '➢', '➢', '➢'],
+    suplente: ['✔', '✔', '✔']
+};
+
+let handler = async (m, { conn }) => {
     try {
-        const listaff = global.plugins.find(p => p.name === 'listaff');
-        if (listaff) {
-            listas = listaff.listas;
-        }
-    } catch (e) {
-        console.error(e);
-    }
-
-    if (!listas) {
-        listas = {
-            escuadra1: ['➢', '➢', '➢', '➢'],
-            escuadra2: ['➢', '➢', '➢', '➢'],
-            suplente: ['✔', '✔', '✔']
-        };
-    }
-
-    // Determinar qué escuadra basado en el comando
-    let squadType, squadName;
-    if (command === 'escuadra1') {
-        squadType = 'escuadra1';
-        squadName = 'Escuadra 1';
-    } else if (command === 'escuadra2') {
-        squadType = 'escuadra2';
-        squadName = 'Escuadra 2';
-    } else if (command === 'suplente') {
-        squadType = 'suplente';
-        squadName = 'Suplente';
-    } else if (command === 'limpiarlista') {
-        // Reiniciar todas las listas
-        listas = {
-            escuadra1: ['➢', '➢', '➢', '➢'],
-            escuadra2: ['➢', '➢', '➢', '➢'],
-            suplente: ['✔', '✔', '✔']
-        };
-        await conn.sendMessage(m.chat, {
-            text: `♻️ Listas reiniciadas por @${usuario}`,
-            mentions: [tag]
-        });
-        return;
-    }
-
-    // Buscar espacio libre en la escuadra
-    const libre = listas[squadType].findIndex(p => p === '➢' || p === '✔');
-    
-    if (libre !== -1) {
-        // Agregar usuario a la escuadra
-        listas[squadType][libre] = `@${usuario}`;
-        
-        // Enviar mensaje de confirmación
-        await conn.sendMessage(m.chat, {
-            text: `✅ @${usuario} agregado a ${squadName}`,
-            mentions: [tag]
-        });
-
-        // Mostrar lista actualizada
         const texto = `EliteBot
 MODALIDAD: CLK
 ROPA: verde
@@ -76,18 +25,45 @@ ${listas.suplente.map(p => `👤 ${p}`).join('\n')}
 
 BOLLLOBOT / MELDEXZZ.`;
 
-        await conn.sendMessage(m.chat, { text: texto });
-    } else {
-        // Enviar mensaje si la escuadra está llena
-        await conn.sendMessage(m.chat, {
-            text: `⚠️ ${squadName} está llena`,
-            mentions: [tag]
-        });
-    }
-}
+        const buttons = [
+            {
+                buttonId: '.escuadra1',
+                buttonText: { displayText: 'Escuadra 1' },
+                type: 1
+            },
+            {
+                buttonId: '.escuadra2',
+                buttonText: { displayText: 'Escuadra 2' },
+                type: 1
+            },
+            {
+                buttonId: '.suplente',
+                buttonText: { displayText: 'Suplente' },
+                type: 1
+            },
+            {
+                buttonId: '.limpiarlista',
+                buttonText: { displayText: 'Limpiar lista' },
+                type: 1
+            }
+        ];
 
-handler.help = ['escuadra1', 'escuadra2', 'suplente', 'limpiarlista']
+        const buttonMessage = {
+            text: texto,
+            footer: 'Selecciona una opción:',
+            buttons: buttons,
+            headerType: 1
+        };
+
+        await conn.sendMessage(m.chat, buttonMessage);
+    } catch (error) {
+        console.error('Error:', error);
+        await m.reply('❌ Error al mostrar la lista');
+    }
+};
+
+handler.help = ['listaff']
 handler.tags = ['main']
-handler.command = /^(escuadra1|escuadra2|suplente|limpiarlista)$/i
+handler.command = /^listaff$/i
 
 export default handler 
