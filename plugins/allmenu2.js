@@ -9,17 +9,20 @@ const listas = {
 };
 
 let handler = async (m, { conn }) => {
-    if (m.text.toLowerCase() !== 'escuadra 1') return
+    const msgText = m.text.toLowerCase();
+    if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2') return
     
     const usuario = m.sender.split('@')[0];
-    // Agregar automáticamente al usuario a la Escuadra 1
-    const libre = listas.squad1.findIndex(p => p === '➢');
+    const squadType = msgText === 'escuadra 1' ? 'squad1' : 'squad2';
+    
+    // Agregar automáticamente al usuario a la escuadra correspondiente
+    const libre = listas[squadType].findIndex(p => p === '➢');
     if (libre !== -1) {
-        listas.squad1[libre] = `@${usuario}`;
+        listas[squadType][libre] = `@${usuario}`;
     }
 
     const texto = `Tú
-Escuadra 1
+${msgText === 'escuadra 1' ? 'Escuadra 1' : 'Escuadra 2'}
 
 MODALIDAD: CLK
 ROPA: verde
@@ -127,8 +130,8 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^escuadra 1$/i
+handler.customPrefix = /^escuadra [12]$/i
 handler.command = new RegExp
 handler.group = true
 
-export default handler 
+export default handler
