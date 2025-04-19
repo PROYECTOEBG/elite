@@ -31,7 +31,7 @@ let handler = async (m, { conn }) => {
     
     // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
-        const index = listas[key].findIndex(p => p.includes(`@${usuario}`));
+        const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
         if (index !== -1) {
             listas[key][index] = key === 'suplente' ? '✔' : '➢';
         }
@@ -40,9 +40,23 @@ let handler = async (m, { conn }) => {
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
-        listas[squadType][libre] = `@${usuario}`;
+        listas[squadType][libre] = `@${nombreUsuario}`;
         mentions.push(m.sender);
     }
+
+    // Recolectar todas las menciones de los usuarios en las listas
+    Object.values(listas).forEach(squad => {
+        squad.forEach(member => {
+            if (member !== '➢' && member !== '✔') {
+                const userName = member.slice(1); // Remover el @
+                const userJid = Object.keys(m.message.extendedTextMessage?.contextInfo?.mentionedJid || {}).find(jid => 
+                    jid.split('@')[0] === userName || 
+                    conn.getName(jid) === userName
+                );
+                if (userJid) mentions.push(userJid);
+            }
+        });
+    });
 
     const texto = `Tú
 ${titulo}
@@ -85,15 +99,13 @@ BOLLLLOBOT / MELDEXZZ.`
         }
     ];
 
-    await conn.sendMessage(m.chat, {
-        text: texto,
-        mentions: mentions
-    });
-
     const mensaje = generateWAMessageFromContent(m.chat, {
         viewOnceMessage: {
             message: {
-                messageContextInfo: { deviceListMetadata: {} },
+                messageContextInfo: {
+                    deviceListMetadata: {},
+                    mentionedJid: mentions
+                },
                 interactiveMessage: proto.Message.InteractiveMessage.create({
                     body: { text: texto },
                     footer: { text: "Selecciona una opción:" },
@@ -119,7 +131,7 @@ export async function after(m, { conn }) {
 
         // Borrar al usuario de otras escuadras
         Object.keys(listas).forEach(key => {
-            const index = listas[key].findIndex(p => p.includes(`@${numero}`));
+            const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
             if (index !== -1) {
                 listas[key][index] = key === 'suplente' ? '✔' : '➢';
             }
@@ -130,9 +142,9 @@ export async function after(m, { conn }) {
         const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
         
         if (libre !== -1) {
-            listas[squadType][libre] = `@${numero}`;
+            listas[squadType][libre] = `@${nombreUsuario}`;
             await conn.sendMessage(m.chat, {
-                text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
+                text: `✅ @${nombreUsuario} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
                 mentions: [tag]
             });
         } else {
