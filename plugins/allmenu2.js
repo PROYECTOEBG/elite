@@ -32,11 +32,14 @@ let handler = async (m, { conn, text, args }) => {
     let listas = getListasGrupo(groupId);
     
     // Manejar el comando .listaff
-    if (msgText.toLowerCase().startsWith('.8vs8')) {
+    if (msgText.toLowerCase().startsWith('.listaff')) {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
             await conn.sendMessage(m.chat, { 
-                text: `🕓 𝗜𝗡𝗚𝗥𝗘𝗦𝗔 𝗨𝗡 𝗛𝗢𝗥𝗔𝗥𝗜𝗢.\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.8vs8 4pm🇪🇨/3pm🇲🇽` 
+                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
+
+𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
+.listaff Actívense para la ranked 🎮` 
             });
             return;
         }
@@ -105,9 +108,7 @@ let handler = async (m, { conn, text, args }) => {
 
 // Función para mostrar la lista
 async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = '') {
-    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''} 🗣️ 𝗜𝗡𝗗𝗜𝗖𝗔𝗖𝗜𝗢𝗡𝗘𝗦 :
-» Reglas y color se avisa al llenar este listado.
-
+    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''}
 ╭──────⚔──────╮
           8 𝗩𝗘𝗥𝗦𝗨𝗦 8
 ╰──────⚔──────╯
@@ -132,7 +133,7 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
 │🥷🏻 ${listas.suplente[2]}
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
-©EliteBotGlobal 2023 `;
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟`;
 
     const buttons = [
         {
@@ -224,7 +225,7 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^(escuadra [12]|suplente|\.8vs8.*)$/i
+handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
 handler.command = new RegExp
 handler.group = true
 
