@@ -106,6 +106,10 @@ let handler = async (m, { conn, text, args }) => {
 // Función para mostrar la lista
 async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = '') {
     const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''}
+🗣️ 𝗜𝗡𝗗𝗜𝗖𝗔𝗖𝗜𝗢𝗡𝗘𝗦 :
+» Reglas y color se avisa al llenar este listado.
+
+
 ╭──────⚔──────╮
           8 𝗩𝗘𝗥𝗦𝗨𝗦 8
 ╰──────⚔──────╯
@@ -130,7 +134,7 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
 │🥷🏻 ${listas.suplente[2]}
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
-𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟`;
+©EliteBotGlobal 2023 `;
 
     const buttons = [
         {
