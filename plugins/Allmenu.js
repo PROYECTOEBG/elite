@@ -1,4 +1,5 @@
-// Lista global para mantener el estado
+import { generateWAMessageFromContent } from '@whiskeysockets/baileys'
+
 export const listas = {
     escuadra1: [],
     escuadra2: [], 
@@ -6,40 +7,75 @@ export const listas = {
 }
 
 let handler = async (m, { conn }) => {
-    let texto = `EliteBot
-MODALIDAD: CLK
-ROPA: verde
-
-Escuadra 1:
-${listas.escuadra1.map(u => `👤 ➢ ${u}`).join('\n')}${'\n👤 ➢'.repeat(Math.max(0, 4-listas.escuadra1.length))}
-
-Escuadra 2:
-${listas.escuadra2.map(u => `👤 ➢ ${u}`).join('\n')}${'\n👤 ➢'.repeat(Math.max(0, 4-listas.escuadra2.length))}
-
-SUPLENTE:
-${listas.suplente.map(u => '👤').join('\n')}${'\n👤'.repeat(Math.max(0, 3-listas.suplente.length))}
-
-BOLLLOBOT / MELDEXZZ.`
-
-    const templateButtons = [
-        {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra1'}},
-        {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra2'}},
-        {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}},
-        {index: 4, quickReplyButton: {displayText: 'Limpiar lista', id: 'limpiarlista'}}
-    ]
-
-    const templateMessage = {
-        text: texto,
-        footer: 'Selecciona una opción:',
-        templateButtons: templateButtons,
-        mentions: [...listas.escuadra1, ...listas.escuadra2, ...listas.suplente].map(u => u.replace('@', '') + '@s.whatsapp.net')
+    let msg = `*[ LISTA DE STAFF ]*\n\n`
+    
+    msg += `*ESCUADRA 1:*\n`
+    if (listas.escuadra1.length) {
+        listas.escuadra1.forEach((user, i) => {
+            msg += `${i + 1}. ${user}\n`
+        })
+    } else {
+        msg += `_No hay miembros_\n`
+    }
+    
+    msg += `\n*ESCUADRA 2:*\n`
+    if (listas.escuadra2.length) {
+        listas.escuadra2.forEach((user, i) => {
+            msg += `${i + 1}. ${user}\n`
+        })
+    } else {
+        msg += `_No hay miembros_\n`
+    }
+    
+    msg += `\n*SUPLENTES:*\n`
+    if (listas.suplente.length) {
+        listas.suplente.forEach((user, i) => {
+            msg += `${i + 1}. ${user}\n`
+        })
+    } else {
+        msg += `_No hay suplentes_\n`
     }
 
-    await conn.sendMessage(m.chat, templateMessage)
+    const template = generateWAMessageFromContent(m.chat, {
+        templateMessage: {
+            hydratedTemplate: {
+                hydratedContentText: msg,
+                hydratedFooterText: '\nSelecciona una opción:',
+                hydratedButtons: [
+                    {
+                        quickReplyButton: {
+                            displayText: 'Escuadra 1',
+                            id: '.escuadra1'
+                        }
+                    },
+                    {
+                        quickReplyButton: {
+                            displayText: 'Escuadra 2',
+                            id: '.escuadra2'
+                        }
+                    },
+                    {
+                        quickReplyButton: {
+                            displayText: 'Suplente',
+                            id: '.suplente'
+                        }
+                    },
+                    {
+                        quickReplyButton: {
+                            displayText: 'Limpiar Lista',
+                            id: '.limpiarlista'
+                        }
+                    }
+                ]
+            }
+        }
+    }, { quoted: m })
+
+    await conn.relayMessage(m.chat, template.message, { messageId: template.key.id })
 }
 
 handler.help = ['listaff']
 handler.tags = ['main']
-handler.command = ['listaff']
+handler.command = /^listaff$/i
 
 export default handler
