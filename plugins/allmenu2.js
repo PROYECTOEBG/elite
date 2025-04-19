@@ -35,7 +35,7 @@ let handler = async (m, { conn, text, args }) => {
     if (msgText.toLowerCase().startsWith('.listaff')) {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
-            await m.reply(`❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮`);
+            await conn.sendMessage(m.chat, { text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮` }, { quoted: m });
             return;
         }
         reiniciarListas(groupId);
@@ -69,19 +69,14 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-        const buttons = [
-            {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ]
-
-        const buttonMessage = {
+        await conn.sendMessage(m.chat, { 
             text: texto,
-            buttons: buttons,
-            headerType: 1
-        }
-
-        await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
+            templateButtons: [
+                {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
+                {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
+                {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
+            ]
+        }, { quoted: m });
         return;
     }
 
@@ -143,19 +138,14 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-    const buttons = [
-        {buttonId: 'escuadra 1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-        {buttonId: 'escuadra 2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-        {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-    ]
-
-    const buttonMessage = {
+    await conn.sendMessage(m.chat, { 
         text: texto,
-        buttons: buttons,
-        headerType: 1
-    }
-
-    await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
+        templateButtons: [
+            {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra 1'}},
+            {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra 2'}},
+            {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}}
+        ]
+    }, { quoted: m });
 }
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
