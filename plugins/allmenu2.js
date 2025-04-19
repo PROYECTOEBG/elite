@@ -223,8 +223,8 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^(escuadra [12]|suplente|\.listaff)$/i
+handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
 handler.command = new RegExp
 handler.group = true
 
-export default handler
+export default handler 
