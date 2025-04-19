@@ -13,6 +13,7 @@ let handler = async (m, { conn }) => {
     if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2' && msgText !== 'suplente') return
     
     const usuario = m.sender.split('@')[0];
+    const nombreUsuario = m.pushName || usuario;
     let squadType;
     let titulo;
     
@@ -29,7 +30,7 @@ let handler = async (m, { conn }) => {
     
     // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
-        const index = listas[key].findIndex(p => p === `@${usuario}`);
+        const index = listas[key].findIndex(p => p.includes(`@${usuario}`));
         if (index !== -1) {
             listas[key][index] = key === 'suplente' ? '✔' : '➢';
         }
@@ -38,7 +39,7 @@ let handler = async (m, { conn }) => {
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
-        listas[squadType][libre] = `@${usuario}`;
+        listas[squadType][libre] = `@${usuario} (${nombreUsuario})`;
     }
 
     const texto = `Tú
@@ -106,11 +107,12 @@ export async function after(m, { conn }) {
 
         const id = button.selectedButtonId;
         const numero = m.sender.split('@')[0];
+        const nombreUsuario = m.pushName || numero;
         const tag = m.sender;
 
         // Borrar al usuario de otras escuadras
         Object.keys(listas).forEach(key => {
-            const index = listas[key].findIndex(p => p === `@${numero}`);
+            const index = listas[key].findIndex(p => p.includes(`@${numero}`));
             if (index !== -1) {
                 listas[key][index] = key === 'suplente' ? '✔' : '➢';
             }
@@ -121,7 +123,7 @@ export async function after(m, { conn }) {
         const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
         
         if (libre !== -1) {
-            listas[squadType][libre] = `@${numero}`;
+            listas[squadType][libre] = `@${numero} (${nombreUsuario})`;
             await conn.sendMessage(m.chat, {
                 text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
                 mentions: [tag]
