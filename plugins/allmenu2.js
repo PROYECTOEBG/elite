@@ -35,7 +35,7 @@ let handler = async (m, { conn, text, args }) => {
     if (msgText.toLowerCase().startsWith('.listaff')) {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
-            m.reply(`❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮`);
+            await m.reply(`❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮`);
             return;
         }
         reiniciarListas(groupId);
@@ -75,11 +75,13 @@ let handler = async (m, { conn, text, args }) => {
             {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
         ]
 
-        await conn.sendMessage(m.chat, {
+        const buttonMessage = {
             text: texto,
             buttons: buttons,
             headerType: 1
-        })
+        }
+
+        await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
         return;
     }
 
@@ -147,11 +149,13 @@ let handler = async (m, { conn, text, args }) => {
         {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
     ]
 
-    await conn.sendMessage(m.chat, {
+    const buttonMessage = {
         text: texto,
         buttons: buttons,
         headerType: 1
-    })
+    }
+
+    await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
 }
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
