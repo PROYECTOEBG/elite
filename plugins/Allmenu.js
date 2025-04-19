@@ -1,75 +1,52 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-let lists = {
-  squad1: ['EliteBot', 'Ñaña', '➢', '➢'],
-  squad2: ['➢', '➢', '➢', '➢'],
+let listas = {
+  squad1: ['➤', '➤', '➤', '➤'],
+  squad2: ['➤', '➤', '➤', '➤'],
   suplente: ['✔', '✔', '✔']
 };
 
 const handler = async (m, { conn }) => {
-  await sendListWithButtons(conn, m.chat);
+  await enviarLista(conn, m.chat);
 };
 
-async function sendListWithButtons(conn, chatId, userAdded = null, listType = null, mentionJid = null, quoted = null) {
-  if (userAdded && listType) {
-    const list = lists[listType];
-    const emptyIndex = list.findIndex(item => item === '➢' || item === '✔');
-    if (emptyIndex !== -1) list[emptyIndex] = `@${userAdded}`;
+async function enviarLista(conn, chatId, user = null, tipo = null) {
+  // Añadir usuario si se especifica escuadra
+  if (user && tipo) {
+    let lista = listas[tipo];
+    let index = lista.findIndex(x => x === '➤' || x === '✔');
+    if (index !== -1) lista[index] = `@${user.split('@')[0]}`;
   }
 
-  const listText = 
+  const texto =
 `*MODALIDAD:* CLK  
-*ROPA:* verde  
+*ROPA:* verde
 
 *Escuadra 1:*  
-${lists.squad1.map(p => `➡ ${p}`).join('\n')}  
+${listas.squad1.map(p => `➡ ${p}`).join('\n')}
 
 *Escuadra 2:*  
-${lists.squad2.map(p => `➡ ${p}`).join('\n')}  
+${listas.squad2.map(p => `➡ ${p}`).join('\n')}
 
 *SUPLENTE:*  
-${lists.suplente.map(p => `➡ ${p}`).join('\n')}  
+${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  const msg = generateWAMessageFromContent(chatId, {
+  const mensaje = generateWAMessageFromContent(chatId, {
     viewOnceMessage: {
       message: {
         messageContextInfo: { deviceListMetadata: {} },
         interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: { text: listText },
+          body: { text: texto },
           footer: { text: "Selecciona una opción:" },
           nativeFlowMessage: {
             buttons: [
-              {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                  display_text: "Escuadra 1",
-                  id: "squad1"
-                })
-              },
-              {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                  display_text: "Escuadra 2",
-                  id: "squad2"
-                })
-              },
-              {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                  display_text: "Suplente",
-                  id: "suplente"
-                })
-              },
-              {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                  display_text: "Limpiar lista",
-                  id: "limpiar"
-                })
-              }
+              { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Escuadra 1", id: "squad1" }) },
+              { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Escuadra 2", id: "squad2" }) },
+              { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Suplente", id: "suplente" }) },
+              { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Limpiar lista", id: "limpiar" }) }
             ]
           }
         })
@@ -77,37 +54,33 @@ ${lists.suplente.map(p => `➡ ${p}`).join('\n')}
     }
   }, {});
 
-  await conn.relayMessage(chatId, msg.message, { messageId: msg.key.id });
-
-  // Si hay usuario para mencionar (en respuesta al botón)
-  if (mentionJid) {
-    await conn.sendMessage(chatId, {
-      text: `✅ @${userAdded} agregado a ${listType.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}`,
-      mentions: [mentionJid]
-    }, { quoted });
-  }
+  // Guardamos el ID del mensaje para poder responderlo (opcional)
+  await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
 }
 
 export async function after(m, { conn }) {
   if (!m.message?.buttonsResponseMessage) return;
 
-  const { selectedButtonId } = m.message.buttonsResponseMessage;
-  const userJid = m.sender;
-  const user = m.pushName || userJid.split('@')[0];
+  const seleccion = m.message.buttonsResponseMessage.selectedButtonId;
+  const user = m.sender;
 
-  if (selectedButtonId === 'limpiar') {
-    lists = {
-      squad1: ['EliteBot', 'Ñaña', '➢', '➢'],
-      squad2: ['➢', '➢', '➢', '➢'],
+  if (seleccion === 'limpiar') {
+    listas = {
+      squad1: ['➤', '➤', '➤', '➤'],
+      squad2: ['➤', '➤', '➤', '➤'],
       suplente: ['✔', '✔', '✔']
     };
-    await conn.sendMessage(m.chat, {
-      text: `♻️ Listas reiniciadas por @${user}`,
-      mentions: [userJid]
-    }, { quoted: m });
-  } else {
-    await sendListWithButtons(conn, m.chat, user, selectedButtonId, userJid, m);
+    return conn.sendMessage(m.chat, { text: `♻️ Listas reiniciadas por @${user.split('@')[0]}`, mentions: [user] });
   }
+
+  // Actualizar lista y reenviar mensaje con botones
+  await enviarLista(conn, m.chat, user, seleccion);
+
+  // Mensaje informativo
+  await conn.sendMessage(m.chat, {
+    text: `✅ @${user.split('@')[0]} fue agregado a *${seleccion.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}*`,
+    mentions: [user]
+  }, { quoted: m });
 }
 
 handler.command = /^(listaff)$/i;
