@@ -1,12 +1,5 @@
 import { listas } from './listaff.js'
 
-// Lista global para mantener el estado
-const listas = {
-    escuadra1: [],
-    escuadra2: [],
-    suplente: []
-}
-
 // Función para unirse a escuadra 1
 let handler1 = async (m, { conn }) => {
     let user = '@' + m.sender.split('@')[0]
@@ -85,4 +78,4 @@ handler4.command = /^limpiarlista$/i
 handler4.help = ['limpiarlista']
 handler4.tags = ['main']
 
-export { handler1, handler2, handler3, handler4 } 
+export { handler1, handler2, handler3, handler4 }
