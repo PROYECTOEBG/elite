@@ -1,12 +1,16 @@
 import { listas } from './listaff.js'
 
-let handler = async (m, { conn, command }) => {
+let handler = async (m, { conn, command, usedPrefix }) => {
     // Obtener el usuario que envió el comando
     const usuario = m.sender.split('@')[0];
     const tag = m.sender;
 
     // Determinar qué escuadra basado en el comando
     let squadType, squadName;
+    
+    // Remover el prefix del comando si existe
+    command = command.replace(/^[\.!#\$\/%]/gi, '');
+    
     if (command === 'escuadra1') {
         squadType = 'escuadra1';
         squadName = 'Escuadra 1';
@@ -75,22 +79,22 @@ BOLLLOBOT / MELDEXZZ.`;
 
     const buttons = [
         {
-            buttonId: '.escuadra1',
+            buttonId: 'escuadra1',
             buttonText: { displayText: 'Escuadra 1' },
             type: 1
         },
         {
-            buttonId: '.escuadra2',
+            buttonId: 'escuadra2',
             buttonText: { displayText: 'Escuadra 2' },
             type: 1
         },
         {
-            buttonId: '.suplente',
+            buttonId: 'suplente',
             buttonText: { displayText: 'Suplente' },
             type: 1
         },
         {
-            buttonId: '.limpiarlista',
+            buttonId: 'limpiarlista',
             buttonText: { displayText: 'Limpiar lista' },
             type: 1
         }
