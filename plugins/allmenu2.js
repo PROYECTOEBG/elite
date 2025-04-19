@@ -47,8 +47,7 @@ let handler = async (m, { conn, text, args }) => {
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
 
-        await conn.sendMessage(m.chat, {
-            text: `*${mensaje}*
+        const texto = `*${mensaje}*
 
 ╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
@@ -72,13 +71,21 @@ let handler = async (m, { conn, text, args }) => {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`,
-            buttons: [
-                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-            ]
-        });
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+
+        const templateButtons = [
+            { index: 1, quickReplyButton: { displayText: 'Escuadra 1', id: 'escuadra1' } },
+            { index: 2, quickReplyButton: { displayText: 'Escuadra 2', id: 'escuadra2' } },
+            { index: 3, quickReplyButton: { displayText: 'Suplente', id: 'suplente' } }
+        ];
+
+        const templateMessage = {
+            text: texto,
+            footer: 'Selecciona una opción:',
+            templateButtons: templateButtons
+        };
+
+        await conn.sendMessage(m.chat, templateMessage);
         return;
     }
 
@@ -113,8 +120,7 @@ let handler = async (m, { conn, text, args }) => {
 
     const mensajeGuardado = mensajesGrupos.get(groupId) || '';
     
-    await conn.sendMessage(m.chat, {
-        text: `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
+    const texto = `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -136,14 +142,22 @@ let handler = async (m, { conn, text, args }) => {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`,
-        mentions: [usuario],
-        buttons: [
-            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ]
-    });
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+
+    const templateButtons = [
+        { index: 1, quickReplyButton: { displayText: 'Escuadra 1', id: 'escuadra1' } },
+        { index: 2, quickReplyButton: { displayText: 'Escuadra 2', id: 'escuadra2' } },
+        { index: 3, quickReplyButton: { displayText: 'Suplente', id: 'suplente' } }
+    ];
+
+    const templateMessage = {
+        text: texto,
+        footer: 'Selecciona una opción:',
+        templateButtons: templateButtons,
+        mentions: [usuario]
+    };
+
+    await conn.sendMessage(m.chat, templateMessage);
 }
 
 // Manejo de respuestas a botones
@@ -176,8 +190,7 @@ export async function after(m, { conn }) {
         // Actualizar la lista después de cada acción
         const mensajeGuardado = mensajesGrupos.get(groupId) || '';
         
-        await conn.sendMessage(m.chat, {
-            text: `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
+        const texto = `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -199,14 +212,22 @@ export async function after(m, { conn }) {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`,
-            mentions: [usuario],
-            buttons: [
-                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-            ]
-        });
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+
+        const templateButtons = [
+            { index: 1, quickReplyButton: { displayText: 'Escuadra 1', id: 'escuadra1' } },
+            { index: 2, quickReplyButton: { displayText: 'Escuadra 2', id: 'escuadra2' } },
+            { index: 3, quickReplyButton: { displayText: 'Suplente', id: 'suplente' } }
+        ];
+
+        const templateMessage = {
+            text: texto,
+            footer: 'Selecciona una opción:',
+            templateButtons: templateButtons,
+            mentions: [usuario]
+        };
+
+        await conn.sendMessage(m.chat, templateMessage);
     } catch (error) {
         console.error('Error en after:', error);
         await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
