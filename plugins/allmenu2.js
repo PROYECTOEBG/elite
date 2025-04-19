@@ -195,15 +195,6 @@ export async function after(m, { conn }) {
         
         if (libre !== -1) {
             listas[squadType][libre] = `@${nombreUsuario}`;
-            await conn.sendMessage(m.chat, {
-                text: `✅ @${nombreUsuario} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
-                mentions: [tag]
-            });
-        } else {
-            await conn.sendMessage(m.chat, {
-                text: `⚠️ ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'} está llena`,
-                mentions: [tag]
-            });
         }
         
         // Actualizar la lista después de cada acción
