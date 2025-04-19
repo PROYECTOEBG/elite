@@ -84,24 +84,20 @@ let handler4 = async (m, { conn }) => {
     })
 }
 
-handler1.command = /^escuadra\s*1$/i
-handler1.help = ['escuadra 1']
+handler1.customPrefix = /escuadra 1|escuadra1/i
+handler1.command = new RegExp
 handler1.tags = ['main']
-handler1.prefix = ''
 
-handler2.command = /^escuadra\s*2$/i
-handler2.help = ['escuadra 2']
+handler2.customPrefix = /escuadra 2|escuadra2/i
+handler2.command = new RegExp
 handler2.tags = ['main']
-handler2.prefix = ''
 
-handler3.command = /^suplente$/i
-handler3.help = ['suplente']
+handler3.customPrefix = /suplente/i
+handler3.command = new RegExp
 handler3.tags = ['main']
-handler3.prefix = ''
 
-handler4.command = /^(limpiar\s*lista|limpiarlista)$/i
-handler4.help = ['limpiar lista']
+handler4.customPrefix = /limpiar lista|limpiarlista/i
+handler4.command = new RegExp
 handler4.tags = ['main']
-handler4.prefix = ''
 
 export { handler1, handler2, handler3, handler4 }
