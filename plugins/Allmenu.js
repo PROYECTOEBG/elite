@@ -1,5 +1,5 @@
-import pkg from '@whiskeysockets/baileys';
-const { generateWAMessageFromContent, proto, MessageType } = pkg;
+// plugins/listaff.js
+import { MessageType } from '@whiskeysockets/baileys';
 
 let handler = async (m, { conn, usedPrefix }) => {
     let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
@@ -26,13 +26,17 @@ let handler = async (m, { conn, usedPrefix }) => {
 ╰─────────────╯`;
 
     const buttonMessage = {
-        text: `${escuadra1}\n\n${escuadra2}`,
-        footer: 'Presiona el botón para unirte a una escuadra',
+        contentText: `${escuadra1}\n\n${escuadra2}`,
+        footerText: 'Presiona el botón para unirte a una escuadra',
         buttons: buttons,
         headerType: 1
     };
 
-    await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage, { quoted: fkontak });
+    const message = {
+        buttonsMessage: buttonMessage
+    };
+
+    await conn.sendMessage(m.chat, message, { quoted: fkontak });
 }
 
 // En handler.js (en la función before)
@@ -44,7 +48,6 @@ export async function before(m, { conn, usedPrefix, text, participants }) {
             const user = m.sender;
             const userName = conn.getName(user);
             
-            // Actualizar la base de datos con el usuario
             if (escuadra === '1') {
                 global.db.data.users[user] = {
                     escuadra1: userName,
@@ -61,7 +64,6 @@ export async function before(m, { conn, usedPrefix, text, participants }) {
                 };
             }
 
-            // Mostrar la lista actualizada
             const escuadra1 = `╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ➤ ${global.db.data.users[user]?.escuadra1 || 'Vacante'}
@@ -79,13 +81,17 @@ export async function before(m, { conn, usedPrefix, text, participants }) {
 ╰─────────────╯`;
 
             const buttonMessage = {
-                text: `${escuadra1}\n\n${escuadra2}`,
-                footer: 'Presiona el botón para unirte a una escuadra',
+                contentText: `${escuadra1}\n\n${escuadra2}`,
+                footerText: 'Presiona el botón para unirte a una escuadra',
                 buttons: buttons,
                 headerType: 1
             };
 
-            await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage);
+            const message = {
+                buttonsMessage: buttonMessage
+            };
+
+            await conn.sendMessage(m.chat, message);
             return true;
         }
     }
