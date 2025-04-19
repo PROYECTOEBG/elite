@@ -2,7 +2,7 @@ import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
 let listas = {
-  squad1: ['EliteBot', 'Ñaña', 'Tú', 'dado ...'],
+  squad1: ['➢', '➢', '➢', '➢'],
   squad2: ['➢', '➢', '➢', '➢'],
   suplente: ['✔', '✔', '✔']
 };
@@ -33,11 +33,35 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  const botones = [
-    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Escuadra 1", id: "squad1" }) },
-    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Escuadra 2", id: "squad2" }) },
-    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Suplente", id: "suplente" }) },
-    { name: "quick_reply", buttonParamsJson: JSON.stringify({ display_text: "Limpiar lista", id: "limpiar" }) }
+  const buttons = [
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({
+        display_text: "Escuadra 1",
+        id: "squad1"
+      })
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({
+        display_text: "Escuadra 2",
+        id: "squad2"
+      })
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({
+        display_text: "Suplente",
+        id: "suplente"
+      })
+    },
+    {
+      name: "quick_reply",
+      buttonParamsJson: JSON.stringify({
+        display_text: "Limpiar lista",
+        id: "limpiar"
+      })
+    }
   ];
 
   const mensaje = generateWAMessageFromContent(chatId, {
@@ -55,9 +79,11 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 
   await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
 
-  // Si fue por acción de botón, también se menciona al usuario
   if (usuario && tag) {
-    await conn.sendMessage(chatId, { text: `✅ @${usuario} agregado a ${tipo.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}`, mentions: [tag] });
+    await conn.sendMessage(chatId, {
+      text: `✅ @${usuario} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+      mentions: [tag]
+    });
   }
 }
 
@@ -71,11 +97,14 @@ export async function after(m, { conn }) {
 
   if (id === 'limpiar') {
     listas = {
-      squad1: ['EliteBot', 'Ñaña', 'Tú', 'dado ...'],
+      squad1: ['➢', '➢', '➢', '➢'],
       squad2: ['➢', '➢', '➢', '➢'],
       suplente: ['✔', '✔', '✔']
     };
-    await conn.sendMessage(m.chat, { text: `♻️ Listas reiniciadas por @${numero}`, mentions: [m.sender] }, { quoted: m });
+    await conn.sendMessage(m.chat, {
+      text: `♻️ Listas reiniciadas por @${numero}`,
+      mentions: [m.sender]
+    }, { quoted: m });
   } else {
     await enviarLista(conn, m.chat, numero, id, m.sender);
   }
