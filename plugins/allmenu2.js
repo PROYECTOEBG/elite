@@ -226,6 +226,6 @@ export async function after(m, { conn }) {
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.8vs8.*)$/i
 handler.command = new RegExp
-handler.group = false
+handler.group = true
 
 export default handler
