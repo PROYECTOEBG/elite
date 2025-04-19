@@ -32,7 +32,7 @@ let handler = async (m, { conn, text, args }) => {
     let listas = getListasGrupo(groupId);
     
     // Manejar el comando .listaff
-    if (msgText.toLowerCase().startsWith('.listaff')) {
+    if (msgText.toLowerCase().startsWith('.8vs8')) {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
             await conn.sendMessage(m.chat, { 
