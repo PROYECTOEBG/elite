@@ -1,5 +1,11 @@
-let handler = async (m, { conn, usedPrefix }) => {
-    const listMessage = {
+let handler = async (m, { conn }) => {
+    const buttons = [
+        { buttonId: '.escuadra1', buttonText: { displayText: 'Escuadra 1' }, type: 1 },
+        { buttonId: '.escuadra2', buttonText: { displayText: 'Escuadra 2' }, type: 1 },
+        { buttonId: '.suplente', buttonText: { displayText: 'Suplente' }, type: 1 }
+    ]
+
+    const buttonMessage = {
         text: `EliteBot
 MODALIDAD: CLK
 ROPA: verde
@@ -22,35 +28,17 @@ SUPLENTE:
 👤
 
 BOLLLOBOT / MELDEXZZ.`,
-        footer: "© BOLLLOBOT / MELDEXZZ",
-        title: "EliteBot",
-        buttonText: "Click Aquí",
-        sections: [
-            {
-                "title": "Selecciona una opción",
-                "rows": [
-                    {
-                        "title": "Escuadra 1",
-                        "rowId": `${usedPrefix}escuadra1`
-                    },
-                    {
-                        "title": "Escuadra 2",
-                        "rowId": `${usedPrefix}escuadra2`
-                    },
-                    {
-                        "title": "Suplente",
-                        "rowId": `${usedPrefix}suplente`
-                    },
-                    {
-                        "title": "Limpiar lista",
-                        "rowId": `${usedPrefix}limpiarlista`
-                    }
-                ]
-            }
-        ]
+        footer: '© BOLLLOBOT / MELDEXZZ',
+        buttons: buttons,
+        headerType: 1
     }
-    
-    await conn.sendMessage(m.chat, listMessage)
+
+    try {
+        await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
+    } catch (e) {
+        // Si falla con botones, enviamos como texto simple
+        await conn.sendMessage(m.chat, { text: buttonMessage.text }, { quoted: m })
+    }
 }
 
 handler.help = ['listaff']
