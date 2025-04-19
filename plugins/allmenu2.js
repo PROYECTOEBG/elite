@@ -35,16 +35,15 @@ let handler = async (m, { conn, text, args }) => {
     if (msgText.toLowerCase().startsWith('.listaff')) {
         const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
         if (!mensaje) {
-            await conn.sendMessage(m.chat, { 
-                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮` 
-            });
+            m.reply(`❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢\n\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.listaff Actívense para la ranked 🎮`);
             return;
         }
         reiniciarListas(groupId);
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
 
-        const texto = `*${mensaje}*
+        let yo = `*${mensaje}*`
+        let texto = `${yo}
 
 ╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
@@ -68,19 +67,9 @@ let handler = async (m, { conn, text, args }) => {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-        const buttons = [
-            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ];
-
-        await conn.sendMessage(m.chat, {
-            text: texto,
-            buttons: buttons,
-            headerType: 1
-        });
+        await conn.sendFile(m.chat, null, 'error.jpg', texto, m, false, { mentions: [m.sender] })
         return;
     }
 
@@ -115,7 +104,10 @@ let handler = async (m, { conn, text, args }) => {
 
     const mensajeGuardado = mensajesGrupos.get(groupId) || '';
     
-    const texto = `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
+    let yo = mensajeGuardado ? `*${mensajeGuardado}*` : ''
+    let texto = `${yo}
+
+╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -137,88 +129,9 @@ let handler = async (m, { conn, text, args }) => {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-    await conn.sendMessage(m.chat, {
-        text: texto,
-        buttons: [
-            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-        ],
-        headerType: 1,
-        mentions: [usuario]
-    });
-}
-
-// Manejo de respuestas a botones
-export async function after(m, { conn }) {
-    try {
-        const button = m?.message?.buttonsResponseMessage;
-        if (!button) return;
-
-        const id = button.selectedButtonId;
-        const groupId = m.chat;
-        let listas = getListasGrupo(groupId);
-        const usuario = m.sender;
-        const nombreUsuario = m.pushName || usuario.split('@')[0];
-        
-        // Borrar al usuario de otras escuadras
-        Object.keys(listas).forEach(key => {
-            const index = listas[key].findIndex(p => p.includes(usuario));
-            if (index !== -1) {
-                listas[key][index] = '➤';
-            }
-        });
-
-        const squadType = id === 'escuadra1' ? 'squad1' : 
-                        id === 'escuadra2' ? 'squad2' : 'suplente';
-        const libre = listas[squadType].findIndex(p => p === '➤');
-        
-        if (libre !== -1) {
-            listas[squadType][libre] = `@${usuario.split('@')[0]}`;
-        }
-        
-        // Actualizar la lista después de cada acción
-        const mensajeGuardado = mensajesGrupos.get(groupId);
-        const texto = `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
-│👑 ${listas.squad1[0]}
-│🥷🏻 ${listas.squad1[1]}
-│🥷🏻 ${listas.squad1[2]}
-│🥷🏻 ${listas.squad1[3]}
-╰─────────────╯
-╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
-│👑 ${listas.squad2[0]}
-│🥷🏻 ${listas.squad2[1]}
-│🥷🏻 ${listas.squad2[2]}
-│🥷🏻 ${listas.squad2[3]}
-╰─────────────╯
-╭─────────────╮
-│ 𝗦𝗨𝗣𝗟𝗘𝗡𝗧𝗘𝗦
-│🥷🏻 ${listas.suplente[0]}
-│🥷🏻 ${listas.suplente[1]}
-│🥷🏻 ${listas.suplente[2]}
-│🥷🏻 ${listas.suplente[3]}
-╰─────────────╯
-𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
-
-        await conn.sendMessage(m.chat, {
-            text: texto,
-            buttons: [
-                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
-                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
-                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
-            ],
-            headerType: 1,
-            mentions: [usuario]
-        });
-    } catch (error) {
-        console.error('Error en after:', error);
-        await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
-    }
+    await conn.sendFile(m.chat, null, 'error.jpg', texto, m, false, { mentions: [usuario] })
 }
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
