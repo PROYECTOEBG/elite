@@ -70,9 +70,7 @@ ${listas.squad1.map(p => `➡ ${p}`).join('\n')}
 ${listas.squad2.map(p => `➡ ${p}`).join('\n')}  
 
 *SUPLENTE:*  
-${listas.suplente.map(p => `➡ ${p}`).join('\n')}  
-
-*BOLLLOBOT / MELDEXZZ.*`;
+${listas.suplente.map(p => `➡ ${p}`).join('\n')}`;
 
     const buttons = [
       {
