@@ -1,112 +1,45 @@
-let handler = async (m, { conn, command, text }) => {
-    // Obtener el usuario que envió el comando
-    const usuario = m.sender.split('@')[0]
-    const tag = m.sender
+// Lista global para mantener el estado
+export const listas = {
+    escuadra1: [],
+    escuadra2: [], 
+    suplente: []
+}
 
-    // Variables globales para las listas
-    global.escuadra1 = global.escuadra1 || ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
-    global.escuadra2 = global.escuadra2 || ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
-    global.suplente = global.suplente || ['✓', '✓', '✓']
-
-    // Función para mostrar la lista actualizada
-    const mostrarLista = async () => {
-        const listMessage = {
-            text: `EliteBot
+let handler = async (m, { conn }) => {
+    let texto = `EliteBot
 MODALIDAD: CLK
 ROPA: verde
 
 Escuadra 1:
-👤 ${escuadra1[0]}
-👤 ${escuadra1[1]}
-👤 ${escuadra1[2]}
-👤 ${escuadra1[3]}
+${listas.escuadra1.map(u => `👤 ➢ ${u}`).join('\n')}${'\n👤 ➢'.repeat(Math.max(0, 4-listas.escuadra1.length))}
 
 Escuadra 2:
-👤 ${escuadra2[0]}
-👤 ${escuadra2[1]}
-👤 ${escuadra2[2]}
-👤 ${escuadra2[3]}
+${listas.escuadra2.map(u => `👤 ➢ ${u}`).join('\n')}${'\n👤 ➢'.repeat(Math.max(0, 4-listas.escuadra2.length))}
 
 SUPLENTE:
-👤 ${suplente[0]}
-👤 ${suplente[1]}
-👤 ${suplente[2]}
+${listas.suplente.map(u => '👤').join('\n')}${'\n👤'.repeat(Math.max(0, 3-listas.suplente.length))}
 
-BOLLLOBOT / MELDEXZZ.`,
-            footer: "Selecciona una opción:",
-            title: null,
-            buttonText: "Click Aquí",
-            sections: [{
-                title: "BOLLLOBOT / MELDEXZZ.",
-                rows: [
-                    {title: "Escuadra 1", rowId: "escuadra1"},
-                    {title: "Escuadra 2", rowId: "escuadra2"},
-                    {title: "Suplente", rowId: "suplente"},
-                    {title: "Limpiar lista", rowId: "limpiarlista"}
-                ]
-            }]
-        }
+BOLLLOBOT / MELDEXZZ.`
 
-        await conn.sendMessage(m.chat, listMessage)
+    const templateButtons = [
+        {index: 1, quickReplyButton: {displayText: 'Escuadra 1', id: 'escuadra1'}},
+        {index: 2, quickReplyButton: {displayText: 'Escuadra 2', id: 'escuadra2'}},
+        {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}},
+        {index: 4, quickReplyButton: {displayText: 'Limpiar lista', id: 'limpiarlista'}}
+    ]
+
+    const templateMessage = {
+        text: texto,
+        footer: 'Selecciona una opción:',
+        templateButtons: templateButtons,
+        mentions: [...listas.escuadra1, ...listas.escuadra2, ...listas.suplente].map(u => u.replace('@', '') + '@s.whatsapp.net')
     }
 
-    // Manejar comandos
-    if (command === 'escuadra1') {
-        let libre = escuadra1.findIndex(p => p === '➢ ➢')
-        if (libre !== -1) {
-            escuadra1[libre] = `@${usuario}`
-            await conn.sendMessage(m.chat, { 
-                text: `✅ @${usuario} agregado a Escuadra 1`, 
-                mentions: [tag] 
-            })
-            await mostrarLista()
-        } else {
-            await conn.sendMessage(m.chat, { 
-                text: `⚠️ Escuadra 1 está llena`, 
-                mentions: [tag] 
-            })
-        }
-    } else if (command === 'escuadra2') {
-        let libre = escuadra2.findIndex(p => p === '➢ ➢')
-        if (libre !== -1) {
-            escuadra2[libre] = `@${usuario}`
-            await conn.sendMessage(m.chat, { 
-                text: `✅ @${usuario} agregado a Escuadra 2`, 
-                mentions: [tag] 
-            })
-            await mostrarLista()
-        } else {
-            await conn.sendMessage(m.chat, { 
-                text: `⚠️ Escuadra 2 está llena`, 
-                mentions: [tag] 
-            })
-        }
-    } else if (command === 'suplente') {
-        let libre = suplente.findIndex(p => p === '✓')
-        if (libre !== -1) {
-            suplente[libre] = `@${usuario}`
-            await conn.sendMessage(m.chat, { 
-                text: `✅ @${usuario} agregado a Suplente`, 
-                mentions: [tag] 
-            })
-            await mostrarLista()
-        } else {
-            await conn.sendMessage(m.chat, { 
-                text: `⚠️ Lista de suplentes llena`, 
-                mentions: [tag] 
-            })
-        }
-    } else if (command === 'limpiarlista') {
-        global.escuadra1 = ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
-        global.escuadra2 = ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
-        global.suplente = ['✓', '✓', '✓']
-        await conn.sendMessage(m.chat, { 
-            text: `♻️ Listas reiniciadas por @${usuario}`, 
-            mentions: [tag] 
-        })
-        await mostrarLista()
-    }
+    await conn.sendMessage(m.chat, templateMessage)
 }
 
-handler.command = ['escuadra1', 'escuadra2', 'suplente', 'limpiarlista']
+handler.help = ['listaff']
+handler.tags = ['main']
+handler.command = ['listaff']
+
 export default handler
