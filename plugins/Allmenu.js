@@ -1,12 +1,8 @@
-let handler = async (m, { conn }) => {
-    const buttons = [
-        { buttonId: '.escuadra1', buttonText: { displayText: 'Escuadra 1' }, type: 1 },
-        { buttonId: '.escuadra2', buttonText: { displayText: 'Escuadra 2' }, type: 1 },
-        { buttonId: '.suplente', buttonText: { displayText: 'Suplente' }, type: 1 }
-    ]
-
-    const buttonMessage = {
-        text: `EliteBot
+let handler = async (m, { conn, text, usedPrefix, command }) => {
+    let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
+    
+    let str = `
+EliteBot
 MODALIDAD: CLK
 ROPA: verde
 
@@ -27,18 +23,29 @@ SUPLENTE:
 👤
 👤
 
-BOLLLOBOT / MELDEXZZ.`,
-        footer: '© BOLLLOBOT / MELDEXZZ',
-        buttons: buttons,
-        headerType: 1
+BOLLLOBOT / MELDEXZZ.`
+
+    const sections = [
+        {
+            title: 'SELECCIONA UNA OPCIÓN',
+            rows: [
+                {title: "Escuadra 1", description: "Seleccionar Escuadra 1", rowId: `${usedPrefix}escuadra1`},
+                {title: "Escuadra 2", description: "Seleccionar Escuadra 2", rowId: `${usedPrefix}escuadra2`},
+                {title: "Suplente", description: "Seleccionar Suplente", rowId: `${usedPrefix}suplente`},
+                {title: "Limpiar lista", description: "Limpiar todas las listas", rowId: `${usedPrefix}limpiarlista`}
+            ]
+        }
+    ]
+
+    const listMessage = {
+        text: str,
+        footer: 'EliteBot',
+        title: null,
+        buttonText: "Selecciona una opción",
+        sections
     }
 
-    try {
-        await conn.sendMessage(m.chat, buttonMessage, { quoted: m })
-    } catch (e) {
-        // Si falla con botones, enviamos como texto simple
-        await conn.sendMessage(m.chat, { text: buttonMessage.text }, { quoted: m })
-    }
+    await conn.sendMessage(m.chat, listMessage, { quoted: fkontak })
 }
 
 handler.help = ['listaff']
