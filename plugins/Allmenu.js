@@ -1,59 +1,165 @@
+
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-// Estado global simplificado
-let squad1 = ['➢', '➢', '➢', '➢'];
-
-const handler = async (m, { conn }) => {
-  const msgText = (m.text || '').toLowerCase().trim();
-  const user = m.sender.split('@')[0];
-  
-  // Comando básico para escuadra 1
-  if (msgText === 'escuadra 1') {
-    const emptySlot = squad1.findIndex(slot => slot === '➢');
-    
-    if (emptySlot !== -1) {
-      squad1[emptySlot] = `@${user}`;
-      
-      // Enviar confirmación directa
-      await conn.sendMessage(m.chat, {
-        text: `✅ @${user} agregado a Escuadra 1 (posición ${emptySlot + 1})`,
-        mentions: [m.sender]
-      });
-      
-      // Mostrar lista actualizada
-      await showUpdatedList(conn, m.chat);
-    } else {
-      await conn.sendMessage(m.chat, {
-        text: '⚠️ Escuadra 1 está llena',
-        mentions: [m.sender]
-      });
-    }
-    return;
-  }
-  
-  // Mostrar lista por defecto
-  await showUpdatedList(conn, m.chat);
+// Estado global de las listas
+let listas = {
+  squad1: ['➢', '➢', '➢', '➢'],
+  squad2: ['➢', '➢', '➢', '➢'],
+  suplente: ['✔', '✔', '✔']
 };
 
-// Función simplificada para mostrar lista
-async function showUpdatedList(conn, chatId) {
-  const listText = `*ESCUADRA 1:*\n${squad1.map((p, i) => `${i+1}. ${p}`).join('\n')}`;
+const handler = async (m, { conn }) => {
+  try {
+    const msgText = (m.text || '').toLowerCase().trim();
+    
+    // Manejo del comando "escuadra 1"
+    if (msgText === 'escuadra 1') {
+      await handleSquadRequest(conn, m, 'squad1');
+      return;
+    }
+    
+    // Mostrar lista normal si no es un comando específico
+    await enviarLista(conn, m.chat);
+  } catch (error) {
+    console.error('Error en handler:', error);
+    await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al procesar tu solicitud' });
+  }
+};
+
+// Función para manejar solicitudes de escuadra
+async function handleSquadRequest(conn, m, squadType) {
+  const usuario = m.sender.split('@')[0];
+  const tag = m.sender;
+  const squadName = squadType === 'squad1' ? 'Escuadra 1' : squadType === 'squad2' ? 'Escuadra 2' : 'Suplente';
   
-  await conn.sendMessage(chatId, {
-    text: listText,
-    footer: 'Escribe "escuadra 1" para unirte',
-    mentions: []
-  });
+  // Buscar espacio libre
+  const libre = listas[squadType].findIndex(p => p === '➢' || p === '✔');
+  
+  if (libre !== -1) {
+    listas[squadType][libre] = `@${usuario}`;
+    await conn.sendMessage(m.chat, {
+      text: `✅ @${usuario} agregado a ${squadName}`,
+      mentions: [tag]
+    });
+    await enviarLista(conn, m.chat);
+  } else {
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ ${squadName} está llena`,
+      mentions: [tag]
+    });
+  }
 }
 
-// Manejo de botones (versión mínima)
+// Función para enviar la lista interactiva
+async function enviarLista(conn, chatId, usuario = null, tipo = null, tag = null) {
+  try {
+    // Actualizar lista si se proporciona usuario
+    if (usuario && tipo) {
+      const libre = listas[tipo].findIndex(p => p === '➢' || p === '✔');
+      if (libre !== -1) listas[tipo][libre] = `@${usuario}`;
+    }
+
+    const texto = 
+`*MODALIDAD:* CLK  
+*ROPA:* verde  
+
+*Escuadra 1:*  
+${listas.squad1.map(p => `➡ ${p}`).join('\n')}  
+
+*Escuadra 2:*  
+${listas.squad2.map(p => `➡ ${p}`).join('\n')}  
+
+*SUPLENTE:*  
+${listas.suplente.map(p => `➡ ${p}`).join('\n')}  
+
+*BOLLLOBOT / MELDEXZZ.*`;
+
+    const buttons = [
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Escuadra 1",
+          id: "squad1"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Escuadra 2",
+          id: "squad2"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Suplente",
+          id: "suplente"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Limpiar lista",
+          id: "limpiar"
+        })
+      }
+    ];
+
+    const mensaje = generateWAMessageFromContent(chatId, {
+      viewOnceMessage: {
+        message: {
+          messageContextInfo: { deviceListMetadata: {} },
+          interactiveMessage: proto.Message.InteractiveMessage.create({
+            body: { text: texto },
+            footer: { text: "Selecciona una opción:" },
+            nativeFlowMessage: { buttons }
+          })
+        }
+      }
+    }, {});
+
+    await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
+
+    // Confirmación adicional si se agregó usuario
+    if (usuario && tag) {
+      await conn.sendMessage(chatId, {
+        text: `✅ @${usuario} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+        mentions: [tag]
+      });
+    }
+  } catch (error) {
+    console.error('Error en enviarLista:', error);
+    throw error;
+  }
+}
+
+// Manejo de respuestas a botones
 export async function after(m, { conn }) {
-  const button = m?.message?.buttonsResponseMessage;
-  if (button && button.selectedButtonId === 'reset') {
-    squad1 = ['➢', '➢', '➢', '➢'];
-    await conn.sendMessage(m.chat, { text: '♻️ Lista reiniciada' });
-    await showUpdatedList(conn, m.chat);
+  try {
+    const button = m?.message?.buttonsResponseMessage;
+    if (!button) return;
+
+    const id = button.selectedButtonId;
+    const numero = m.sender.split('@')[0];
+    const tag = m.sender;
+
+    if (id === 'limpiar') {
+      listas = {
+        squad1: ['➢', '➢', '➢', '➢'],
+        squad2: ['➢', '➢', '➢', '➢'],
+        suplente: ['✔', '✔', '✔']
+      };
+      await conn.sendMessage(m.chat, {
+        text: `♻️ Listas reiniciadas por @${numero}`,
+        mentions: [tag]
+      }, { quoted: m });
+    } else {
+      await handleSquadRequest(conn, m, id);
+    }
+  } catch (error) {
+    console.error('Error en after:', error);
+    await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
   }
 }
 
