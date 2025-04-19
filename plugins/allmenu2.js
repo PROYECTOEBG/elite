@@ -3,7 +3,7 @@ const { generateWAMessageFromContent, proto } = pkg;
 
 // Estado global de las listas por grupo
 let listasGrupos = new Map();
-let horariosGrupos = new Map();
+let mensajesGrupos = new Map();
 
 // Función para obtener o crear las listas de un grupo
 const getListasGrupo = (groupId) => {
@@ -24,39 +24,34 @@ const reiniciarListas = (groupId) => {
         squad2: ['➤', '➤', '➤', '➤'],
         suplente: ['➤', '➤', '➤', '➤']
     });
-    horariosGrupos.delete(groupId);
+    mensajesGrupos.delete(groupId);
 };
 
 let handler = async (m, { conn }) => {
-    const msgText = m.text.toLowerCase();
+    const msgText = m.text;
     const groupId = m.chat;
     let listas = getListasGrupo(groupId);
     
-    // Manejar el comando de horario
-    if (msgText.startsWith('.8vs8')) {
-        const horario = msgText.slice(5).trim(); // Remover '.8vs8' del mensaje
-        if (!horario) {
-            const texto = `⌚ 𝗜𝗡𝗚𝗥𝗘𝗦𝗔 𝗨𝗡 𝗛𝗢𝗥𝗔𝗥𝗜𝗢.
+    // Manejar el comando .listaff
+    if (msgText.toLowerCase().startsWith('.listaff')) {
+        const mensaje = msgText.slice(8).trim(); // Remover '.listaff' del mensaje
+        if (!mensaje) {
+            await conn.sendMessage(m.chat, { 
+                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
 
 𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
-.8vs8 4pm🇪🇨/3pm🇲🇽`;
-            await conn.sendMessage(m.chat, { text: texto });
+.listaff Actívense para la ranked 🎮` 
+            });
             return;
         }
-        horariosGrupos.set(groupId, horario);
-        await mostrarLista(conn, m.chat, listas, horario);
-        return;
-    }
-    
-    // Manejar el comando .listaff
-    if (msgText === '.listaff') {
         reiniciarListas(groupId);
         listas = getListasGrupo(groupId);
-        await mostrarLista(conn, m.chat, listas);
+        mensajesGrupos.set(groupId, mensaje);
+        await mostrarLista(conn, m.chat, listas, [], mensaje);
         return;
     }
 
-    if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2' && msgText !== 'suplente') return;
+    if (msgText.toLowerCase() !== 'escuadra 1' && msgText.toLowerCase() !== 'escuadra 2' && msgText.toLowerCase() !== 'suplente') return;
     
     const usuario = m.sender.split('@')[0];
     const nombreUsuario = m.pushName || usuario;
@@ -64,9 +59,9 @@ let handler = async (m, { conn }) => {
     let squadType;
     let mentions = [];
     
-    if (msgText === 'escuadra 1') {
+    if (msgText.toLowerCase() === 'escuadra 1') {
         squadType = 'squad1';
-    } else if (msgText === 'escuadra 2') {
+    } else if (msgText.toLowerCase() === 'escuadra 2') {
         squadType = 'squad2';
     } else {
         squadType = 'suplente';
@@ -101,14 +96,14 @@ let handler = async (m, { conn }) => {
         });
     });
 
-    await mostrarLista(conn, m.chat, listas, horariosGrupos.get(groupId), mentions);
+    await mostrarLista(conn, m.chat, listas, mentions, mensajesGrupos.get(groupId));
 }
 
-// Función para mostrar la lista con o sin horario
-async function mostrarLista(conn, chat, listas, horario = '', mentions = []) {
-    const horarioTexto = horario ? `⌚ ${horario}\n` : '';
+// Función para mostrar la lista
+async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
+    const mensajeTexto = mensaje ? `${mensaje}\n\n` : '';
     
-    const texto = `${horarioTexto}╭─────────────╮
+    const texto = `${mensajeTexto}╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -214,15 +209,15 @@ export async function after(m, { conn }) {
         }
         
         // Actualizar la lista después de cada acción
-        await mostrarLista(conn, m.chat, listas, horariosGrupos.get(groupId), [tag]);
+        await mostrarLista(conn, m.chat, listas, [tag], mensajesGrupos.get(groupId));
     } catch (error) {
         console.error('Error en after:', error);
         await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
     }
 }
 
-handler.customPrefix = /^(escuadra [12]|suplente|\.listaff|\.8vs8.*)$/i
+handler.customPrefix = /^(escuadra [12]|suplente|\.listaff)$/i
 handler.command = new RegExp
 handler.group = true
 
-export default handler 
+export default handler
