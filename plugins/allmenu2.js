@@ -8,9 +8,9 @@ let listasGrupos = new Map();
 const getListasGrupo = (groupId) => {
     if (!listasGrupos.has(groupId)) {
         listasGrupos.set(groupId, {
-            squad1: ['➢', '➢', '➢', '➢'],
-            squad2: ['➢', '➢', '➢', '➢'],
-            suplente: ['✔', '✔', '✔']
+            squad1: ['➤', '➤', '➤', '➤'],
+            squad2: ['➤', '➤', '➤', '➤'],
+            suplente: ['➤', '➤', '➤', '➤']
         });
     }
     return listasGrupos.get(groupId);
@@ -19,9 +19,9 @@ const getListasGrupo = (groupId) => {
 // Función para reiniciar las listas de un grupo específico
 const reiniciarListas = (groupId) => {
     listasGrupos.set(groupId, {
-        squad1: ['➢', '➢', '➢', '➢'],
-        squad2: ['➢', '➢', '➢', '➢'],
-        suplente: ['✔', '✔', '✔']
+        squad1: ['➤', '➤', '➤', '➤'],
+        squad2: ['➤', '➤', '➤', '➤'],
+        suplente: ['➤', '➤', '➤', '➤']
     });
 };
 
@@ -34,21 +34,29 @@ let handler = async (m, { conn }) => {
     if (msgText === '.listaff') {
         reiniciarListas(groupId);
         listas = getListasGrupo(groupId);
-        const texto = `*✅ Las listas han sido reiniciadas*
-
-MODALIDAD: CLK
-ROPA: verde
-
-Escuadra 1:
-${listas.squad1.map(p => `➡️ ${p}`).join('\n')}
-
-Escuadra 2:
-${listas.squad2.map(p => `➡️ ${p}`).join('\n')}
-
-SUPLENTE:
-${listas.suplente.map(p => `➡️ ${p}`).join('\n')}
-
-BOLLLLOBOT / MELDEXZZ.`
+        const texto = `╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
+│👑 ${listas.squad1[0]}
+│🥷🏻 ${listas.squad1[1]}
+│🥷🏻 ${listas.squad1[2]}
+│🥷🏻 ${listas.squad1[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
+│👑 ${listas.squad2[0]}
+│🥷🏻 ${listas.squad2[1]}
+│🥷🏻 ${listas.squad2[2]}
+│🥷🏻 ${listas.squad2[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗦𝗨𝗣𝗟𝗘𝗡𝗧𝗘𝗦
+│🥷🏻 ${listas.suplente[0]}
+│🥷🏻 ${listas.suplente[1]}
+│🥷🏻 ${listas.suplente[2]}
+│🥷🏻 ${listas.suplente[3]}
+╰─────────────╯
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`
 
         const buttons = [
             {
@@ -99,30 +107,26 @@ BOLLLLOBOT / MELDEXZZ.`
     const nombreUsuario = m.pushName || usuario;
     
     let squadType;
-    let titulo;
     let mentions = [];
     
     if (msgText === 'escuadra 1') {
         squadType = 'squad1';
-        titulo = 'Escuadra 1';
     } else if (msgText === 'escuadra 2') {
         squadType = 'squad2';
-        titulo = 'Escuadra 2';
     } else {
         squadType = 'suplente';
-        titulo = 'Suplente';
     }
     
     // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
         const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
         if (index !== -1) {
-            listas[key][index] = key === 'suplente' ? '✔' : '➢';
+            listas[key][index] = '➤';
         }
     });
     
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
-    const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
+    const libre = listas[squadType].findIndex(p => p === '➤');
     if (libre !== -1) {
         listas[squadType][libre] = `@${nombreUsuario}`;
         mentions.push(m.sender);
@@ -131,7 +135,7 @@ BOLLLLOBOT / MELDEXZZ.`
     // Recolectar todas las menciones de los usuarios en las listas
     Object.values(listas).forEach(squad => {
         squad.forEach(member => {
-            if (member !== '➢' && member !== '✔') {
+            if (member !== '➤') {
                 const userName = member.slice(1);
                 const userJid = Object.keys(m.message.extendedTextMessage?.contextInfo?.mentionedJid || {}).find(jid => 
                     jid.split('@')[0] === userName || 
@@ -142,22 +146,29 @@ BOLLLLOBOT / MELDEXZZ.`
         });
     });
 
-    const texto = `Tú
-${titulo}
-
-MODALIDAD: CLK
-ROPA: verde
-
-Escuadra 1:
-${listas.squad1.map(p => `➡️ ${p}`).join('\n')}
-
-Escuadra 2:
-${listas.squad2.map(p => `➡️ ${p}`).join('\n')}
-
-SUPLENTE:
-${listas.suplente.map(p => `➡️ ${p}`).join('\n')}
-
-BOLLLLOBOT / MELDEXZZ.`
+    const texto = `╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
+│👑 ${listas.squad1[0]}
+│🥷🏻 ${listas.squad1[1]}
+│🥷🏻 ${listas.squad1[2]}
+│🥷🏻 ${listas.squad1[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
+│👑 ${listas.squad2[0]}
+│🥷🏻 ${listas.squad2[1]}
+│🥷🏻 ${listas.squad2[2]}
+│🥷🏻 ${listas.squad2[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗦𝗨𝗣𝗟𝗘𝗡𝗧𝗘𝗦
+│🥷🏻 ${listas.suplente[0]}
+│🥷🏻 ${listas.suplente[1]}
+│🥷🏻 ${listas.suplente[2]}
+│🥷🏻 ${listas.suplente[3]}
+╰─────────────╯
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`
 
     const buttons = [
         {
@@ -219,13 +230,13 @@ export async function after(m, { conn }) {
         Object.keys(listas).forEach(key => {
             const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
             if (index !== -1) {
-                listas[key][index] = key === 'suplente' ? '✔' : '➢';
+                listas[key][index] = '➤';
             }
         });
 
         const squadType = id === 'escuadra1' ? 'squad1' : 
                         id === 'escuadra2' ? 'squad2' : 'suplente';
-        const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
+        const libre = listas[squadType].findIndex(p => p === '➤');
         
         if (libre !== -1) {
             listas[squadType][libre] = `@${nombreUsuario}`;
