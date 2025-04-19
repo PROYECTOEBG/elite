@@ -27,6 +27,14 @@ let handler = async (m, { conn }) => {
         titulo = 'Suplente';
     }
     
+    // Borrar al usuario de otras escuadras
+    Object.keys(listas).forEach(key => {
+        const index = listas[key].findIndex(p => p === `@${usuario}`);
+        if (index !== -1) {
+            listas[key][index] = key === 'suplente' ? '✔' : '➢';
+        }
+    });
+    
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
@@ -99,6 +107,14 @@ export async function after(m, { conn }) {
         const id = button.selectedButtonId;
         const numero = m.sender.split('@')[0];
         const tag = m.sender;
+
+        // Borrar al usuario de otras escuadras
+        Object.keys(listas).forEach(key => {
+            const index = listas[key].findIndex(p => p === `@${numero}`);
+            if (index !== -1) {
+                listas[key][index] = key === 'suplente' ? '✔' : '➢';
+            }
+        });
 
         const squadType = id === 'escuadra1' ? 'squad1' : 
                         id === 'escuadra2' ? 'squad2' : 'suplente';
