@@ -36,10 +36,7 @@ let handler = async (m, { conn, text, args }) => {
         const mensaje = msgText.substring(6).trim(); // Remover '.8vs8' del mensaje
         if (!mensaje) {
             await conn.sendMessage(m.chat, { 
-                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
-
-𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
-.8vs8 Actívense para la ranked 🎮` 
+                text: `🕓 𝗜𝗡𝗚𝗥𝗘𝗦𝗔 𝗨𝗡 𝗛𝗢𝗥𝗔𝗥𝗜𝗢.\n𝗘𝗷𝗲𝗺𝗽𝗹𝗼:\n.8vs8 4pm🇪🇨/3pm🇲🇽` 
             });
             return;
         }
@@ -108,7 +105,9 @@ let handler = async (m, { conn, text, args }) => {
 
 // Función para mostrar la lista
 async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = '') {
-    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''}
+    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''} 🗣️ 𝗜𝗡𝗗𝗜𝗖𝗔𝗖𝗜𝗢𝗡𝗘𝗦 :
+» Reglas y color se avisa al llenar este listado.
+
 ╭──────⚔──────╮
           8 𝗩𝗘𝗥𝗦𝗨𝗦 8
 ╰──────⚔──────╯
@@ -133,7 +132,7 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
 │🥷🏻 ${listas.suplente[2]}
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
-𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟`;
+©EliteBotGlobal 2023 `;
 
     const buttons = [
         {
