@@ -47,7 +47,8 @@ let handler = async (m, { conn, text, args }) => {
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
 
-        const texto = `*${mensaje}*
+        await conn.sendMessage(m.chat, {
+            text: `*${mensaje}*
 
 ╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
@@ -71,49 +72,13 @@ let handler = async (m, { conn, text, args }) => {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
-
-        const buttons = [
-            {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                    display_text: "Escuadra 1",
-                    id: "escuadra1"
-                })
-            },
-            {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                    display_text: "Escuadra 2",
-                    id: "escuadra2"
-                })
-            },
-            {
-                name: "quick_reply",
-                buttonParamsJson: JSON.stringify({
-                    display_text: "Suplente",
-                    id: "suplente"
-                })
-            }
-        ];
-
-        const mensajeWA = generateWAMessageFromContent(m.chat, {
-            viewOnceMessage: {
-                message: {
-                    messageContextInfo: {
-                        deviceListMetadata: {},
-                        mentionedJid: []
-                    },
-                    interactiveMessage: proto.Message.InteractiveMessage.create({
-                        body: { text: texto },
-                        footer: { text: "Selecciona una opción:" },
-                        nativeFlowMessage: { buttons }
-                    })
-                }
-            }
-        }, {});
-
-        await conn.relayMessage(m.chat, mensajeWA.message, { messageId: mensajeWA.key.id });
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`,
+            buttons: [
+                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+            ]
+        });
         return;
     }
 
@@ -123,7 +88,6 @@ let handler = async (m, { conn, text, args }) => {
     const nombreUsuario = m.pushName || usuario.split('@')[0];
     
     let squadType;
-    let mentions = [usuario];
     
     if (msgText.toLowerCase() === 'escuadra 1') {
         squadType = 'squad1';
@@ -135,7 +99,7 @@ let handler = async (m, { conn, text, args }) => {
     
     // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
-        const index = listas[key].findIndex(p => p === `@${nombreUsuario}`);
+        const index = listas[key].findIndex(p => p.includes(usuario));
         if (index !== -1) {
             listas[key][index] = '➤';
         }
@@ -144,16 +108,13 @@ let handler = async (m, { conn, text, args }) => {
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === '➤');
     if (libre !== -1) {
-        listas[squadType][libre] = `@${nombreUsuario}`;
+        listas[squadType][libre] = `@${usuario.split('@')[0]}`;
     }
 
     const mensajeGuardado = mensajesGrupos.get(groupId) || '';
-    await mostrarLista(conn, m.chat, listas, mentions, mensajeGuardado);
-}
-
-// Función para mostrar la lista
-async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
-    const texto = `${mensaje ? `*${mensaje}*\n\n` : ''}╭─────────────╮
+    
+    await conn.sendMessage(m.chat, {
+        text: `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -175,49 +136,14 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
-❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
-
-    const buttons = [
-        {
-            name: "quick_reply",
-            buttonParamsJson: JSON.stringify({
-                display_text: "Escuadra 1",
-                id: "escuadra1"
-            })
-        },
-        {
-            name: "quick_reply",
-            buttonParamsJson: JSON.stringify({
-                display_text: "Escuadra 2",
-                id: "escuadra2"
-            })
-        },
-        {
-            name: "quick_reply",
-            buttonParamsJson: JSON.stringify({
-                display_text: "Suplente",
-                id: "suplente"
-            })
-        }
-    ];
-
-    const mensaje = generateWAMessageFromContent(chat, {
-        viewOnceMessage: {
-            message: {
-                messageContextInfo: {
-                    deviceListMetadata: {},
-                    mentionedJid: mentions
-                },
-                interactiveMessage: proto.Message.InteractiveMessage.create({
-                    body: { text: texto },
-                    footer: { text: "Selecciona una opción:" },
-                    nativeFlowMessage: { buttons }
-                })
-            }
-        }
-    }, {});
-
-    await conn.relayMessage(chat, mensaje.message, { messageId: mensaje.key.id });
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`,
+        mentions: [usuario],
+        buttons: [
+            {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+            {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+            {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+        ]
+    });
 }
 
 // Manejo de respuestas a botones
@@ -230,11 +156,10 @@ export async function after(m, { conn }) {
         const groupId = m.chat;
         let listas = getListasGrupo(groupId);
         const usuario = m.sender;
-        const nombreUsuario = m.pushName || usuario.split('@')[0];
-
+        
         // Borrar al usuario de otras escuadras
         Object.keys(listas).forEach(key => {
-            const index = listas[key].findIndex(p => p === `@${nombreUsuario}`);
+            const index = listas[key].findIndex(p => p.includes(usuario));
             if (index !== -1) {
                 listas[key][index] = '➤';
             }
@@ -245,12 +170,43 @@ export async function after(m, { conn }) {
         const libre = listas[squadType].findIndex(p => p === '➤');
         
         if (libre !== -1) {
-            listas[squadType][libre] = `@${nombreUsuario}`;
+            listas[squadType][libre] = `@${usuario.split('@')[0]}`;
         }
         
         // Actualizar la lista después de cada acción
         const mensajeGuardado = mensajesGrupos.get(groupId) || '';
-        await mostrarLista(conn, m.chat, listas, [usuario], mensajeGuardado);
+        
+        await conn.sendMessage(m.chat, {
+            text: `${mensajeGuardado ? `*${mensajeGuardado}*\n\n` : ''}╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
+│👑 ${listas.squad1[0]}
+│🥷🏻 ${listas.squad1[1]}
+│🥷🏻 ${listas.squad1[2]}
+│🥷🏻 ${listas.squad1[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
+│👑 ${listas.squad2[0]}
+│🥷🏻 ${listas.squad2[1]}
+│🥷🏻 ${listas.squad2[2]}
+│🥷🏻 ${listas.squad2[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗦𝗨𝗣𝗟𝗘𝗡𝗧𝗘𝗦
+│🥷🏻 ${listas.suplente[0]}
+│🥷🏻 ${listas.suplente[1]}
+│🥷🏻 ${listas.suplente[2]}
+│🥷🏻 ${listas.suplente[3]}
+╰─────────────╯
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`,
+            mentions: [usuario],
+            buttons: [
+                {buttonId: 'escuadra1', buttonText: {displayText: 'Escuadra 1'}, type: 1},
+                {buttonId: 'escuadra2', buttonText: {displayText: 'Escuadra 2'}, type: 1},
+                {buttonId: 'suplente', buttonText: {displayText: 'Suplente'}, type: 1}
+            ]
+        });
     } catch (error) {
         console.error('Error en after:', error);
         await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
