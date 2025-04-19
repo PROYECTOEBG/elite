@@ -8,14 +8,20 @@ let listas = {
   suplente: ['✔', '✔', '✔']
 };
 
+// Almacenar la relación entre nombres y números
+let userMapping = new Map();
+
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
     if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2' && msgText !== 'suplente') return
     
     const usuario = m.sender.split('@')[0];
     const nombreUsuario = m.pushName || usuario;
+    userMapping.set(nombreUsuario, usuario);
+    
     let squadType;
     let titulo;
+    let mentions = [];
     
     if (msgText === 'escuadra 1') {
         squadType = 'squad1';
@@ -40,7 +46,21 @@ let handler = async (m, { conn }) => {
     const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
         listas[squadType][libre] = `@${nombreUsuario}`;
+        mentions.push(usuario + '@s.whatsapp.net');
     }
+
+    // Recolectar todas las menciones
+    Object.values(listas).forEach(squad => {
+        squad.forEach(member => {
+            if (member !== '➢' && member !== '✔') {
+                const userName = member.slice(1); // Remover el @
+                const userNumber = userMapping.get(userName);
+                if (userNumber) {
+                    mentions.push(userNumber + '@s.whatsapp.net');
+                }
+            }
+        });
+    });
 
     const texto = `Tú
 ${titulo}
@@ -86,7 +106,10 @@ BOLLLLOBOT / MELDEXZZ.`
     const mensaje = generateWAMessageFromContent(m.chat, {
         viewOnceMessage: {
             message: {
-                messageContextInfo: { deviceListMetadata: {} },
+                messageContextInfo: { 
+                    deviceListMetadata: {},
+                    mentionedJid: mentions
+                },
                 interactiveMessage: proto.Message.InteractiveMessage.create({
                     body: { text: texto },
                     footer: { text: "Selecciona una opción:" },
@@ -109,6 +132,7 @@ export async function after(m, { conn }) {
         const numero = m.sender.split('@')[0];
         const nombreUsuario = m.pushName || numero;
         const tag = m.sender;
+        userMapping.set(nombreUsuario, numero);
 
         // Borrar al usuario de otras escuadras
         Object.keys(listas).forEach(key => {
