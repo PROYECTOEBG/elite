@@ -8,12 +8,83 @@ let listas = {
   suplente: ['✔', '✔', '✔']
 };
 
+// Función para reiniciar las listas
+const reiniciarListas = () => {
+  listas.squad1 = ['➢', '➢', '➢', '➢'];
+  listas.squad2 = ['➢', '➢', '➢', '➢'];
+  listas.suplente = ['✔', '✔', '✔'];
+};
+
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
+    
+    // Manejar el comando .listaff
+    if (msgText === '.listaff') {
+        reiniciarListas();
+        const texto = `*✅ Las listas han sido reiniciadas*
+
+MODALIDAD: CLK
+ROPA: verde
+
+Escuadra 1:
+${listas.squad1.map(p => `➡️ ${p}`).join('\n')}
+
+Escuadra 2:
+${listas.squad2.map(p => `➡️ ${p}`).join('\n')}
+
+SUPLENTE:
+${listas.suplente.map(p => `➡️ ${p}`).join('\n')}
+
+BOLLLLOBOT / MELDEXZZ.`
+
+        const buttons = [
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "Escuadra 1",
+                    id: "escuadra1"
+                })
+            },
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "Escuadra 2",
+                    id: "escuadra2"
+                })
+            },
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "Suplente",
+                    id: "suplente"
+                })
+            }
+        ];
+
+        const mensaje = generateWAMessageFromContent(m.chat, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: {
+                        deviceListMetadata: {}
+                    },
+                    interactiveMessage: proto.Message.InteractiveMessage.create({
+                        body: { text: texto },
+                        footer: { text: "Selecciona una opción:" },
+                        nativeFlowMessage: { buttons }
+                    })
+                }
+            }
+        }, {});
+
+        await conn.relayMessage(m.chat, mensaje.message, { messageId: mensaje.key.id });
+        return;
+    }
+
     if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2' && msgText !== 'suplente') return
     
     const usuario = m.sender.split('@')[0];
     const nombreUsuario = m.pushName || usuario;
+    
     let squadType;
     let titulo;
     let mentions = [];
@@ -48,7 +119,7 @@ let handler = async (m, { conn }) => {
     Object.values(listas).forEach(squad => {
         squad.forEach(member => {
             if (member !== '➢' && member !== '✔') {
-                const userName = member.slice(1); // Remover el @
+                const userName = member.slice(1);
                 const userJid = Object.keys(m.message.extendedTextMessage?.contextInfo?.mentionedJid || {}).find(jid => 
                     jid.split('@')[0] === userName || 
                     conn.getName(jid) === userName
@@ -162,7 +233,7 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^(escuadra [12]|suplente)$/i
+handler.customPrefix = /^(escuadra [12]|suplente|\.listaff)$/i
 handler.command = new RegExp
 handler.group = true
 
