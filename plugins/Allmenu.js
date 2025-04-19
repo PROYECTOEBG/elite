@@ -1,7 +1,6 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-// Estado global de las listas
 let listas = {
     escuadra1: ['➢', '➢', '➢', '➢'],
     escuadra2: ['➢', '➢', '➢', '➢'],
@@ -9,36 +8,6 @@ let listas = {
 };
 
 const handler = async (m, { conn }) => {
-    try {
-        await enviarLista(conn, m);
-    } catch (error) {
-        console.error('Error en handler:', error);
-        await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al procesar tu solicitud' });
-    }
-};
-
-// Función para manejar solicitudes de escuadra
-async function handleSquadRequest(conn, m, squadType) {
-    const usuario = m.sender.split('@')[0];
-    const tag = m.sender;
-    const squadName = squadType === 'escuadra1' ? 'Escuadra 1' : squadType === 'escuadra2' ? 'Escuadra 2' : 'Suplente';
-    
-    const libre = listas[squadType].findIndex(p => p === '➢' || p === '✓');
-    
-    if (libre !== -1) {
-        listas[squadType][libre] = `@${usuario}`;
-        // Enviar mensaje con el formato actualizado
-        await enviarLista(conn, m, true);
-    } else {
-        await conn.sendMessage(m.chat, {
-            text: `⚠️ ${squadName} está llena`,
-            mentions: [tag]
-        });
-    }
-}
-
-// Función para enviar la lista interactiva
-async function enviarLista(conn, m, conMencion = false) {
     try {
         const texto = `EliteBot
 MODALIDAD: CLK
@@ -63,50 +32,63 @@ SUPLENTE:
 
 BOLLLOBOT / MELDEXZZ.`;
 
-        // Recopilar todas las menciones
         const mentions = [...listas.escuadra1, ...listas.escuadra2, ...listas.suplente]
             .filter(id => id !== '➢' && id !== '✓')
             .map(id => id.replace('@', '') + '@s.whatsapp.net');
 
-        // Enviar el mensaje con las menciones
-        await conn.sendMessage(m.chat, {
-            text: texto,
-            mentions: mentions
-        });
-
-        // Enviar los botones
-        const buttons = [
-            { buttonId: 'escuadra1', buttonText: { displayText: 'Escuadra 1' }, type: 1 },
-            { buttonId: 'escuadra2', buttonText: { displayText: 'Escuadra 2' }, type: 1 },
-            { buttonId: 'suplente', buttonText: { displayText: 'Suplente' }, type: 1 },
-            { buttonId: 'limpiar', buttonText: { displayText: 'Limpiar lista' }, type: 1 }
+        const templateButtons = [
+            {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'escuadra1'}},
+            {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'escuadra2'}},
+            {index: 3, quickReplyButton: {displayText: 'Suplente', id: 'suplente'}},
+            {index: 4, quickReplyButton: {displayText: 'Limpiar lista', id: 'limpiar'}}
         ];
 
-        const buttonMessage = {
-            text: 'Selecciona una opción:',
-            footer: 'EliteBot',
-            buttons: buttons,
-            headerType: 1
+        const templateMessage = {
+            text: texto,
+            footer: 'Selecciona una opción:',
+            templateButtons: templateButtons,
+            mentions: mentions
         };
 
-        await conn.sendMessage(m.chat, buttonMessage);
+        await conn.sendMessage(m.chat, templateMessage);
 
     } catch (error) {
-        console.error('Error en enviarLista:', error);
-        throw error;
+        console.error('Error:', error);
+        await m.reply('❌ Error al mostrar la lista');
+    }
+};
+
+async function handleSquadRequest(conn, m, squadType) {
+    const usuario = m.sender.split('@')[0];
+    const tag = m.sender;
+    const squadName = squadType === 'escuadra1' ? 'Escuadra 1' : squadType === 'escuadra2' ? 'Escuadra 2' : 'Suplente';
+    
+    const libre = listas[squadType].findIndex(p => p === '➢' || p === '✓');
+    
+    if (libre !== -1) {
+        listas[squadType][libre] = `@${usuario}`;
+        await handler(m, { conn });
+    } else {
+        await conn.sendMessage(m.chat, {
+            text: `⚠️ ${squadName} está llena`,
+            mentions: [tag]
+        });
     }
 }
 
-// Manejo de respuestas a botones
 export async function after(m, { conn }) {
+    if (!m.message) return;
+    
+    const button = m?.message?.templateButtonReplyMessage || m?.message?.buttonsResponseMessage;
+    if (!button) return;
+
+    const id = button.selectedId || button.selectedButtonId;
+    if (!id) return;
+
+    const numero = m.sender.split('@')[0];
+    const tag = m.sender;
+
     try {
-        const button = m?.message?.buttonsResponseMessage;
-        if (!button) return;
-
-        const id = button.selectedButtonId;
-        const numero = m.sender.split('@')[0];
-        const tag = m.sender;
-
         if (id === 'limpiar') {
             listas = {
                 escuadra1: ['➢', '➢', '➢', '➢'],
@@ -117,7 +99,7 @@ export async function after(m, { conn }) {
                 text: `♻️ Listas reiniciadas por @${numero}`,
                 mentions: [tag]
             });
-            await enviarLista(conn, m);
+            await handler(m, { conn });
         } else {
             await handleSquadRequest(conn, m, id);
         }
