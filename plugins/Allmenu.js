@@ -1,9 +1,8 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-// Estado inicial IDÉNTICO a tu imagen
 let lists = {
-  squad1: ['EliteBot', 'Ñaña', 'Tú', 'dado ...'],
+  squad1: ['EliteBot', 'Ñaña', '➢', '➢'],
   squad2: ['➢', '➢', '➢', '➢'],
   suplente: ['✔', '✔', '✔']
 };
@@ -13,14 +12,14 @@ const handler = async (m, { conn }) => {
 };
 
 async function sendListWithButtons(conn, chatId, userAdded = null, listType = null) {
-  // Actualizar lista si hay un nuevo usuario
   if (userAdded && listType) {
     const list = lists[listType];
     const emptyIndex = list.findIndex(item => item === '➢' || item === '✔');
-    if (emptyIndex !== -1) list[emptyIndex] = `@${userAdded}`;
+    if (emptyIndex !== -1) {
+      list[emptyIndex] = `@${userAdded}`;
+    }
   }
 
-  // Texto FORMATEADO como en tu captura
   const listText = 
 `*MODALIDAD:* CLK  
 *ROPA:* verde  
@@ -36,7 +35,6 @@ ${lists.suplente.map(p => `➡ ${p}`).join('\n')}
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  // Crear mensaje interactivo CON BOTONES
   const msg = generateWAMessageFromContent(chatId, {
     viewOnceMessage: {
       message: {
@@ -46,7 +44,7 @@ ${lists.suplente.map(p => `➡ ${p}`).join('\n')}
           footer: { text: "Selecciona una opción:" },
           nativeFlowMessage: {
             buttons: [
-              { 
+              {
                 name: "quick_reply",
                 buttonParamsJson: JSON.stringify({
                   display_text: "Escuadra 1",
@@ -84,7 +82,6 @@ ${lists.suplente.map(p => `➡ ${p}`).join('\n')}
   await conn.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id });
 }
 
-// Manejar interacciones DE FORMA CONFIABLE
 export async function after(m, { conn }) {
   if (!m.message?.buttonsResponseMessage) return;
 
@@ -92,18 +89,20 @@ export async function after(m, { conn }) {
   const user = m.pushName || m.sender.split('@')[0];
 
   if (selectedButtonId === 'limpiar') {
-    // Resetear a estado INICIAL
     lists = {
-      squad1: ['EliteBot', 'Ñaña', 'Tú', 'dado ...'],
+      squad1: ['EliteBot', 'Ñaña', '➢', '➢'],
       squad2: ['➢', '➢', '➢', '➢'],
       suplente: ['✔', '✔', '✔']
     };
-    await conn.sendMessage(m.chat, { text: `♻️ Listas reiniciadas por @${user}` }, { quoted: m });
+    await conn.sendMessage(m.chat, {
+      text: `♻️ Listas reiniciadas por @${user}`,
+      mentions: [m.sender]
+    }, { quoted: m });
   } else {
-    // Actualizar y reenviar lista
     await sendListWithButtons(conn, m.chat, user, selectedButtonId);
     await conn.sendMessage(m.chat, {
-      text: `✅ @${user} agregado a ${selectedButtonId.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}`
+      text: `✅ @${user} agregado a ${selectedButtonId.replace('squad', 'Escuadra ').replace('suplente', 'Suplente')}`,
+      mentions: [m.sender]
     }, { quoted: m });
   }
 }
