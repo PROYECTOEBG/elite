@@ -1,13 +1,52 @@
+import { proto } from '@whiskeysockets/baileys';
 
+let escuadras = {
+  squad1: [],
+  squad2: [],
+  suplente: []
 };
 
 let handler = async (m, { conn }) => {
-  const texto = generarTexto();
-  await m.reply(texto + '\n\nUsa los comandos:\n.squad1 - Unirse a Escuadra 1\n.squad2 - Unirse a Escuadra 2\n.suplente - Ser suplente\n.limpiar - Limpiar lista');
-};
+    try {
+        await m.reply(`*EliteBot*
+🎮 *MODALIDAD:* CLK  
+👕 *ROPA:* verde  
 
-handler.command = /^(listaff|lista)$/i;
-export default handler;
+*Escuadra 1:*  
+➡ Vacío
+➡ Vacío
+➡ Vacío
+➡ Vacío
+
+*Escuadra 2:*  
+➡ Vacío
+➡ Vacío
+➡ Vacío
+➡ Vacío
+
+*SUPLENTE:*  
+➡ Vacío
+➡ Vacío
+➡ Vacío
+
+*BOLLLOBOT / MELDEXZZ.*
+
+Usa:
+.squad1 - Unirte a Escuadra 1
+.squad2 - Unirte a Escuadra 2
+.suplente - Ser suplente
+.limpiar - Limpiar lista`);
+    } catch (e) {
+        console.error('Error:', e);
+        await m.reply('Ocurrió un error');
+    }
+}
+
+handler.help = ['listaff']
+handler.tags = ['main']
+handler.command = /^(listaff|lista)$/i
+
+export default handler
 
 // Comando para Escuadra 1
 let handler_squad1 = async (m, { conn }) => {
