@@ -32,11 +32,7 @@ let handler = async (m, { conn, usedPrefix }) => {
         headerType: 1
     };
 
-    const message = {
-        buttonsMessage: buttonMessage
-    };
-
-    await conn.sendMessage(m.chat, message, { quoted: fkontak });
+    await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage, { quoted: fkontak });
 }
 
 // En handler.js (en la función before)
@@ -87,11 +83,7 @@ export async function before(m, { conn, usedPrefix, text, participants }) {
                 headerType: 1
             };
 
-            const message = {
-                buttonsMessage: buttonMessage
-            };
-
-            await conn.sendMessage(m.chat, message);
+            await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage);
             return true;
         }
     }
