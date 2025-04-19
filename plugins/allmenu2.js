@@ -47,16 +47,8 @@ let handler = async (m, { conn, text, args }) => {
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
 
-        // Enviar el mensaje primero
-        await conn.sendMessage(m.chat, { 
-            text: `*${mensaje}*`,
-            contextInfo: {
-                mentionedJid: []
-            }
-        });
-
-        // Luego mostrar la lista
-        await mostrarLista(conn, m.chat, listas, []);
+        // Mostrar la lista con el mensaje combinado
+        await mostrarLista(conn, m.chat, listas, [], mensaje);
         return;
     }
 
@@ -114,13 +106,12 @@ let handler = async (m, { conn, text, args }) => {
             }
         });
     }
-    await mostrarLista(conn, m.chat, listas, mentions);
+    await mostrarLista(conn, m.chat, listas, mentions, nombreUsuario);
 }
 
 // Función para mostrar la lista
-async function mostrarLista(conn, chat, listas, mentions = []) {
-    const texto = `
-   
+async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = '') {
+    const texto = `${mensajeUsuario ? `*${mensajeUsuario}*\n\n` : ''}
     ╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
@@ -228,15 +219,7 @@ export async function after(m, { conn }) {
         
         // Actualizar la lista después de cada acción
         const mensajeGuardado = mensajesGrupos.get(groupId);
-        if (mensajeGuardado) {
-            await conn.sendMessage(m.chat, { 
-                text: `*${mensajeGuardado}*`,
-                contextInfo: {
-                    mentionedJid: []
-                }
-            });
-        }
-        await mostrarLista(conn, m.chat, listas, [tag]);
+        await mostrarLista(conn, m.chat, listas, [tag], mensajeGuardado);
     } catch (error) {
         console.error('Error en after:', error);
         await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
