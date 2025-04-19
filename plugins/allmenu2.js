@@ -30,7 +30,7 @@ let handler = async (m, { conn }) => {
     
     // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
-        const index = listas[key].findIndex(p => p.includes(`@${usuario}`));
+        const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
         if (index !== -1) {
             listas[key][index] = key === 'suplente' ? '✔' : '➢';
         }
@@ -39,7 +39,7 @@ let handler = async (m, { conn }) => {
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
-        listas[squadType][libre] = `@${usuario} (${nombreUsuario})`;
+        listas[squadType][libre] = `@${nombreUsuario}`;
     }
 
     const texto = `Tú
@@ -112,7 +112,7 @@ export async function after(m, { conn }) {
 
         // Borrar al usuario de otras escuadras
         Object.keys(listas).forEach(key => {
-            const index = listas[key].findIndex(p => p.includes(`@${numero}`));
+            const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
             if (index !== -1) {
                 listas[key][index] = key === 'suplente' ? '✔' : '➢';
             }
@@ -123,7 +123,7 @@ export async function after(m, { conn }) {
         const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
         
         if (libre !== -1) {
-            listas[squadType][libre] = `@${numero} (${nombreUsuario})`;
+            listas[squadType][libre] = `@${nombreUsuario}`;
             await conn.sendMessage(m.chat, {
                 text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
                 mentions: [tag]
