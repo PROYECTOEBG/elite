@@ -1,117 +1,112 @@
-import { listas } from './listaff.js'
-
-let handler = async (m, { conn, command, usedPrefix }) => {
+let handler = async (m, { conn, command, text }) => {
     // Obtener el usuario que envió el comando
-    const usuario = m.sender.split('@')[0];
-    const tag = m.sender;
+    const usuario = m.sender.split('@')[0]
+    const tag = m.sender
 
-    // Determinar qué escuadra basado en el comando
-    let squadType, squadName;
-    
-    // Remover el prefix del comando si existe
-    command = command.replace(/^[\.!#\$\/%]/gi, '');
-    
-    if (command === 'escuadra1') {
-        squadType = 'escuadra1';
-        squadName = 'Escuadra 1';
-    } else if (command === 'escuadra2') {
-        squadType = 'escuadra2';
-        squadName = 'Escuadra 2';
-    } else if (command === 'suplente') {
-        squadType = 'suplente';
-        squadName = 'Suplente';
-    } else if (command === 'limpiarlista') {
-        // Reiniciar todas las listas
-        Object.assign(listas, {
-            escuadra1: ['➢', '➢', '➢', '➢'],
-            escuadra2: ['➢', '➢', '➢', '➢'],
-            suplente: ['✔', '✔', '✔']
-        });
-        await conn.sendMessage(m.chat, {
-            text: `♻️ Listas reiniciadas por @${usuario}`,
-            mentions: [tag]
-        });
+    // Variables globales para las listas
+    global.escuadra1 = global.escuadra1 || ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
+    global.escuadra2 = global.escuadra2 || ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
+    global.suplente = global.suplente || ['✓', '✓', '✓']
 
-        // Mostrar lista actualizada
-        await mostrarLista(conn, m.chat);
-        return;
-    }
-
-    // Buscar espacio libre en la escuadra
-    const libre = listas[squadType].findIndex(p => p === '➢' || p === '✔');
-    
-    if (libre !== -1) {
-        // Agregar usuario a la escuadra
-        listas[squadType][libre] = `@${usuario}`;
-        
-        // Enviar mensaje de confirmación
-        await conn.sendMessage(m.chat, {
-            text: `✅ @${usuario} agregado a ${squadName}`,
-            mentions: [tag]
-        });
-
-        // Mostrar lista actualizada
-        await mostrarLista(conn, m.chat);
-    } else {
-        // Enviar mensaje si la escuadra está llena
-        await conn.sendMessage(m.chat, {
-            text: `⚠️ ${squadName} está llena`,
-            mentions: [tag]
-        });
-    }
-}
-
-async function mostrarLista(conn, chat) {
-    const texto = `EliteBot
+    // Función para mostrar la lista actualizada
+    const mostrarLista = async () => {
+        const listMessage = {
+            text: `EliteBot
 MODALIDAD: CLK
 ROPA: verde
 
 Escuadra 1:
-${listas.escuadra1.map(p => `👤 ➢ ${p}`).join('\n')}
+👤 ${escuadra1[0]}
+👤 ${escuadra1[1]}
+👤 ${escuadra1[2]}
+👤 ${escuadra1[3]}
 
 Escuadra 2:
-${listas.escuadra2.map(p => `👤 ➢ ${p}`).join('\n')}
+👤 ${escuadra2[0]}
+👤 ${escuadra2[1]}
+👤 ${escuadra2[2]}
+👤 ${escuadra2[3]}
 
 SUPLENTE:
-${listas.suplente.map(p => `👤 ${p}`).join('\n')}
+👤 ${suplente[0]}
+👤 ${suplente[1]}
+👤 ${suplente[2]}
 
-BOLLLOBOT / MELDEXZZ.`;
-
-    const buttons = [
-        {
-            buttonId: 'escuadra1',
-            buttonText: { displayText: 'Escuadra 1' },
-            type: 1
-        },
-        {
-            buttonId: 'escuadra2',
-            buttonText: { displayText: 'Escuadra 2' },
-            type: 1
-        },
-        {
-            buttonId: 'suplente',
-            buttonText: { displayText: 'Suplente' },
-            type: 1
-        },
-        {
-            buttonId: 'limpiarlista',
-            buttonText: { displayText: 'Limpiar lista' },
-            type: 1
+BOLLLOBOT / MELDEXZZ.`,
+            footer: "Selecciona una opción:",
+            title: null,
+            buttonText: "Click Aquí",
+            sections: [{
+                title: "BOLLLOBOT / MELDEXZZ.",
+                rows: [
+                    {title: "Escuadra 1", rowId: "escuadra1"},
+                    {title: "Escuadra 2", rowId: "escuadra2"},
+                    {title: "Suplente", rowId: "suplente"},
+                    {title: "Limpiar lista", rowId: "limpiarlista"}
+                ]
+            }]
         }
-    ];
 
-    const buttonMessage = {
-        text: texto,
-        footer: 'Selecciona una opción:',
-        buttons: buttons,
-        headerType: 1
-    };
+        await conn.sendMessage(m.chat, listMessage)
+    }
 
-    await conn.sendMessage(chat, buttonMessage);
+    // Manejar comandos
+    if (command === 'escuadra1') {
+        let libre = escuadra1.findIndex(p => p === '➢ ➢')
+        if (libre !== -1) {
+            escuadra1[libre] = `@${usuario}`
+            await conn.sendMessage(m.chat, { 
+                text: `✅ @${usuario} agregado a Escuadra 1`, 
+                mentions: [tag] 
+            })
+            await mostrarLista()
+        } else {
+            await conn.sendMessage(m.chat, { 
+                text: `⚠️ Escuadra 1 está llena`, 
+                mentions: [tag] 
+            })
+        }
+    } else if (command === 'escuadra2') {
+        let libre = escuadra2.findIndex(p => p === '➢ ➢')
+        if (libre !== -1) {
+            escuadra2[libre] = `@${usuario}`
+            await conn.sendMessage(m.chat, { 
+                text: `✅ @${usuario} agregado a Escuadra 2`, 
+                mentions: [tag] 
+            })
+            await mostrarLista()
+        } else {
+            await conn.sendMessage(m.chat, { 
+                text: `⚠️ Escuadra 2 está llena`, 
+                mentions: [tag] 
+            })
+        }
+    } else if (command === 'suplente') {
+        let libre = suplente.findIndex(p => p === '✓')
+        if (libre !== -1) {
+            suplente[libre] = `@${usuario}`
+            await conn.sendMessage(m.chat, { 
+                text: `✅ @${usuario} agregado a Suplente`, 
+                mentions: [tag] 
+            })
+            await mostrarLista()
+        } else {
+            await conn.sendMessage(m.chat, { 
+                text: `⚠️ Lista de suplentes llena`, 
+                mentions: [tag] 
+            })
+        }
+    } else if (command === 'limpiarlista') {
+        global.escuadra1 = ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
+        global.escuadra2 = ['➢ ➢', '➢ ➢', '➢ ➢', '➢ ➢']
+        global.suplente = ['✓', '✓', '✓']
+        await conn.sendMessage(m.chat, { 
+            text: `♻️ Listas reiniciadas por @${usuario}`, 
+            mentions: [tag] 
+        })
+        await mostrarLista()
+    }
 }
 
-handler.help = ['escuadra1', 'escuadra2', 'suplente', 'limpiarlista']
-handler.tags = ['main']
-handler.command = /^(escuadra1|escuadra2|suplente|limpiarlista)$/i
-
+handler.command = ['escuadra1', 'escuadra2', 'suplente', 'limpiarlista']
 export default handler
