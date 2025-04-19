@@ -1,11 +1,11 @@
 import { listas } from './listaff.js'
 
-let handler = async (m, { conn }) => {
+let handler = async (m, { conn, text, command }) => {
     const usuario = m.sender.split('@s.whatsapp.net')[0]
     const tag = m.sender
-    const comando = m.text.toLowerCase().trim()
+    const comando = (text || '').toLowerCase()
 
-    if (comando.includes('escuadra 1') || comando.includes('escuadra1')) {
+    if (command == 'escuadra1' || command == 'escuadra 1') {
         if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
             m.reply('Ya estás en una escuadra')
             return
@@ -24,7 +24,7 @@ let handler = async (m, { conn }) => {
         })
     }
     
-    else if (comando.includes('escuadra 2') || comando.includes('escuadra2')) {
+    else if (command == 'escuadra2' || command == 'escuadra 2') {
         if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
             m.reply('Ya estás en una escuadra')
             return
@@ -43,7 +43,7 @@ let handler = async (m, { conn }) => {
         })
     }
     
-    else if (comando.includes('suplente')) {
+    else if (command == 'suplente') {
         if (listas.squad1.includes(`@${usuario}`) || listas.squad2.includes(`@${usuario}`) || listas.suplente.includes(`@${usuario}`)) {
             m.reply('Ya estás en una escuadra')
             return
@@ -62,7 +62,7 @@ let handler = async (m, { conn }) => {
         })
     }
     
-    else if (comando.includes('limpiar lista') || comando.includes('limpiarlista')) {
+    else if (command == 'limpiarlista' || command == 'limpiar lista') {
         listas.squad1 = ['➢', '➢', '➢', '➢']
         listas.squad2 = ['➢', '➢', '➢', '➢']
         listas.suplente = ['✔', '✔', '✔']
@@ -74,8 +74,7 @@ let handler = async (m, { conn }) => {
     }
 }
 
-handler.customPrefix = /escuadra 1|escuadra1|escuadra 2|escuadra2|suplente|limpiar lista|limpiarlista/i
-handler.command = new RegExp
+handler.command = /^(escuadra1|escuadra 1|escuadra2|escuadra 2|suplente|limpiarlista|limpiar lista)$/i
 handler.tags = ['main']
 
 export default handler
