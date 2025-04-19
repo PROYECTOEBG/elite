@@ -1,69 +1,47 @@
-import pkg from '@whiskeysockets/baileys';
-const { generateWAMessageFromContent, proto } = pkg;
-
-// Estado global de las listas (exportado para compartir)
-export let listas = {
-    escuadra1: ['➢', '➢', '➢', '➢'],
-    escuadra2: ['➢', '➢', '➢', '➢'],
-    suplente: ['✔', '✔', '✔']
-};
-
 let handler = async (m, { conn }) => {
-    try {
-        const texto = `EliteBot
+    const sections = [
+        {
+            title: "BOLLLOBOT / MELDEXZZ.",
+            rows: [
+                {title: "Escuadra 1", rowId: "escuadra1", description: "Unirse a Escuadra 1"},
+                {title: "Escuadra 2", rowId: "escuadra2", description: "Unirse a Escuadra 2"},
+                {title: "Suplente", rowId: "suplente", description: "Unirse como Suplente"},
+                {title: "Limpiar lista", rowId: "limpiarlista", description: "Reiniciar todas las listas"}
+            ]
+        }
+    ]
+
+    const listMessage = {
+        text: `EliteBot
 MODALIDAD: CLK
 ROPA: verde
 
 Escuadra 1:
-${listas.escuadra1.map(p => `👤 ➢ ${p}`).join('\n')}
+👤 ➢ ➢
+👤 ➢ ➢
+👤 ➢ ➢
+👤 ➢ ➢
 
 Escuadra 2:
-${listas.escuadra2.map(p => `👤 ➢ ${p}`).join('\n')}
+👤 ➢ ➢
+👤 ➢ ➢
+👤 ➢ ➢
+👤 ➢ ➢
 
 SUPLENTE:
-${listas.suplente.map(p => `👤 ${p}`).join('\n')}
+👤 ✓
+👤 ✓
+👤 ✓
 
-BOLLLOBOT / MELDEXZZ.`;
-
-        const buttons = [
-            {
-                buttonId: 'escuadra1',
-                buttonText: { displayText: 'Escuadra 1' },
-                type: 1
-            },
-            {
-                buttonId: 'escuadra2',
-                buttonText: { displayText: 'Escuadra 2' },
-                type: 1
-            },
-            {
-                buttonId: 'suplente',
-                buttonText: { displayText: 'Suplente' },
-                type: 1
-            },
-            {
-                buttonId: 'limpiarlista',
-                buttonText: { displayText: 'Limpiar lista' },
-                type: 1
-            }
-        ];
-
-        const buttonMessage = {
-            text: texto,
-            footer: 'Selecciona una opción:',
-            buttons: buttons,
-            headerType: 1
-        };
-
-        await conn.sendMessage(m.chat, buttonMessage);
-    } catch (error) {
-        console.error('Error:', error);
-        await m.reply('❌ Error al mostrar la lista');
+BOLLLOBOT / MELDEXZZ.`,
+        footer: "Selecciona una opción:",
+        title: null,
+        buttonText: "Click Aquí",
+        sections
     }
-};
 
-handler.help = ['listaff']
-handler.tags = ['main']
-handler.command = /^listaff$/i
+    await conn.sendMessage(m.chat, listMessage)
+}
 
+handler.command = ['listaff']
 export default handler
