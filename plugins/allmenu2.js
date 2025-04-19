@@ -33,9 +33,7 @@ Escuadra 2:
 ${listas.squad2.map(p => `➡️ ${p}`).join('\n')}
 
 SUPLENTE:
-${listas.suplente.map(p => `➡️ ${p}`).join('\n')}
-
-BOLLLLOBOT / MELDEXZZ.`
+${listas.suplente.map(p => `➡️ ${p}`).join('\n')}`
 
         const buttons = [
             {
