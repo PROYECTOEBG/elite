@@ -8,17 +8,12 @@ let listas = {
   suplente: ['✔', '✔', '✔']
 };
 
-// Almacenar la relación entre nombres y números
-let userMapping = new Map();
-
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
     if (msgText !== 'escuadra 1' && msgText !== 'escuadra 2' && msgText !== 'suplente') return
     
     const usuario = m.sender.split('@')[0];
     const nombreUsuario = m.pushName || usuario;
-    userMapping.set(nombreUsuario, usuario);
-    
     let squadType;
     let titulo;
     let mentions = [];
@@ -36,7 +31,7 @@ let handler = async (m, { conn }) => {
     
     // Borrar al usuario de otras escuadras
     Object.keys(listas).forEach(key => {
-        const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
+        const index = listas[key].findIndex(p => p.includes(`@${usuario}`));
         if (index !== -1) {
             listas[key][index] = key === 'suplente' ? '✔' : '➢';
         }
@@ -45,22 +40,9 @@ let handler = async (m, { conn }) => {
     // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
     const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
     if (libre !== -1) {
-        listas[squadType][libre] = `@${nombreUsuario}`;
-        mentions.push(usuario + '@s.whatsapp.net');
+        listas[squadType][libre] = `@${usuario}`;
+        mentions.push(m.sender);
     }
-
-    // Recolectar todas las menciones
-    Object.values(listas).forEach(squad => {
-        squad.forEach(member => {
-            if (member !== '➢' && member !== '✔') {
-                const userName = member.slice(1); // Remover el @
-                const userNumber = userMapping.get(userName);
-                if (userNumber) {
-                    mentions.push(userNumber + '@s.whatsapp.net');
-                }
-            }
-        });
-    });
 
     const texto = `Tú
 ${titulo}
@@ -103,13 +85,15 @@ BOLLLLOBOT / MELDEXZZ.`
         }
     ];
 
+    await conn.sendMessage(m.chat, {
+        text: texto,
+        mentions: mentions
+    });
+
     const mensaje = generateWAMessageFromContent(m.chat, {
         viewOnceMessage: {
             message: {
-                messageContextInfo: { 
-                    deviceListMetadata: {},
-                    mentionedJid: mentions
-                },
+                messageContextInfo: { deviceListMetadata: {} },
                 interactiveMessage: proto.Message.InteractiveMessage.create({
                     body: { text: texto },
                     footer: { text: "Selecciona una opción:" },
@@ -132,11 +116,10 @@ export async function after(m, { conn }) {
         const numero = m.sender.split('@')[0];
         const nombreUsuario = m.pushName || numero;
         const tag = m.sender;
-        userMapping.set(nombreUsuario, numero);
 
         // Borrar al usuario de otras escuadras
         Object.keys(listas).forEach(key => {
-            const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
+            const index = listas[key].findIndex(p => p.includes(`@${numero}`));
             if (index !== -1) {
                 listas[key][index] = key === 'suplente' ? '✔' : '➢';
             }
@@ -147,7 +130,7 @@ export async function after(m, { conn }) {
         const libre = listas[squadType].findIndex(p => p === (squadType === 'suplente' ? '✔' : '➢'));
         
         if (libre !== -1) {
-            listas[squadType][libre] = `@${nombreUsuario}`;
+            listas[squadType][libre] = `@${numero}`;
             await conn.sendMessage(m.chat, {
                 text: `✅ @${numero} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
                 mentions: [tag]
