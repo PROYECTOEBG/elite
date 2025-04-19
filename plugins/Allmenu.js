@@ -1,224 +1,166 @@
-import { proto } from '@whiskeysockets/baileys';
+import pkg from '@whiskeysockets/baileys';
+const { generateWAMessageFromContent, proto } = pkg;
 
-let escuadras = {
-  squad1: [],
-  squad2: [],
-  suplente: []
+// Estado global de las listas
+let listas = {
+  squad1: ['➢', '➢', '➢', '➢'],
+  squad2: ['➢', '➢', '➢', '➢'],
+  suplente: ['✔', '✔', '✔']
 };
 
-let handler = async (m, { conn }) => {
-    try {
-        await m.reply(`*EliteBot*
-🎮 *MODALIDAD:* CLK  
-👕 *ROPA:* verde  
-
-*Escuadra 1:*  
-➡ Vacío
-➡ Vacío
-➡ Vacío
-➡ Vacío
-
-*Escuadra 2:*  
-➡ Vacío
-➡ Vacío
-➡ Vacío
-➡ Vacío
-
-*SUPLENTE:*  
-➡ Vacío
-➡ Vacío
-➡ Vacío
-
-*BOLLLOBOT / MELDEXZZ.*
-
-Usa:
-.squad1 - Unirte a Escuadra 1
-.squad2 - Unirte a Escuadra 2
-.suplente - Ser suplente
-.limpiar - Limpiar lista`);
-    } catch (e) {
-        console.error('Error:', e);
-        await m.reply('Ocurrió un error');
+const handler = async (m, { conn }) => {
+  try {
+    const msgText = (m.text || '').toLowerCase().trim();
+    
+    // Manejo del comando "escuadra 1"
+    if (msgText === 'escuadra 1') {
+      await handleSquadRequest(conn, m, 'squad1');
+      return;
     }
+    
+    // Mostrar lista normal si no es un comando específico
+    await enviarLista(conn, m.chat);
+  } catch (error) {
+    console.error('Error en handler:', error);
+    await conn.sendMessage(m.chat, { text: '❌ Ocurrió un error al procesar tu solicitud' });
+  }
+};
+
+// Función para manejar solicitudes de escuadra
+async function handleSquadRequest(conn, m, squadType) {
+  const usuario = m.sender.split('@')[0];
+  const tag = m.sender;
+  const squadName = squadType === 'squad1' ? 'Escuadra 1' : squadType === 'squad2' ? 'Escuadra 2' : 'Suplente';
+  
+  // Buscar espacio libre
+  const libre = listas[squadType].findIndex(p => p === '➢' || p === '✔');
+  
+  if (libre !== -1) {
+    listas[squadType][libre] = `@${usuario}`;
+    await conn.sendMessage(m.chat, {
+      text: `✅ @${usuario} agregado a ${squadName}`,
+      mentions: [tag]
+    });
+    await enviarLista(conn, m.chat);
+  } else {
+    await conn.sendMessage(m.chat, {
+      text: `⚠️ ${squadName} está llena`,
+      mentions: [tag]
+    });
+  }
 }
 
-handler.help = ['listaff']
-handler.tags = ['main']
-handler.command = /^(listaff|lista)$/i
+// Función para enviar la lista interactiva
+async function enviarLista(conn, chatId, usuario = null, tipo = null, tag = null) {
+  try {
+    // Actualizar lista si se proporciona usuario
+    if (usuario && tipo) {
+      const libre = listas[tipo].findIndex(p => p === '➢' || p === '✔');
+      if (libre !== -1) listas[tipo][libre] = `@${usuario}`;
+    }
 
-export default handler
-
-// Comando para Escuadra 1
-let handler_squad1 = async (m, { conn }) => {
-  const user = m.sender;
-  const username = '@' + user.split('@')[0];
-  
-  if (escuadras.squad1.length >= 4) {
-    return m.reply('⚠️ Escuadra 1 está llena');
-  }
-  
-  // Remover de otras escuadras si existe
-  escuadras.squad2 = escuadras.squad2.filter(p => p !== username);
-  escuadras.suplente = escuadras.suplente.filter(p => p !== username);
-  
-  // Agregar a escuadra 1 si no está
-  if (!escuadras.squad1.includes(username)) {
-    escuadras.squad1.push(username);
-  }
-  
-  await conn.sendMessage(m.chat, { 
-    text: generarTexto(),
-    mentions: [user]
-  });
-};
-handler_squad1.command = /^squad1$/i;
-export { handler_squad1 };
-
-// Comando para Escuadra 2
-let handler_squad2 = async (m, { conn }) => {
-  const user = m.sender;
-  const username = '@' + user.split('@')[0];
-  
-  if (escuadras.squad2.length >= 4) {
-    return m.reply('⚠️ Escuadra 2 está llena');
-  }
-  
-  // Remover de otras escuadras si existe
-  escuadras.squad1 = escuadras.squad1.filter(p => p !== username);
-  escuadras.suplente = escuadras.suplente.filter(p => p !== username);
-  
-  // Agregar a escuadra 2 si no está
-  if (!escuadras.squad2.includes(username)) {
-    escuadras.squad2.push(username);
-  }
-  
-  await conn.sendMessage(m.chat, { 
-    text: generarTexto(),
-    mentions: [user]
-  });
-};
-handler_squad2.command = /^squad2$/i;
-export { handler_squad2 };
-
-// Comando para Suplente
-let handler_suplente = async (m, { conn }) => {
-  const user = m.sender;
-  const username = '@' + user.split('@')[0];
-  
-  if (escuadras.suplente.length >= 3) {
-    return m.reply('⚠️ Lista de suplentes llena');
-  }
-  
-  // Remover de otras escuadras si existe
-  escuadras.squad1 = escuadras.squad1.filter(p => p !== username);
-  escuadras.squad2 = escuadras.squad2.filter(p => p !== username);
-  
-  // Agregar a suplentes si no está
-  if (!escuadras.suplente.includes(username)) {
-    escuadras.suplente.push(username);
-  }
-  
-  await conn.sendMessage(m.chat, { 
-    text: generarTexto(),
-    mentions: [user]
-  });
-};
-handler_suplente.command = /^suplente$/i;
-export { handler_suplente };
-
-// Comando para limpiar
-let handler_limpiar = async (m, { conn }) => {
-  escuadras = {
-    squad1: [],
-    squad2: [],
-    suplente: []
-  };
-  
-  await m.reply('♻️ Listas reiniciadas');
-  await conn.sendMessage(m.chat, { 
-    text: generarTexto()
-  });
-};
-handler_limpiar.command = /^limpiar$/i;
-export { handler_limpiar };
-
-// Función para generar el texto de la lista
-function generarTexto() {
-  return `*EliteBot*
-🎮 *MODALIDAD:* CLK  
-👕 *ROPA:* verde  
+    const texto = 
+`*MODALIDAD:* CLK  
+*ROPA:* verde  
 
 *Escuadra 1:*  
-${escuadras.squad1.length ? escuadras.squad1.map(p => `➡ ${p}`).join('\n') : '➡ Vacío'}
+${listas.squad1.map(p => `➡ ${p}`).join('\n')}  
 
 *Escuadra 2:*  
-${escuadras.squad2.length ? escuadras.squad2.map(p => `➡ ${p}`).join('\n') : '➡ Vacío'}
+${listas.squad2.map(p => `➡ ${p}`).join('\n')}  
 
 *SUPLENTE:*  
-${escuadras.suplente.length ? escuadras.suplente.map(p => `➡ ${p}`).join('\n') : '➡ Vacío'}
-
-*BOLLLOBOT / MELDEXZZ.*`;
-}
-
-async function enviarLista(conn, jid, mentions = []) {
-  // Obtener todos los usuarios mencionados
-  const allMentions = [...new Set([
-    ...mentions,
-    ...escuadras.squad1.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
-    ...escuadras.squad2.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
-    ...escuadras.suplente.filter(p => p !== '✔').map(p => p.replace('@', '') + '@s.whatsapp.net')
-  ])];
-
-  const texto = 
-`*EliteBot*
-🎮 *MODALIDAD:* CLK  
-👕 *ROPA:* verde  
-
-*Escuadra 1:*  
-${escuadras.squad1.map(p => `➡ ${p}`).join('\n')}  
-
-*Escuadra 2:*  
-${escuadras.squad2.map(p => `➡ ${p}`).join('\n')}  
-
-*SUPLENTE:*  
-${escuadras.suplente.map(p => `➡ ${p}`).join('\n')}  
+${listas.suplente.map(p => `➡ ${p}`).join('\n')}  
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  const buttons = [
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 1", id: "squad1" })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Escuadra 2", id: "squad2" })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Suplente", id: "suplente" })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({ display_text: "Limpiar lista", id: "limpiar" })
-    }
-  ];
-
-  const mensaje = generateWAMessageFromContent(jid, {
-    viewOnceMessage: {
-      message: {
-        messageContextInfo: { 
-          deviceListMetadata: {},
-          mentionedJid: allMentions
-        },
-        interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: { text: texto },
-          footer: { text: "Selecciona una opción:" },
-          nativeFlowMessage: { buttons }
+    const buttons = [
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Escuadra 1",
+          id: "squad1"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Escuadra 2",
+          id: "squad2"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Suplente",
+          id: "suplente"
+        })
+      },
+      {
+        name: "quick_reply",
+        buttonParamsJson: JSON.stringify({
+          display_text: "Limpiar lista",
+          id: "limpiar"
         })
       }
-    }
-  }, {});
+    ];
 
-  await conn.relayMessage(jid, mensaje.message, { messageId: mensaje.key.id });
+    const mensaje = generateWAMessageFromContent(chatId, {
+      viewOnceMessage: {
+        message: {
+          messageContextInfo: { deviceListMetadata: {} },
+          interactiveMessage: proto.Message.InteractiveMessage.create({
+            body: { text: texto },
+            footer: { text: "Selecciona una opción:" },
+            nativeFlowMessage: { buttons }
+          })
+        }
+      }
+    }, {});
+
+    await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
+
+    // Confirmación adicional si se agregó usuario
+    if (usuario && tag) {
+      await conn.sendMessage(chatId, {
+        text: `✅ @${usuario} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
+        mentions: [tag]
+      });
+    }
+  } catch (error) {
+    console.error('Error en enviarLista:', error);
+    throw error;
+  }
 }
+
+// Manejo de respuestas a botones
+export async function after(m, { conn }) {
+  try {
+    const button = m?.message?.buttonsResponseMessage;
+    if (!button) return;
+
+    const id = button.selectedButtonId;
+    const numero = m.sender.split('@')[0];
+    const tag = m.sender;
+
+    if (id === 'limpiar') {
+      listas = {
+        squad1: ['➢', '➢', '➢', '➢'],
+        squad2: ['➢', '➢', '➢', '➢'],
+        suplente: ['✔', '✔', '✔']
+      };
+      await conn.sendMessage(m.chat, {
+        text: `♻️ Listas reiniciadas por @${numero}`,
+        mentions: [tag]
+      }, { quoted: m });
+    } else {
+      await handleSquadRequest(conn, m, id);
+    }
+  } catch (error) {
+    console.error('Error en after:', error);
+    await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
+  }
+}
+
+handler.command = /^listaff$/i;
+export default handler;
