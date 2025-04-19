@@ -1,8 +1,125 @@
-// ... existing code ...
+import pkg from '@whiskeysockets/baileys';
+const { generateWAMessageFromContent, proto } = pkg;
+
+// Estado global de las listas por grupo
+let listasGrupos = new Map();
+let mensajesGrupos = new Map();
+
+// Función para obtener o crear las listas de un grupo
+const getListasGrupo = (groupId) => {
+    if (!listasGrupos.has(groupId)) {
+        listasGrupos.set(groupId, {
+            squad1: ['➤', '➤', '➤', '➤'],
+            squad2: ['➤', '➤', '➤', '➤'],
+            suplente: ['➤', '➤', '➤', '➤']
+        });
+    }
+    return listasGrupos.get(groupId);
+};
+
+// Función para reiniciar las listas de un grupo específico
+const reiniciarListas = (groupId) => {
+    listasGrupos.set(groupId, {
+        squad1: ['➤', '➤', '➤', '➤'],
+        squad2: ['➤', '➤', '➤', '➤'],
+        suplente: ['➤', '➤', '➤', '➤']
+    });
+};
+
+let handler = async (m, { conn, text, args }) => {
+    const msgText = m.text;
+    const groupId = m.chat;
+    let listas = getListasGrupo(groupId);
+    
+    // Manejar el comando .listaff
+    if (msgText.toLowerCase().startsWith('.listaff')) {
+        const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
+        if (!mensaje) {
+            await conn.sendMessage(m.chat, { 
+                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
+
+𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
+.listaff Actívense para la ranked 🎮` 
+            });
+            return;
+        }
+        reiniciarListas(groupId);
+        listas = getListasGrupo(groupId);
+        mensajesGrupos.set(groupId, mensaje);
+
+        // Enviar el mensaje primero
+        await conn.sendMessage(m.chat, { 
+            text: `*${mensaje}*`,
+            contextInfo: {
+                mentionedJid: []
+            }
+        });
+
+        // Luego mostrar la lista
+        await mostrarLista(conn, m.chat, listas, []);
+        return;
+    }
+
+    if (msgText.toLowerCase() !== 'escuadra 1' && msgText.toLowerCase() !== 'escuadra 2' && msgText.toLowerCase() !== 'suplente') return;
+    
+    const usuario = m.sender.split('@')[0];
+    const nombreUsuario = m.pushName || usuario;
+    
+    let squadType;
+    let mentions = [];
+    
+    if (msgText.toLowerCase() === 'escuadra 1') {
+        squadType = 'squad1';
+    } else if (msgText.toLowerCase() === 'escuadra 2') {
+        squadType = 'squad2';
+    } else {
+        squadType = 'suplente';
+    }
+    
+    // Borrar al usuario de otras escuadras
+    Object.keys(listas).forEach(key => {
+        const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
+        if (index !== -1) {
+            listas[key][index] = '➤';
+        }
+    });
+    
+    // Agregar automáticamente al usuario a la escuadra/suplente correspondiente
+    const libre = listas[squadType].findIndex(p => p === '➤');
+    if (libre !== -1) {
+        listas[squadType][libre] = `@${nombreUsuario}`;
+        mentions.push(m.sender);
+    }
+
+    // Recolectar todas las menciones y mostrar la lista actualizada
+    Object.values(listas).forEach(squad => {
+        squad.forEach(member => {
+            if (member !== '➤') {
+                const userName = member.slice(1);
+                const userJid = Object.keys(m.message.extendedTextMessage?.contextInfo?.mentionedJid || {}).find(jid => 
+                    jid.split('@')[0] === userName || 
+                    conn.getName(jid) === userName
+                );
+                if (userJid) mentions.push(userJid);
+            }
+        });
+    });
+
+    const mensajeGuardado = mensajesGrupos.get(groupId);
+    if (mensajeGuardado) {
+        await conn.sendMessage(m.chat, { 
+            text: `*${mensajeGuardado}*`,
+            contextInfo: {
+                mentionedJid: []
+            }
+        });
+    }
+    await mostrarLista(conn, m.chat, listas, mentions);
+}
 
 // Función para mostrar la lista
-async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
-    const texto = `${mensaje ? `*${mensaje}*\n\n` : ''}╭─────────────╮
+async function mostrarLista(conn, chat, listas, mentions = []) {
+    const texto = `╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
@@ -69,30 +186,63 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensaje = '') {
     await conn.relayMessage(chat, mensaje.message, { messageId: mensaje.key.id });
 }
 
-// ... existing code ...
+// Manejo de respuestas a botones
+export async function after(m, { conn }) {
+    try {
+        const button = m?.message?.buttonsResponseMessage;
+        if (!button) return;
 
-let handler = async (m, { conn, text, args }) => {
-    const msgText = m.text;
-    const groupId = m.chat;
-    let listas = getListasGrupo(groupId);
-    
-    // Manejar el comando .listaff
-    if (msgText.toLowerCase().startsWith('.listaff')) {
-        const mensaje = msgText.substring(8).trim(); // Remover '.listaff' del mensaje
-        if (!mensaje) {
-            await conn.sendMessage(m.chat, { 
-                text: `❌ 𝗗𝗘𝗕𝗘𝗦 𝗜𝗡𝗚𝗥𝗘𝗦𝗔𝗥 𝗨𝗡 𝗧𝗘𝗫𝗧𝗢
+        const id = button.selectedButtonId;
+        const groupId = m.chat;
+        let listas = getListasGrupo(groupId);
+        const numero = m.sender.split('@')[0];
+        const nombreUsuario = m.pushName || numero;
+        const tag = m.sender;
 
-𝗘𝗷𝗲𝗺𝗽𝗹𝗼:
-.listaff Actívense para la ranked 🎮` 
+        // Borrar al usuario de otras escuadras
+        Object.keys(listas).forEach(key => {
+            const index = listas[key].findIndex(p => p.includes(`@${nombreUsuario}`));
+            if (index !== -1) {
+                listas[key][index] = '➤';
+            }
+        });
+
+        const squadType = id === 'escuadra1' ? 'squad1' : 
+                        id === 'escuadra2' ? 'squad2' : 'suplente';
+        const libre = listas[squadType].findIndex(p => p === '➤');
+        
+        if (libre !== -1) {
+            listas[squadType][libre] = `@${nombreUsuario}`;
+            await conn.sendMessage(m.chat, {
+                text: `✅ @${nombreUsuario} agregado a ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'}`,
+                mentions: [tag]
             });
-            return;
+        } else {
+            await conn.sendMessage(m.chat, {
+                text: `⚠️ ${id === 'escuadra1' ? 'Escuadra 1' : id === 'escuadra2' ? 'Escuadra 2' : 'Suplente'} está llena`,
+                mentions: [tag]
+            });
         }
-        reiniciarListas(groupId);
-        listas = getListasGrupo(groupId);
-        mensajesGrupos.set(groupId, mensaje);
-        await mostrarLista(conn, m.chat, listas, [], mensaje);
-        return;
+        
+        // Actualizar la lista después de cada acción
+        const mensajeGuardado = mensajesGrupos.get(groupId);
+        if (mensajeGuardado) {
+            await conn.sendMessage(m.chat, { 
+                text: `*${mensajeGuardado}*`,
+                contextInfo: {
+                    mentionedJid: []
+                }
+            });
+        }
+        await mostrarLista(conn, m.chat, listas, [tag]);
+    } catch (error) {
+        console.error('Error en after:', error);
+        await conn.sendMessage(m.chat, { text: '❌ Error al procesar tu selección' });
     }
+}
 
-    // ... rest of the handler code ...
+handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
+handler.command = new RegExp
+handler.group = true
+
+export default handler
