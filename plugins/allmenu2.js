@@ -1,26 +1,39 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
-// Estado global de las listas
-let listas = {
-  squad1: ['➢', '➢', '➢', '➢'],
-  squad2: ['➢', '➢', '➢', '➢'],
-  suplente: ['✔', '✔', '✔']
+// Estado global de las listas por grupo
+let listasGrupos = new Map();
+
+// Función para obtener o crear las listas de un grupo
+const getListasGrupo = (groupId) => {
+    if (!listasGrupos.has(groupId)) {
+        listasGrupos.set(groupId, {
+            squad1: ['➢', '➢', '➢', '➢'],
+            squad2: ['➢', '➢', '➢', '➢'],
+            suplente: ['✔', '✔', '✔']
+        });
+    }
+    return listasGrupos.get(groupId);
 };
 
-// Función para reiniciar las listas
-const reiniciarListas = () => {
-  listas.squad1 = ['➢', '➢', '➢', '➢'];
-  listas.squad2 = ['➢', '➢', '➢', '➢'];
-  listas.suplente = ['✔', '✔', '✔'];
+// Función para reiniciar las listas de un grupo específico
+const reiniciarListas = (groupId) => {
+    listasGrupos.set(groupId, {
+        squad1: ['➢', '➢', '➢', '➢'],
+        squad2: ['➢', '➢', '➢', '➢'],
+        suplente: ['✔', '✔', '✔']
+    });
 };
 
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
+    const groupId = m.chat;
+    let listas = getListasGrupo(groupId);
     
     // Manejar el comando .listaff
     if (msgText === '.listaff') {
-        reiniciarListas();
+        reiniciarListas(groupId);
+        listas = getListasGrupo(groupId);
         const texto = `*✅ Las listas han sido reiniciadas*
 
 MODALIDAD: CLK
@@ -33,7 +46,9 @@ Escuadra 2:
 ${listas.squad2.map(p => `➡️ ${p}`).join('\n')}
 
 SUPLENTE:
-${listas.suplente.map(p => `➡️ ${p}`).join('\n')}`
+${listas.suplente.map(p => `➡️ ${p}`).join('\n')}
+
+BOLLLLOBOT / MELDEXZZ.`
 
         const buttons = [
             {
@@ -194,6 +209,8 @@ export async function after(m, { conn }) {
         if (!button) return;
 
         const id = button.selectedButtonId;
+        const groupId = m.chat;
+        let listas = getListasGrupo(groupId);
         const numero = m.sender.split('@')[0];
         const nombreUsuario = m.pushName || numero;
         const tag = m.sender;
@@ -235,5 +252,4 @@ handler.customPrefix = /^(escuadra [12]|suplente|\.listaff)$/i
 handler.command = new RegExp
 handler.group = true
 
-export { listas }
 export default handler
