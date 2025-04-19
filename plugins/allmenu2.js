@@ -69,7 +69,17 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-        await conn.sendFile(m.chat, null, 'error.jpg', texto, m, false, { mentions: [m.sender] })
+        const templateButtons = [
+            {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'https://wa.me/1234567890?text=escuadra%201'}},
+            {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'https://wa.me/1234567890?text=escuadra%202'}},
+            {index: 3, urlButton: {displayText: 'Suplente', url: 'https://wa.me/1234567890?text=suplente'}}
+        ]
+
+        await conn.sendMessage(m.chat, {
+            text: texto,
+            templateButtons: templateButtons,
+            mentions: [m.sender]
+        })
         return;
     }
 
@@ -131,7 +141,17 @@ let handler = async (m, { conn, text, args }) => {
 𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`.trim()
 
-    await conn.sendFile(m.chat, null, 'error.jpg', texto, m, false, { mentions: [usuario] })
+    const templateButtons = [
+        {index: 1, urlButton: {displayText: 'Escuadra 1', url: 'https://wa.me/1234567890?text=escuadra%201'}},
+        {index: 2, urlButton: {displayText: 'Escuadra 2', url: 'https://wa.me/1234567890?text=escuadra%202'}},
+        {index: 3, urlButton: {displayText: 'Suplente', url: 'https://wa.me/1234567890?text=suplente'}}
+    ]
+
+    await conn.sendMessage(m.chat, {
+        text: texto,
+        templateButtons: templateButtons,
+        mentions: [usuario]
+    })
 }
 
 handler.customPrefix = /^(escuadra [12]|suplente|\.listaff.*)$/i
