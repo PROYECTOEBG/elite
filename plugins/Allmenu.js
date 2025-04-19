@@ -1,114 +1,56 @@
-import pkg from '@whiskeysockets/baileys';
-const { generateWAMessageFromContent, proto } = pkg;
+const { default: makeWASocket, proto, generateWAMessageFromContent, prepareWAMessageMedia, generateWAMessageContent } = require('@whiskeysockets/baileys');
 
-let listas = {
-  squad1: ['➢', '➢', '➢', '➢'],
-  squad2: ['➢', '➢', '➢', '➢'],
-  suplente: ['✔', '✔', '✔']
+let lista = {
+    escuadra1: [],
+    escuadra2: [],
+    suplentes: [],
 };
 
-const handler = async (m, { conn }) => {
-  await enviarLista(conn, m.chat);
-};
+function generarMensajeLista() {
+    return `
+*╭───「 LISTA DE ESCUADRAS 」───╮*
 
-async function enviarLista(conn, chatId, usuario = null, tipo = null, tag = null) {
-  if (usuario && tipo) {
-    const lista = listas[tipo];
-    const libre = lista.findIndex(p => p === '➢' || p === '✔');
-    if (libre !== -1) lista[libre] = `@${usuario}`;
-  }
+*➤ ESCUADRA 1:*
+${formatearLista(lista.escuadra1)}
 
-  const texto = 
-`*MODALIDAD:* CLK  
-*ROPA:* verde  
+*➤ ESCUADRA 2:*
+${formatearLista(lista.escuadra2)}
 
-*Escuadra 1:*  
-${listas.squad1.map(p => `➡ ${p}`).join('\n')}  
+*➤ SUPLENTES:*
+${formatearLista(lista.suplentes)}
 
-*Escuadra 2:*  
-${listas.squad2.map(p => `➡ ${p}`).join('\n')}  
-
-*SUPLENTE:*  
-${listas.suplente.map(p => `➡ ${p}`).join('\n')}  
-
-*BOLLLOBOT / MELDEXZZ.*`;
-
-  const buttons = [
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Escuadra 1",
-        id: "squad1"
-      })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Escuadra 2",
-        id: "squad2"
-      })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Suplente",
-        id: "suplente"
-      })
-    },
-    {
-      name: "quick_reply",
-      buttonParamsJson: JSON.stringify({
-        display_text: "Limpiar lista",
-        id: "limpiar"
-      })
-    }
-  ];
-
-  const mensaje = generateWAMessageFromContent(chatId, {
-    viewOnceMessage: {
-      message: {
-        messageContextInfo: { deviceListMetadata: {} },
-        interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: { text: texto },
-          footer: { text: "Selecciona una opción:" },
-          nativeFlowMessage: { buttons }
-        })
-      }
-    }
-  }, {});
-
-  await conn.relayMessage(chatId, mensaje.message, { messageId: mensaje.key.id });
-
-  if (usuario && tag) {
-    await conn.sendMessage(chatId, {
-      text: `✅ @${usuario} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
-      mentions: [tag]
-    });
-  }
+*╰────── BY ELITEBOT ──────╯*
+`;
 }
 
-export async function after(m, { conn }) {
-  const button = m?.message?.buttonsResponseMessage;
-  if (!button) return;
+function formatearLista(arr) {
+    if (arr.length === 0) return '〃 Vacío';
+    return arr.map((u, i) => `${i + 1}. @${u.split('@')[0]}`).join('\n');
+}
 
-  const id = button.selectedButtonId;
-  const nombre = m.pushName || 'Usuario';
-  const numero = m.sender.split('@')[0];
+async function enviarLista(sock, jid) {
+    const texto = generarMensajeLista();
 
-  if (id === 'limpiar') {
-    listas = {
-      squad1: ['➢', '➢', '➢', '➢'],
-      squad2: ['➢', '➢', '➢', '➢'],
-      suplente: ['✔', '✔', '✔']
+    const buttons = [
+        { buttonId: 'escuadra1', buttonText: { displayText: '↶ Escuadra 1' }, type: 1 },
+        { buttonId: 'escuadra2', buttonText: { displayText: '↶ Escuadra 2' }, type: 1 },
+        { buttonId: 'suplente', buttonText: { displayText: '↶ Suplente' }, type: 1 },
+        { buttonId: 'limpiar', buttonText: { displayText: '↺ Limpiar lista' }, type: 1 },
+    ];
+
+    const buttonMessage = {
+        text: texto,
+        footer: 'Selecciona una opción:',
+        buttons: buttons,
+        headerType: 1
     };
-    await conn.sendMessage(m.chat, {
-      text: `♻️ Listas reiniciadas por @${numero}`,
-      mentions: [m.sender]
-    }, { quoted: m });
-  } else {
-    await enviarLista(conn, m.chat, numero, id, m.sender);
-  }
+
+    await sock.sendMessage(jid, buttonMessage);
 }
 
-handler.command = /^listaff$/i;
-export default handler;
+module.exports = {
+    command: ['listaff'],
+    handler: async (m, { sock }) => {
+        await enviarLista(sock, m.chat);
+    }
+}
