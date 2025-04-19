@@ -120,7 +120,7 @@ let handler = async (m, { conn, text, args }) => {
 // Función para mostrar la lista
 async function mostrarLista(conn, chat, listas, mentions = []) {
     const texto = `
-    *${mensajeGuardado}*
+   
     ╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
 │👑 ${listas.squad1[0]}
