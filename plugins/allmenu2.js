@@ -1,6 +1,12 @@
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
-import { listas } from './listaff.js';
+
+// Estado global de las listas
+let listas = {
+  squad1: ['➢', '➢', '➢', '➢'],
+  squad2: ['➢', '➢', '➢', '➢'],
+  suplente: ['✔', '✔', '✔']
+};
 
 let handler = async (m, { conn }) => {
     const msgText = m.text.toLowerCase();
@@ -123,4 +129,5 @@ handler.customPrefix = /^(escuadra [12]|suplente)$/i
 handler.command = new RegExp
 handler.group = true
 
-export default handler 
+export { listas }
+export default handler
