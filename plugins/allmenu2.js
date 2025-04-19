@@ -47,7 +47,8 @@ let handler = async (m, { conn, text, args }) => {
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
 
-        const texto = `*${mensaje}*
+        let yo = `*${mensaje}*`
+        const texto = `${yo}
 
 ╭─────────────╮
 │ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
@@ -197,7 +198,7 @@ async function mostrarLista(conn, chat, listas, mentions = []) {
 │🥷🏻 ${listas.suplente[2]}
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
-𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 ��𝗟𝗢𝗕𝗔𝗟
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
     const buttons = [
