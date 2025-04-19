@@ -2,13 +2,13 @@ import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
 // Estado global de las listas
-let listas = {
+const listas = {
   squad1: ['➢', '➢', '➢', '➢'],
   squad2: ['➢', '➢', '➢', '➢'],
   suplente: ['✔', '✔', '✔']
 };
 
-const handler = async (m, { conn }) => {
+let handler = async (m, { conn }) => {
   try {
     const msgText = (m.text || '').toLowerCase().trim();
     
@@ -79,14 +79,14 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
         name: "quick_reply",
         buttonParamsJson: JSON.stringify({
           display_text: "Escuadra 1",
-          id: "squad1"
+          id: "escuadra 1"
         })
       },
       {
         name: "quick_reply",
         buttonParamsJson: JSON.stringify({
           display_text: "Escuadra 2",
-          id: "squad2"
+          id: "escuadra 2"
         })
       },
       {
@@ -100,7 +100,7 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
         name: "quick_reply",
         buttonParamsJson: JSON.stringify({
           display_text: "Limpiar lista",
-          id: "limpiar"
+          id: "limpiar lista"
         })
       }
     ];
@@ -143,7 +143,7 @@ export async function after(m, { conn }) {
     const numero = m.sender.split('@')[0];
     const tag = m.sender;
 
-    if (id === 'limpiar') {
+    if (id === 'limpiar lista') {
       listas = {
         squad1: ['➢', '➢', '➢', '➢'],
         squad2: ['➢', '➢', '➢', '➢'],
@@ -154,7 +154,7 @@ export async function after(m, { conn }) {
         mentions: [tag]
       }, { quoted: m });
     } else {
-      await handleSquadRequest(conn, m, id);
+      await handleSquadRequest(conn, m, id === 'escuadra 1' ? 'squad1' : id === 'escuadra 2' ? 'squad2' : 'suplente');
     }
   } catch (error) {
     console.error('Error en after:', error);
@@ -162,5 +162,8 @@ export async function after(m, { conn }) {
   }
 }
 
-handler.command = /^listaff$/i;
+handler.command = /^(listaff|lista)$/i;
+handler.tags = ['main'];
+
+export { listas };
 export default handler;
