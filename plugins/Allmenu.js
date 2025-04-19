@@ -1,61 +1,44 @@
-import pkg from '@whiskeysockets/baileys';
-const { generateWAMessageFromContent, proto } = pkg;
+// plugins/listaff.js
+import fetch from 'node-fetch';
+import { MessageType } from '@whiskeysockets/baileys';
 
-// Estado global simplificado
-let squad1 = ['➢', '➢', '➢', '➢'];
-
-const handler = async (m, { conn }) => {
-  const msgText = (m.text || '').toLowerCase().trim();
-  const user = m.sender.split('@')[0];
-  
-  // Comando básico para escuadra 1
-  if (msgText === 'escuadra 1') {
-    const emptySlot = squad1.findIndex(slot => slot === '➢');
+let handler = async (m, { conn, usedPrefix, text, groupMetadata, participants }) => {
+    let fkontak = { "key": { "participants":"0@s.whatsapp.net", "remoteJid": "status@broadcast", "fromMe": false, "id": "Halo" }, "message": { "contactMessage": { "vcard": `BEGIN:VCARD\nVERSION:3.0\nN:Sy;Bot;;;\nFN:y\nitem1.TEL;waid=${m.sender.split('@')[0]}:${m.sender.split('@')[0]}\nitem1.X-ABLabel:Ponsel\nEND:VCARD` }}, "participant": "0@s.whatsapp.net" }
     
-    if (emptySlot !== -1) {
-      squad1[emptySlot] = `@${user}`;
-      
-      // Enviar confirmación directa
-      await conn.sendMessage(m.chat, {
-        text: `✅ @${user} agregado a Escuadra 1 (posición ${emptySlot + 1})`,
-        mentions: [m.sender]
-      });
-      
-      // Mostrar lista actualizada
-      await showUpdatedList(conn, m.chat);
-    } else {
-      await conn.sendMessage(m.chat, {
-        text: '⚠️ Escuadra 1 está llena',
-        mentions: [m.sender]
-      });
-    }
-    return;
-  }
-  
-  // Mostrar lista por defecto
-  await showUpdatedList(conn, m.chat);
-};
+    const buttons = [
+        { buttonId: `${usedPrefix}listaff 1`, buttonText: { displayText: 'Escuadra 1' }, type: 1 },
+        { buttonId: `${usedPrefix}listaff 2`, buttonText: { displayText: 'Escuadra 2' }, type: 1 }
+    ];
 
-// Función simplificada para mostrar lista
-async function showUpdatedList(conn, chatId) {
-  const listText = `*ESCUADRA 1:*\n${squad1.map((p, i) => `${i+1}. ${p}`).join('\n')}`;
-  
-  await conn.sendMessage(chatId, {
-    text: listText,
-    footer: 'Escribe "escuadra 1" para unirte',
-    mentions: []
-  });
+    const escuadra1 = `╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
+│👑 ➤ ${text === '1' ? conn.getName(m.sender) : 'Vacante'}
+│🥷🏻 ➤ ${text === '1' ? conn.getName(m.sender) : 'Vacante'}
+│🥷🏻 ➤ ${text === '1' ? conn.getName(m.sender) : 'Vacante'}
+│🥷🏻 ➤ ${text === '1' ? conn.getName(m.sender) : 'Vacante'}
+╰─────────────╯`;
+
+    const escuadra2 = `╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
+│👑 ➤ ${text === '2' ? conn.getName(m.sender) : 'Vacante'}
+│🥷🏻 ➤ ${text === '2' ? conn.getName(m.sender) : 'Vacante'}
+│🥷🏻 ➤ ${text === '2' ? conn.getName(m.sender) : 'Vacante'}
+│🥷🏻 ➤ ${text === '2' ? conn.getName(m.sender) : 'Vacante'}
+╰─────────────╯`;
+
+    const buttonMessage = {
+        text: `${escuadra1}\n\n${escuadra2}`,
+        footer: 'Presiona el botón para unirte a una escuadra',
+        buttons: buttons,
+        headerType: 1
+    };
+
+    await conn.sendMessage(m.chat, buttonMessage, MessageType.buttonsMessage, { quoted: fkontak });
 }
 
-// Manejo de botones (versión mínima)
-export async function after(m, { conn }) {
-  const button = m?.message?.buttonsResponseMessage;
-  if (button && button.selectedButtonId === 'reset') {
-    squad1 = ['➢', '➢', '➢', '➢'];
-    await conn.sendMessage(m.chat, { text: '♻️ Lista reiniciada' });
-    await showUpdatedList(conn, m.chat);
-  }
-}
+handler.command = ['listaff']
+handler.group = true
+handler.botAdmin = true
+handler.admin = true
 
-handler.command = /^listaff$/i;
-export default handler;
+export default handler
