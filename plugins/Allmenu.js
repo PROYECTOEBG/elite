@@ -1,75 +1,67 @@
-import pkg from '@whiskeysockets/baileys';
-const { generateWAMessageFromContent, proto } = pkg
+import { readFileSync, unlinkSync } from 'fs';
+import { join } from 'path';
 
-var handler = async (m, { conn, usedPrefix }) => {
+let handler = async (m, { conn, command, usedPrefix, args }) => {
+    // Texto de la lista
+    const listText = `
+*MODALIDAD:* CLK  
+*ROPA:* verde  
 
-let msg = generateWAMessageFromContent(m.chat, {
-  viewOnceMessage: {
-    message: {
-        "messageContextInfo": {
-          "deviceListMetadata": {},
-          "deviceListMetadataVersion": 2
-        },
-        interactiveMessage: proto.Message.InteractiveMessage.create({
-          body: proto.Message.InteractiveMessage.Body.create({
-            text: "test"
-          }),
-          footer: proto.Message.InteractiveMessage.Footer.create({
-            text: "test"
-          }),
-          header: proto.Message.InteractiveMessage.Header.create({
-            title: "test",
-            subtitle: "test",
-            hasMediaAttachment: false
-          }),
-          nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
-            buttons: [
-              {
-                "name": "single_select",
-                "buttonParamsJson": "{\"title\":\"title\",\"sections\":[{\"title\":\"title\",\"highlight_label\":\"label\",\"rows\":[{\"header\":\"header\",\"title\":\"title\",\"description\":\"description\",\"id\":\"id\"},{\"header\":\"header\",\"title\":\"title\",\"description\":\"description\",\"id\":\"id\"}]}]}"
-              },
-              {
-                "name": "quick_reply",
-                "buttonParamsJson": "{\"display_text\":\"quick_reply\",\"id\":\"message\"}"
-              },
-              {
-                 "name": "cta_url",
-                 "buttonParamsJson": "{\"display_text\":\"url\",\"url\":\"https://www.google.com\",\"merchant_url\":\"https://www.google.com\"}"
-              },
-              {
-                 "name": "cta_call",
-                 "buttonParamsJson": "{\"display_text\":\"call\",\"id\":\"message\"}"
-              },
-              {
-                 "name": "cta_copy",
-                 "buttonParamsJson": "{\"display_text\":\"copy\",\"id\":\"123456789\",\"copy_code\":\"message\"}"
-              },
-              {
-                 "name": "cta_reminder",
-                 "buttonParamsJson": "{\"display_text\":\"cta_reminder\",\"id\":\"message\"}"
-              },
-              {
-                 "name": "cta_cancel_reminder",
-                 "buttonParamsJson": "{\"display_text\":\"cta_cancel_reminder\",\"id\":\"message\"}"
-              },
-              {
-                 "name": "address_message",
-                 "buttonParamsJson": "{\"display_text\":\"address_message\",\"id\":\"message\"}"
-              },
-              {
-                 "name": "send_location",
-                 "buttonParamsJson": ""
-              }
-           ],
-          })
-        })
-    }
-  }
-}, {})
+*Escuadra 1:*  
+➡ @Bolillo  
+➡ ➢  
+➡ ➢  
+➡ ➢  
 
-await conn.relayMessage(msg.key.remoteJid, msg.message, { messageId: msg.key.id })
+*Escuadra 2:*  
+➡ ➢ @Carito  
+➡ ➢  
+➡ ➢  
+➡ ➢  
+➡ ➢  
 
-}
-handler.command = /^(mboton)$/i
+*SUPLENTE:*  
+➡ ➢  
+➡ ➢  
+➡ ➢  
 
-export default handler  
+*BOLLLOBOT / MELDEXZZ.*  
+`.trim();
+
+    // Botones interactivos
+    const buttons = [
+        { buttonId: 'esc1', buttonText: { displayText: 'Escuadra 1' }, type: 1 },
+        { buttonId: 'esc2', buttonText: { displayText: 'Escuadra 2' }, type: 1 },
+        { buttonId: 'suplente', buttonText: { displayText: 'Suplente' }, type: 1 },
+        { buttonId: 'limpiar', buttonText: { displayText: 'Limpiar lista' }, type: 2 } // Rojo (peligro)
+    ];
+
+    // Enviar mensaje con botones
+    await conn.sendMessage(m.chat, {
+        text: listText,
+        footer: 'Selecciona una opción:',
+        buttons: buttons,
+        headerType: 1
+    });
+
+    // Manejar interacciones
+    conn.on('message-button', async (m) => {
+        const selectedButton = m.message?.buttonsResponseMessage?.selectedButtonId;
+        const sender = m.sender.split('@')[0];
+
+        if (selectedButton === 'esc1') {
+            await conn.sendMessage(m.chat, { text: `*${sender}* ha seleccionado *Escuadra 1*.` }, { quoted: m });
+        } else if (selectedButton === 'esc2') {
+            await conn.sendMessage(m.chat, { text: `*${sender}* ha seleccionado *Escuadra 2*.` }, { quoted: m });
+        } else if (selectedButton === 'suplente') {
+            await conn.sendMessage(m.chat, { text: `*${sender}* ha seleccionado *Suplente*.` }, { quoted: m });
+        } else if (selectedButton === 'limpiar') {
+            await conn.sendMessage(m.chat, { text: `*${sender}* ha limpiado la lista.` }, { quoted: m });
+        }
+    });
+};
+
+handler.help = ['listaff'];
+handler.tags = ['tools'];
+handler.command = /^listaff$/i;
+export default handler;
