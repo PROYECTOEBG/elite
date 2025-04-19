@@ -14,72 +14,85 @@ const handler = async (m, { conn }) => {
 handler.command = /^listaff$/i;
 export default handler;
 
-// Evento para manejar botones
 export async function before(m, { conn }) {
-  // Verificar si es una respuesta de botón
-  const selectedButton = m.message?.templateButtonReplyMessage?.selectedId || 
-                        m.message?.buttonsResponseMessage?.selectedButtonId ||
-                        m.message?.listResponseMessage?.singleSelectReply?.selectedRowId;
-                        
-  if (!selectedButton) return;
-
+  if (!m.message) return;
+  
+  // Detectar el tipo de mensaje de botón
+  const button = m.message?.buttonsResponseMessage?.selectedButtonId ||
+                m.message?.templateButtonReplyMessage?.selectedId;
+  
+  if (!button) return;
+  
   const user = m.sender;
   const username = '@' + user.split('@')[0];
 
   try {
     // Reaccionar al mensaje
-    await conn.sendMessage(m.chat, { 
-      react: { 
-        text: "✅", 
-        key: m.key 
-      }
-    });
+    await reaccionar(conn, m.chat, m.key, '✅');
 
-    if (selectedButton === 'limpiar') {
+    if (button === 'limpiar') {
       listas = {
         squad1: ['➢', '➢', '➢', '➢'],
         squad2: ['➢', '➢', '➢', '➢'],
         suplente: ['✔', '✔', '✔']
       };
-      await conn.sendMessage(m.chat, {
+      
+      await enviarMensaje(conn, m.chat, {
         text: `♻️ Listas reiniciadas por ${username}`,
         mentions: [user]
       });
+      
       return await enviarLista(conn, m.chat);
     }
 
-    const tipo = selectedButton;
+    const tipo = button;
     const libre = listas[tipo]?.findIndex(v => v === '➢' || v === '✔');
     
     if (libre !== -1) {
       listas[tipo][libre] = username;
-      await conn.sendMessage(m.chat, {
+      
+      await enviarMensaje(conn, m.chat, {
         text: `✅ ${username} agregado a ${tipo === 'squad1' ? 'Escuadra 1' : tipo === 'squad2' ? 'Escuadra 2' : 'Suplente'}`,
         mentions: [user]
       });
-      await enviarLista(conn, m.chat, [user]);
+      
+      await enviarLista(conn, m.chat);
     } else {
-      await conn.sendMessage(m.chat, {
+      await enviarMensaje(conn, m.chat, {
         text: `⚠️ ${tipo} está llena`,
         mentions: [user]
       });
     }
   } catch (error) {
-    console.error('Error en el manejo de botones:', error);
-    await conn.sendMessage(m.chat, {
+    console.error('Error:', error);
+    await enviarMensaje(conn, m.chat, {
       text: '❌ Ocurrió un error al procesar tu selección'
     });
   }
 }
 
-async function enviarLista(conn, jid, mentions = []) {
-  const allMentions = [...new Set([
-    ...mentions,
-    ...listas.squad1.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
-    ...listas.squad2.filter(p => p !== '➢').map(p => p.replace('@', '') + '@s.whatsapp.net'),
-    ...listas.suplente.filter(p => p !== '✔').map(p => p.replace('@', '') + '@s.whatsapp.net')
-  ])];
+async function reaccionar(conn, chat, key, emoji) {
+  try {
+    await conn.sendMessage(chat, { 
+      react: { 
+        text: emoji, 
+        key: key 
+      } 
+    });
+  } catch (error) {
+    console.error('Error al reaccionar:', error);
+  }
+}
 
+async function enviarMensaje(conn, chat, options) {
+  try {
+    await conn.sendMessage(chat, options);
+  } catch (error) {
+    console.error('Error al enviar mensaje:', error);
+  }
+}
+
+async function enviarLista(conn, jid) {
   const texto = 
 `*EliteBot*
 🎮 *MODALIDAD:* CLK  
@@ -96,20 +109,26 @@ ${listas.suplente.map(p => `➡ ${p}`).join('\n')}
 
 *BOLLLOBOT / MELDEXZZ.*`;
 
-  const buttons = [
-    { buttonId: 'squad1', buttonText: { displayText: 'Escuadra 1' }, type: 1 },
-    { buttonId: 'squad2', buttonText: { displayText: 'Escuadra 2' }, type: 1 },
-    { buttonId: 'suplente', buttonText: { displayText: 'Suplente' }, type: 1 },
-    { buttonId: 'limpiar', buttonText: { displayText: 'Limpiar lista' }, type: 1 }
+  const templateButtons = [
+    {index: 1, urlButton: {displayText: 'Escuadra 1', url: '#squad1'}},
+    {index: 2, urlButton: {displayText: 'Escuadra 2', url: '#squad2'}},
+    {index: 3, urlButton: {displayText: 'Suplente', url: '#suplente'}},
+    {index: 4, urlButton: {displayText: 'Limpiar lista', url: '#limpiar'}}
   ];
 
-  const buttonMessage = {
+  const templateMessage = {
     text: texto,
     footer: 'Selecciona una opción:',
-    buttons: buttons,
-    headerType: 1,
-    mentions: allMentions
+    templateButtons: templateButtons
   };
 
-  await conn.sendMessage(jid, buttonMessage);
+  try {
+    await conn.sendMessage(jid, templateMessage);
+  } catch (error) {
+    console.error('Error al enviar lista:', error);
+    // Intento alternativo con formato más simple
+    await conn.sendMessage(jid, {
+      text: texto + '\n\nUsa los comandos:\n!squad1\n!squad2\n!suplente\n!limpiar'
+    });
+  }
 }
