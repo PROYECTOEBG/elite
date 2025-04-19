@@ -1,4 +1,3 @@
-
 import pkg from '@whiskeysockets/baileys';
 const { generateWAMessageFromContent, proto } = pkg;
 
@@ -48,16 +47,73 @@ let handler = async (m, { conn, text, args }) => {
         listas = getListasGrupo(groupId);
         mensajesGrupos.set(groupId, mensaje);
 
-        // Enviar el mensaje primero
-        await conn.sendMessage(m.chat, { 
-            text: `*${mensaje}*`,
-            contextInfo: {
-                mentionedJid: []
-            }
-        });
+        const texto = `*${mensaje}*
 
-        // Luego mostrar la lista
-        await mostrarLista(conn, m.chat, listas, []);
+╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 1
+│👑 ${listas.squad1[0]}
+│🥷🏻 ${listas.squad1[1]}
+│🥷🏻 ${listas.squad1[2]}
+│🥷🏻 ${listas.squad1[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔 2
+│👑 ${listas.squad2[0]}
+│🥷🏻 ${listas.squad2[1]}
+│🥷🏻 ${listas.squad2[2]}
+│🥷🏻 ${listas.squad2[3]}
+╰─────────────╯
+╭─────────────╮
+│ 𝗦𝗨𝗣𝗟𝗘𝗡𝗧𝗘𝗦
+│🥷🏻 ${listas.suplente[0]}
+│🥷🏻 ${listas.suplente[1]}
+│🥷🏻 ${listas.suplente[2]}
+│🥷🏻 ${listas.suplente[3]}
+╰─────────────╯
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
+❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
+
+        const buttons = [
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "Escuadra 1",
+                    id: "escuadra1"
+                })
+            },
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "Escuadra 2",
+                    id: "escuadra2"
+                })
+            },
+            {
+                name: "quick_reply",
+                buttonParamsJson: JSON.stringify({
+                    display_text: "Suplente",
+                    id: "suplente"
+                })
+            }
+        ];
+
+        const mensaje_final = generateWAMessageFromContent(m.chat, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: {
+                        deviceListMetadata: {},
+                        mentionedJid: []
+                    },
+                    interactiveMessage: proto.Message.InteractiveMessage.create({
+                        body: { text: texto },
+                        footer: { text: "Selecciona una opción:" },
+                        nativeFlowMessage: { buttons }
+                    })
+                }
+            }
+        }, {});
+
+        await conn.relayMessage(m.chat, mensaje_final.message, { messageId: mensaje_final.key.id });
         return;
     }
 
@@ -141,7 +197,7 @@ async function mostrarLista(conn, chat, listas, mentions = []) {
 │🥷🏻 ${listas.suplente[2]}
 │🥷🏻 ${listas.suplente[3]}
 ╰─────────────╯
-𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 𝗚𝗟𝗢𝗕𝗔𝗟
+𝗘𝗟𝗜𝗧𝗘 𝗕𝗢𝗧 ��𝗟𝗢𝗕𝗔𝗟
 ❙❘❙❙❘❙❚❙❘❙❙❚❙❘❙❘❙❚❙❘❙❙❚❙❘❙❙❘❙❚❙❘`;
 
     const buttons = [
