@@ -125,14 +125,14 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
         {
             name: "quick_reply",
             buttonParamsJson: JSON.stringify({
-                display_text: "Asistir🎖️",
+                display_text: "Participar",
                 id: "asistir"
             })
         },
         {
             name: "quick_reply",
             buttonParamsJson: JSON.stringify({
-                display_text: "Suplente",
+                display_text: "Suplente6vs6",
                 id: "suplente"
             })
         }
