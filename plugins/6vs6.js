@@ -46,7 +46,7 @@ let handler = async (m, { conn, text, args }) => {
         return;
     }
 
-    if (msgText.toLowerCase() !== 'asistir' && msgText.toLowerCase() !== 'suplente') return;
+    if (msgText.toLowerCase() !== 'participar' && msgText.toLowerCase() !== 'suplente6vs6') return;
     
     const usuario = m.sender.split('@')[0];
     const nombreUsuario = m.pushName || usuario;
@@ -54,7 +54,7 @@ let handler = async (m, { conn, text, args }) => {
     let squadType;
     let mentions = [];
     
-    if (msgText.toLowerCase() === 'asistir') {
+    if (msgText.toLowerCase() === 'participar') {
         squadType = 'squad1';
     } else {
         squadType = 'suplente';
@@ -126,14 +126,14 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
             name: "quick_reply",
             buttonParamsJson: JSON.stringify({
                 display_text: "Participar",
-                id: "asistir"
+                id: "participar"
             })
         },
         {
             name: "quick_reply",
             buttonParamsJson: JSON.stringify({
                 display_text: "Suplente6vs6",
-                id: "suplente"
+                id: "suplente6vs6"
             })
         }
     ];
@@ -176,18 +176,18 @@ export async function after(m, { conn }) {
             }
         });
 
-        const squadType = id === 'asistir' ? 'squad1' : 'suplente';
+        const squadType = id === 'participar' ? 'squad1' : 'suplente';
         const libre = listas[squadType].findIndex(p => p === '➤');
         
         if (libre !== -1) {
             listas[squadType][libre] = `@${nombreUsuario}`;
             await conn.sendMessage(m.chat, {
-                text: `✅ @${nombreUsuario} agregado a ${id === 'asistir' ? 'Asistencia' : 'Suplente'}`,
+                text: `✅ @${nombreUsuario} agregado a ${id === 'participar' ? 'Asistencia' : 'Suplente'}`,
                 mentions: [tag]
             });
         } else {
             await conn.sendMessage(m.chat, {
-                text: `⚠️ ${id === 'asistir' ? 'Asistencia' : 'Suplente'} está llena`,
+                text: `⚠️ ${id === 'participar' ? 'Asistencia' : 'Suplente'} está llena`,
                 mentions: [tag]
             });
         }
@@ -200,7 +200,7 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^(asistir|suplente|\.6vs6.*)$/i
+handler.customPrefix = /^(participar|suplente6vs6|\.6vs6.*)$/i
 handler.command = new RegExp
 handler.group = true
 
