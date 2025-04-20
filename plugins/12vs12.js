@@ -49,7 +49,7 @@ let handler = async (m, { conn, text, args }) => {
         return;
     }
 
-    if (msgText.toLowerCase() !== 'asistire' && msgText.toLowerCase() !== 'suplente12vs12') return;
+    if (!['escuadra1', 'escuadra2', 'escuadra3', 'suplente12vs12'].includes(msgText.toLowerCase())) return;
     
     const usuario = m.sender.split('@')[0];
     const nombreUsuario = m.pushName || usuario;
@@ -57,14 +57,19 @@ let handler = async (m, { conn, text, args }) => {
     let squadType;
     let mentions = [];
     
-    if (msgText.toLowerCase() === 'asistire') {
-        // Buscar espacio en cualquiera de las 3 escuadras
-        if (listas.squad1.includes('➤')) squadType = 'squad1';
-        else if (listas.squad2.includes('➤')) squadType = 'squad2';
-        else if (listas.squad3.includes('➤')) squadType = 'squad3';
-        else squadType = null;
-    } else {
-        squadType = 'suplente';
+    switch(msgText.toLowerCase()) {
+        case 'escuadra1':
+            squadType = 'squad1';
+            break;
+        case 'escuadra2':
+            squadType = 'squad2';
+            break;
+        case 'escuadra3':
+            squadType = 'squad3';
+            break;
+        case 'suplente12vs12':
+            squadType = 'suplente';
+            break;
     }
     
     // Borrar al usuario de otras escuadras
@@ -75,12 +80,10 @@ let handler = async (m, { conn, text, args }) => {
         }
     });
     
-    if (squadType) {
-        const libre = listas[squadType].findIndex(p => p === '➤');
-        if (libre !== -1) {
-            listas[squadType][libre] = `@${nombreUsuario}`;
-            mentions.push(m.sender);
-        }
+    const libre = listas[squadType].findIndex(p => p === '➤');
+    if (libre !== -1) {
+        listas[squadType][libre] = `@${nombreUsuario}`;
+        mentions.push(m.sender);
     }
 
     Object.values(listas).forEach(squad => {
@@ -142,8 +145,22 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
         {
             name: "quick_reply",
             buttonParamsJson: JSON.stringify({
-                display_text: "Asistire",
-                id: "asistire"
+                display_text: "Escuadra1",
+                id: "escuadra1"
+            })
+        },
+        {
+            name: "quick_reply",
+            buttonParamsJson: JSON.stringify({
+                display_text: "Escuadra2",
+                id: "escuadra2"
+            })
+        },
+        {
+            name: "quick_reply",
+            buttonParamsJson: JSON.stringify({
+                display_text: "Escuadra3",
+                id: "escuadra3"
             })
         },
         {
@@ -194,12 +211,19 @@ export async function after(m, { conn }) {
         });
 
         let squadType;
-        if (id === 'asistire') {
-            if (listas.squad1.includes('➤')) squadType = 'squad1';
-            else if (listas.squad2.includes('➤')) squadType = 'squad2';
-            else if (listas.squad3.includes('➤')) squadType = 'squad3';
-        } else {
-            squadType = 'suplente';
+        switch(id) {
+            case 'escuadra1':
+                squadType = 'squad1';
+                break;
+            case 'escuadra2':
+                squadType = 'squad2';
+                break;
+            case 'escuadra3':
+                squadType = 'squad3';
+                break;
+            case 'suplente12vs12':
+                squadType = 'suplente';
+                break;
         }
 
         if (squadType) {
@@ -212,7 +236,7 @@ export async function after(m, { conn }) {
                 });
             } else {
                 await conn.sendMessage(m.chat, {
-                    text: `⚠️ ${squadType === 'suplente' ? 'Suplentes' : 'Todas las escuadras están'} llenas`,
+                    text: `⚠️ ${squadType === 'suplente' ? 'Suplentes' : `Escuadra ${squadType.slice(-1)}`} está llena`,
                     mentions: [tag]
                 });
             }
@@ -226,7 +250,7 @@ export async function after(m, { conn }) {
     }
 }
 
-handler.customPrefix = /^(asistire|suplente12vs12|\.12vs12.*)$/i
+handler.customPrefix = /^(escuadra1|escuadra2|escuadra3|suplente12vs12|\.12vs12.*)$/i
 handler.command = new RegExp
 handler.group = true
 
