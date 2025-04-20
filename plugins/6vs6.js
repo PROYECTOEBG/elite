@@ -97,13 +97,14 @@ let handler = async (m, { conn, text, args }) => {
 }
 
 async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = '') {
-    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''} 📑 𝗥𝗘𝗚𝗟𝗔𝗦: 𝗖𝗟𝗞
+    const texto = `🕓 𝗛𝗢𝗥𝗔: ${mensajeUsuario ? `*${mensajeUsuario}*\n` : ''} 🗣️ 𝗜𝗡𝗗𝗜𝗖𝗔𝗖𝗜𝗢𝗡𝗘𝗦 :
+» Reglas y color se avisa al llenar este listado.
 
 ╭──────⚔──────╮
           6 𝗩𝗘𝗥𝗦𝗨𝗦 6
 ╰──────⚔──────╯
 ╭─────────────╮
-│ 𝗘𝗦𝗖𝗨𝗔𝗗𝗥𝗔
+│ 𝗔𝗦𝗜𝗦𝗧𝗘𝗡𝗖𝗜𝗔
 │👑 ${listas.squad1[0]}
 │🥷🏻 ${listas.squad1[1]}
 │🥷🏻 ${listas.squad1[2]}
@@ -124,7 +125,7 @@ async function mostrarLista(conn, chat, listas, mentions = [], mensajeUsuario = 
         {
             name: "quick_reply",
             buttonParamsJson: JSON.stringify({
-                display_text: "Asistir",
+                display_text: "Asistir🎖️",
                 id: "asistir"
             })
         },
